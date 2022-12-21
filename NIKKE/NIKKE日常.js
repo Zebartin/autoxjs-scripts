@@ -6,6 +6,8 @@ var {
   clickRect
 } = require('./utils.js');
 var { width, height } = device;
+// 自行设定想打的对手名单，OCR精度不足，名字越简单越好
+var arenaTargets = ['ROMAY', 'GATO'];
 if (typeof module === 'undefined') {
   auto.waitFor();
   unlockIfNeed();
@@ -157,8 +159,7 @@ function 竞技场() {
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('方舟')), 10, 3000));
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('技场')), 10, 3000));
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('新人')), 10, 3000));
-  const rivals = ['ROMAY', 'GATO'];
-  const regexp = new RegExp(`(${rivals.join('|')})`);
+  const regexp = new RegExp(`(${arenaTargets.join('|')})`);
   const refresh = ocrUntilFound(res => res.find(e => e.text.includes('目录')), 10, 3000);
   const firstFight = ocrUntilFound(res => {
     var t = res.filter(e => e.text.endsWith('战斗') && e.level == 1);

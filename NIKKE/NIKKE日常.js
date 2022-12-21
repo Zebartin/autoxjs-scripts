@@ -1,0 +1,339 @@
+var { 启动NIKKE, 退出NIKKE, 返回首页 } = require('./NIKKEutils.js');
+var {
+  unlockIfNeed,
+  requestScreenCaptureAuto,
+  ocrUntilFound,
+  clickRect
+} = require('./utils.js');
+var { width, height } = device;
+if (typeof module === 'undefined') {
+  auto.waitFor();
+  unlockIfNeed();
+  requestScreenCaptureAuto();
+
+  启动NIKKE();
+  商店();
+  基地收菜();
+  好友();
+  竞技场();
+  爬塔();
+  咨询();
+  退出NIKKE();
+  exit();
+}
+else {
+  module.exports = {
+    商店: 商店,
+    好友: 好友,
+    基地收菜: 基地收菜,
+    竞技场: 竞技场,
+    爬塔: 爬塔,
+    咨询: 咨询
+  };
+}
+function 商店() {
+  try {
+    clickRect(ocrUntilFound(res => res.find(e => e.text == '商店'), 10, 3000));
+    log('进入商店');
+    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('100%')), 10, 3000));
+    clickRect(ocrUntilFound(res => res.find(e => e.text == '购买'), 10, 3000));
+    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 10, 2000));
+  } catch (err) {
+    log('商店失败');
+    log(err);
+  } finally {
+    返回首页();
+  }
+}
+function 基地收菜() {
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('基地')), 10, 3000));
+  log('进入基地');
+  var target = ocrUntilFound(res => res.find(e => e.text.includes('公告栏')), 10, 3000);
+  sleep(1000);
+  click(target.bounds.centerX(), target.bounds.centerY() - 50);
+  log('进入公告栏');
+  sleep(1000);
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('全部')), 10, 3000));
+  log('点击全部派遣');
+  sleep(2000);
+  target = ocrUntilFound(res => {
+    var x = res.filter(e => e.text.match(/派.$/) != null);
+    if (x.length > 3)
+      return x;
+    return null;
+  }, 20, 200);
+  clickRect(target[target.length - 1]);
+  log('点击派遣');
+  ocrUntilFound(res => res.find(e => e.text.includes('全部')), 10, 3000);
+  sleep(1000);
+  back();
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('DEFENSE')), 10, 3000));
+  log('OUTPOST DEFENSE');
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('奖励')), 10, 3000));
+  log('点击获得奖励');
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 10, 3000));
+  log('点击领取奖励');
+  sleep(1000);
+  target = ocrUntilFound(res => res.find(e => e.text.includes('点击')), 5, 300);
+  if (target != null) {
+    clickRect(target);
+    log('升级了');
+  }
+  sleep(1000);
+  返回首页();
+}
+function 好友() {
+  try {
+    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('好友')), 10, 3000));
+    clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('赠送')), 10, 3000));
+    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('确认')), 10, 3000));
+    sleep(1000);
+  } catch (err) {
+    log('好友失败');
+    log(err);
+  } finally {
+    back();
+  }
+}
+function 爬塔() {
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('方舟')), 10, 3000));
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('无限之塔')), 10, 3000));
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('正常开启')), 10, 3000));
+  for (let i = 0; i < 7; ++i) {
+    var curTower = getIntoNextTower();
+    if (curTower.match(/(无|限|朝|圣|者)/)) {
+      log('没有下一个塔了');
+      break;
+    }
+    var cnt = ocrUntilFound(res => parseInt(res.text.match(/关次[^\d]+(\d)\/3/)[1]), 10, 100);
+    log(`通关次数 ${cnt}/3`);
+    if (cnt == 0)
+      continue;
+    sleep(5000);
+    click(width / 2, height / 2);
+    sleep(1000);
+    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('进入战斗')), 10, 3000));
+    for (let j = 0; j < cnt; ++j) {
+      sleep(9000);
+      var target = ocrUntilFound(res => res.text.includes('AUTO'), 10, 3000);
+      if (target == null)
+        break;
+      sleep(40 * 1000);
+      ocrUntilFound(res => {
+        if (res.text.includes('AUTO'))
+          return false;
+        if (res.text.includes('REWARD'))
+          return true;
+      }, 10, 3000);
+      sleep(1000);
+      target = ocrUntilFound(res => res.find(
+        e => e.text.match(/(下.[^步]|返回)/) != null
+      ), 100, 100);
+      if (colors.blue(captureScreen().pixel(target.bounds.left, target.bounds.top)) < 200) {
+        click(width / 2, height / 2);
+        break;
+      }
+      clickRect(target);
+    }
+    sleep(5000);
+  }
+  返回首页();
+}
+function getIntoNextTower() {
+  var target = ocrUntilFound(res => res.find(
+    e => e.text.endsWith('之塔') && e.bounds.top > height / 2
+  ), 20, 1000);
+  sleep(1000);
+  click(width - 50, target.bounds.centerY());
+  sleep(2000);
+  var curTower = ocrUntilFound(res => res.find(
+    e => e.text.endsWith('之塔') && e.bounds.top > height / 2
+  ), 20, 1000).text;
+  log(`进入${curTower}`);
+  return curTower;
+}
+
+function 竞技场() {
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('方舟')), 10, 3000));
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('技场')), 10, 3000));
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('新人')), 10, 3000));
+  const rivals = ['ROMAY', 'GATO'];
+  const regexp = new RegExp(`(${rivals.join('|')})`);
+  const refresh = ocrUntilFound(res => res.find(e => e.text.includes('目录')), 10, 3000);
+  const firstFight = ocrUntilFound(res => {
+    var t = res.filter(e => e.text.endsWith('战斗') && e.level == 1);
+    if (t.length == 3)
+      return t[0];
+  }, 10, 3000);
+  while (true) {
+    var t = ocrUntilFound(res => {
+      if (res.text.includes('战斗'))
+        return res.text;
+      return null;
+    }, 20, 3000);
+    if (t.includes('免费') == false)
+      break;
+    while (ocrUntilFound(res => res.text.match(regexp), 1, 0) == null) {
+      clickRect(refresh);
+      sleep(1000);
+    }
+    clickRect(firstFight);
+    sleep(3000);
+    clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('战斗')), 20, 3000));
+    sleep(5000);
+    ocrUntilFound(res => res.text.includes('RANK'), 20, 3000);
+    click(width / 2, height * 0.2);
+  }
+  返回首页();
+}
+function 咨询() {
+  const counsel = JSON.parse(files.read('./nikke.json'));
+  clickRect(ocrUntilFound(res => res.find(e => e.text == '妮姬'), 20, 3000));
+  clickRect(ocrUntilFound(res => res.find(e => e.text == '咨询'), 20, 3000));
+  var firstPerson = ocrUntilFound(res => res.find(e => e.text.includes('RANK')), 20, 3000);
+  var counselCnt = ocrUntilFound(res => {
+    var t = res.text.match(/(\d)\/[789]/);
+    if (t != null)
+      return parseInt(t[1]);
+    return null;
+  }, 10, 100);
+  log(`咨询次数：${counselCnt}`);
+  for (let i = 0; i < counselCnt; ++i) {
+    clickRect(firstPerson);
+    单次咨询(counsel);
+    back();
+    sleep(1000);
+  }
+  返回首页();
+}
+function 单次咨询(counsel) {
+  var screenOCR = ocrUntilFound(res => {
+    if (res.text.includes('查看花'))
+      return res;
+    return false;
+  }, 20, 3000);
+  var target = screenOCR.find(
+    e => e.text.includes('咨询') && e.bounds != null && e.bounds.top > height / 2 && e.bounds.left > width / 2
+  );
+  if (colors.blue(captureScreen().pixel(target.bounds.right, target.bounds.top)) < 200) {
+    log('已完成今日咨询');
+    sleep(1000);
+    return;
+  }
+  var upperBound = screenOCR.find(e => e.text.includes('查看花') && e.bounds != null).bounds.top;
+  var lowerBound = screenOCR.find(e => e.text.includes('下') && e.bounds != null).bounds.top;
+  var nameOCR = screenOCR.find(e =>
+    e.bounds != null && e.bounds.top > upperBound && e.bounds.bottom < lowerBound && e.bounds.right < width / 2
+  ).text;
+  var name = mostSimilar(nameOCR, Object.keys(counsel)).result;
+  log(`咨询对象：${name}`);
+  clickRect(target);
+  clickRect(ocrUntilFound(res => res.find(
+    e => e.text.includes('确认')
+  ), 20, 3000));
+  sleep(2000);
+  // 连点直到出现选项
+  var counselImage = images.read('./images/counsel.jpg');
+  var result = null;
+  while (true) {
+    result = images.matchTemplate(captureScreen(), counselImage, {
+      threshold: 0.95,
+      max: 2,
+      region: [0, height / 2, width / 2, height / 2]
+    });
+    if (result.matches.length == 2)
+      break;
+    click(width / 2, height / 2);
+    sleep(1000);
+  }
+  var optionTop = result.topmost().point.y;
+  var optionBottom = result.bottommost().point.y;
+  var options = ocrUntilFound(res => {
+    var t = res.filter(
+      e => e.level == 1 && e.bounds.top >= optionTop
+    );
+    var t1 = null, t2 = null;
+    for (let i of t) {
+      if (i.bounds.top < optionBottom)
+        t1 = i;
+      else
+        t2 = i;
+    }
+    if (t1 == null && t2 == null)
+      return null;
+    t1 = t1 == null ? "" : t1.text;
+    t2 = t2 == null ? "" : t2.text;
+    return [t1, t2];
+  }, 10, 300);
+  let whichOne = null, similarOne = -1;
+  for (let i = 0; i < 2; ++i) {
+    var t = mostSimilar(options[i], counsel[name]);
+    if (t.similarity > similarOne) {
+      similarOne = t.similarity;
+      whichOne = i;
+    }
+  }
+  log(`咨询选择："${options[whichOne]}"`);
+  if (whichOne == 0)
+    click(width / 2, counselImage.getHeight() / 2 + optionTop);
+  else
+    click(width / 2, counselImage.getHeight() / 2 + optionBottom);
+  counselImage.recycle();
+  clickRect(ocrUntilFound(res => {
+    if (!res.text.includes('LOG'))
+      return false;
+    return res.find(e =>
+      !e.text.includes('LOG') && e.text.match(/SK.P/) != null
+    )
+  }, 20, 400));
+  sleep(1000);
+  ocrUntilFound(res => res.text.includes('咨询'), 20, 3000);
+  var target = ocrUntilFound(res => res.find(
+    e => e.text == '确认'
+  ), 5, 300);
+  if (target != null) {
+    log('RANK INCREASE');
+    clickRect(target);
+  }
+  ocrUntilFound(res => res.text.includes('查看花'), 10, 3000);
+}
+function mostSimilar(target, candidates) {
+  var res = null, maxSim = -1;
+  for (let candidate of candidates) {
+    if (target == candidate) {
+      res = candidate;
+      maxSim = 1;
+    }
+    let s = similarity(target, candidate);
+    if (s > maxSim) {
+      maxSim = s;
+      res = candidate;
+    }
+  }
+  return {
+    result: res,
+    similarity: maxSim
+  };
+}
+// 编辑距离
+function similarity(s1, s2) {
+  let n = s1.length, m = s2.length;
+  if (n * m == 0)
+    return n == m ? 1 : 0;
+  let dp = [];
+  for (let i = 0; i <= n; ++i)
+    dp.push([i]);
+  for (let j = 1; j <= m; ++j)
+    dp[0].push(j);
+  for (let i = 1; i <= n; ++i) {
+    for (let j = 1; j <= m; ++j) {
+      let left = dp[i - 1][j] + 1;
+      let down = dp[i][j - 1] + 1;
+      let leftDown = dp[i - 1][j - 1];
+      if (s1[i - 1] != s2[j - 1])
+        leftDown += 1;
+      dp[i][j] = Math.min(left, down, leftDown);
+    }
+  }
+  return 1.0 - dp[n][m] / Math.max(m, n);
+}

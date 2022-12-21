@@ -79,7 +79,6 @@ function enterPwd(pwd) {
       desc(a).clickable(true).findOne().click()
     }
   }
-  sleep(1000);
 }
 
 function requestScreenCaptureAuto() {
@@ -89,7 +88,6 @@ function requestScreenCaptureAuto() {
     threads.start(function () {
       packageName('com.android.systemui').text('允许').waitFor();
       text('允许').click();
-      sleep(1000);
     });
   }
   //申请截屏权限

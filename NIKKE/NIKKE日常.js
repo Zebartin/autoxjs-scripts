@@ -34,40 +34,49 @@ else {
   };
 }
 function 商店() {
-  try {
-    clickRect(ocrUntilFound(res => res.find(e => e.text == '商店'), 10, 3000));
-    log('进入商店');
-    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('100%')), 10, 3000));
+  clickRect(ocrUntilFound(res => res.find(e => e.text == '商店'), 10, 3000));
+  log('进入商店');
+  ocrUntilFound(res => res.text.includes('普通'), 20, 3000);
+  var freeGood = ocrUntilFound(res => res.find(e => e.text.includes('100%')), 10, 300);
+  if (freeGood != null) {
+    clickRect(freeGood);
     clickRect(ocrUntilFound(res => res.find(e => e.text == '购买'), 10, 3000));
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 10, 2000));
-  } catch (err) {
-    log('商店失败');
-    log(err);
-  } finally {
-    返回首页();
   }
+  返回首页();
 }
 function 基地收菜() {
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('基地')), 10, 3000));
   log('进入基地');
   var target = ocrUntilFound(res => res.find(e => e.text.includes('公告栏')), 10, 3000);
-  sleep(1000);
+  sleep(2000);
   click(target.bounds.centerX(), target.bounds.centerY() - 50);
   log('进入公告栏');
   sleep(1000);
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('全部')), 10, 3000));
-  log('点击全部派遣');
-  sleep(2000);
-  target = ocrUntilFound(res => {
-    var x = res.filter(e => e.text.match(/派.$/) != null);
-    if (x.length > 3)
-      return x;
-    return null;
-  }, 20, 200);
-  clickRect(target[target.length - 1]);
-  log('点击派遣');
-  ocrUntilFound(res => res.find(e => e.text.includes('全部')), 10, 3000);
-  sleep(1000);
+  target = ocrUntilFound(res => res.find(e => e.text.includes('全部派')), 10, 3000);
+  if (colors.red(captureScreen().pixel(target.bounds.right, target.bounds.top)) < 100) {
+    clickRect(target);
+    log('点击全部派遣');
+    sleep(2000);
+    target = ocrUntilFound(res => {
+      var x = res.filter(e => e.text.match(/派.$/) != null);
+      if (x.length > 3)
+        return x;
+      return null;
+    }, 20, 200);
+    clickRect(target[target.length - 1]);
+    log('点击派遣');
+    ocrUntilFound(res => res.find(e => e.text.includes('全部')), 10, 3000);
+    sleep(1000);
+  }
+  else {
+    target = ocrUntilFound(res => res.find(e => e.text.match('全部(领|領)')!=null), 10, 3000);
+    if (colors.red(captureScreen().pixel(target.bounds.right, target.bounds.top)) < 100) {
+      clickRect(target);
+      clickRect(ocrUntilFound(res=>res.find(e=>e.text.includes('点击')), 10, 3000));
+      sleep(1000);
+    }
+  }
   back();
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('DEFENSE')), 10, 3000));
   log('OUTPOST DEFENSE');
@@ -85,17 +94,17 @@ function 基地收菜() {
   返回首页();
 }
 function 好友() {
-  try {
-    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('好友')), 10, 3000));
-    clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('赠送')), 10, 3000));
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('好友')), 10, 3000));
+  log('点击好友');
+  sleep(2000);
+  var target = ocrUntilFound(res => res.find(e => e.text.endsWith('赠送')), 10, 3000);
+  if (colors.red(captureScreen().pixel(target.bounds.left, target.bounds.top)) < 100) {
+    clickRect(target);
+    log('点击赠送');
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('确认')), 10, 3000));
     sleep(1000);
-  } catch (err) {
-    log('好友失败');
-    log(err);
-  } finally {
-    back();
   }
+  back();
 }
 function 爬塔() {
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('方舟')), 10, 3000));

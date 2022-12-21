@@ -304,6 +304,7 @@ function mostSimilar(target, candidates) {
     if (target == candidate) {
       res = candidate;
       maxSim = 1;
+      break;
     }
     let s = similarity(target, candidate);
     if (s > maxSim) {

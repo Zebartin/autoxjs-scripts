@@ -14,6 +14,9 @@ function 饿了么签到() {
     log("点掉广告");
     adClose.click();
   }
+  // 新版本弹窗信息
+  if (!id('home_bottom_tab_4_text').exists())
+    id('close_btn').click();
   const myBtn = id('home_bottom_tab_4_text').findOne();
   click(myBtn.bounds().centerX(), myBtn.bounds().centerY());
   log("进入我的");

@@ -54,7 +54,7 @@ function 基地收菜() {
   log('进入公告栏');
   sleep(1000);
   target = ocrUntilFound(res => res.find(e => e.text.includes('全部派')), 10, 3000);
-  if (colors.red(captureScreen().pixel(target.bounds.right, target.bounds.top)) < 100) {
+  if (colors.red(captureScreen().pixel(target.bounds.right, target.bounds.top)) > 240) {
     clickRect(target);
     log('点击全部派遣');
     sleep(2000);
@@ -70,10 +70,10 @@ function 基地收菜() {
     sleep(1000);
   }
   else {
-    target = ocrUntilFound(res => res.find(e => e.text.match('全部(领|領)')!=null), 10, 3000);
+    target = ocrUntilFound(res => res.find(e => e.text.match('全部(领|領)') != null), 10, 3000);
     if (colors.red(captureScreen().pixel(target.bounds.right, target.bounds.top)) < 100) {
       clickRect(target);
-      clickRect(ocrUntilFound(res=>res.find(e=>e.text.includes('点击')), 10, 3000));
+      clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 10, 3000));
       sleep(1000);
     }
   }
@@ -116,7 +116,11 @@ function 爬塔() {
       log('没有下一个塔了');
       break;
     }
-    var cnt = ocrUntilFound(res => parseInt(res.text.match(/关次[^\d]+(\d)\/3/)[1]), 10, 100);
+    var cnt = ocrUntilFound(res => {
+      var t = res.text.match(/关次[^\d]+(\d)\/3/);
+      if (t != null)
+        return parseInt(t[1]);
+    }, 10, 100);
     log(`通关次数 ${cnt}/3`);
     if (cnt == 0)
       continue;
@@ -135,7 +139,7 @@ function 爬塔() {
           return false;
         if (res.text.includes('REWARD'))
           return true;
-      }, 10, 3000);
+      }, 30, 3000);
       sleep(1000);
       target = ocrUntilFound(res => res.find(
         e => e.text.match(/(下.[^步]|返回)/) != null
@@ -200,16 +204,40 @@ function 咨询() {
   const counsel = JSON.parse(files.read('./nikke.json'));
   clickRect(ocrUntilFound(res => res.find(e => e.text == '妮姬'), 20, 3000));
   clickRect(ocrUntilFound(res => res.find(e => e.text == '咨询'), 20, 3000));
-  var firstPerson = ocrUntilFound(res => res.find(e => e.text.includes('RANK')), 20, 3000);
   var counselCnt = ocrUntilFound(res => {
-    var t = res.text.match(/(\d)\/[789]/);
-    if (t != null)
+    var t = res.text.match(/([oO\d])\/[789]/);
+    if (t != null){
+      if (t[1] == 'o' || t[1] == 'O')
+        return 0;
       return parseInt(t[1]);
+    }
     return null;
-  }, 10, 100);
+  }, 20, 3000);
   log(`咨询次数：${counselCnt}`);
   for (let i = 0; i < counselCnt; ++i) {
-    clickRect(firstPerson);
+    let cases = [], ranks = [];
+    while (true) {
+      [cases, ranks] = ocrUntilFound(res => {
+        var x1 = res.filter(e => e.text.startsWith('CASE') && e.level == 1);
+        var x2 = res.filter(e => e.text.includes('RANK') && e.level == 1);
+        return [x1, x2];
+      }, 20, 1000);
+      if (cases.length != ranks.length)
+        break;
+      log('整页都咨询过了');
+      swipe(width / 2, ranks[ranks.length - 1].bounds.top, width / 2, ranks[0].bounds.top, 5000);
+      sleep(1000);
+    }
+    let ci = 0, ri = 0;
+    if (cases.length > 0 && cases[0].bounds.bottom < ranks[0].bounds.top)
+      ci++;
+    for (ri = 0; ri < ranks.length - 1; ++ri) {
+      if (ci < cases.length && cases[ci].bounds.bottom > ranks[ri].bounds.top && cases[ci].bounds.top < ranks[ri + 1].bounds.bottom)
+        ci++;
+      else
+        break;
+    }
+    clickRect(ranks[ri]);
     单次咨询(counsel);
     back();
     sleep(1000);
@@ -247,7 +275,7 @@ function 单次咨询(counsel) {
   var result = null;
   while (true) {
     result = images.matchTemplate(captureScreen(), counselImage, {
-      threshold: 0.95,
+      threshold: 0.7,
       max: 2,
       region: [0, height / 2, width / 2, height / 2]
     });
@@ -289,13 +317,9 @@ function 单次咨询(counsel) {
   else
     click(width / 2, counselImage.getHeight() / 2 + optionBottom);
   counselImage.recycle();
-  clickRect(ocrUntilFound(res => {
-    if (!res.text.includes('LOG'))
-      return false;
-    return res.find(e =>
-      !e.text.includes('LOG') && e.text.match(/SK.P/) != null
-    )
-  }, 20, 400));
+  clickRect(ocrUntilFound(res => res.find(e =>
+    e.text.match(/[LAUTOG]/) == null && e.text.match(/SK.P/) != null
+  ), 20, 400));
   sleep(1000);
   ocrUntilFound(res => res.text.includes('咨询'), 20, 3000);
   var target = ocrUntilFound(res => res.find(

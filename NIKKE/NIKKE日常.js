@@ -14,24 +14,22 @@ if (typeof module === 'undefined') {
   requestScreenCaptureAuto();
 
   启动NIKKE();
+  日常();
+  退出NIKKE();
+  exit();
+}
+else {
+  module.exports = {
+    日常: 日常
+  };
+}
+function 日常() {
   商店();
   基地收菜();
   好友();
   竞技场();
   爬塔();
   咨询();
-  退出NIKKE();
-  exit();
-}
-else {
-  module.exports = {
-    商店: 商店,
-    好友: 好友,
-    基地收菜: 基地收菜,
-    竞技场: 竞技场,
-    爬塔: 爬塔,
-    咨询: 咨询
-  };
 }
 function 商店() {
   clickRect(ocrUntilFound(res => res.find(e => e.text == '商店'), 10, 3000));
@@ -206,7 +204,7 @@ function 咨询() {
   clickRect(ocrUntilFound(res => res.find(e => e.text == '咨询'), 20, 3000));
   var counselCnt = ocrUntilFound(res => {
     var t = res.text.match(/([oO\d])\/[789]/);
-    if (t != null){
+    if (t != null) {
       if (t[1] == 'o' || t[1] == 'O')
         return 0;
       return parseInt(t[1]);

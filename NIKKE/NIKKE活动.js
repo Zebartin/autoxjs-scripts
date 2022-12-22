@@ -1,10 +1,5 @@
 var { 启动NIKKE, 退出NIKKE, 返回首页 } = require('./NIKKEutils.js');
-var {
-  商店, 好友,
-  基地收菜,
-  竞技场,
-  爬塔, 咨询
-} = require('./NIKKE日常.js');
+var { 日常 } = require('./NIKKE日常.js');
 var {
   unlockIfNeed,
   requestScreenCaptureAuto,
@@ -18,15 +13,10 @@ if (typeof module === 'undefined') {
   requestScreenCaptureAuto();
 
   启动NIKKE();
-  商店();
-  基地收菜();
-  好友();
-  竞技场();
-  爬塔();
-  咨询();
+  日常();
 
   进入活动();
-  签到();
+  // 签到();
   刷story();
   玩小游戏();
   领取活动任务();
@@ -72,31 +62,34 @@ function 刷story() {
     e => e.text.startsWith('STORY') && e.bounds.left > width / 2 && e.bounds.top > height / 2
   ), 20, 3000));
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('ENTER')), 20, 3000));
-  sleep(2000);
+  ocrUntilFound(res => res.find(e => e.text.includes('REPEAT')), 20, 3000);
+  var target = ocrUntilFound(res => res.find(e => e.text.match(/hard/i) != null), 5, 300);
   // 困难已开放
-  if (ocrUntilFound(res => res.find(e => e.text.match(/还.下/) != null), 10, 200) != null) {
-    swipe(width / 2, height * 0.8, width / 2, height * 0.2, 500);
+  if (target != null) {
+    clickRect(target);
     sleep(1000);
-    var target = ocrUntilFound(res => res.filter(e => e.text.includes('REPEAT')), 5, 200);
-    clickRect(target[target.length - 1]);
-    clickRect(ocrUntilFound(res => res.find(
-      e => e.text.endsWith('战斗')
-    ), 20, 3000));
-    toastLog('进入战斗');
-    sleep(2000);
-    if (ocrUntilFound(e => e.text.includes('REPEAT'), 5, 500) == null) {
-      while (true) {
-        sleep(40 * 1000);
-        target = ocrUntilFound(res => res.find(
-          e => e.text.endsWith('重新开始')
-        ), 20, 5000);
-        if (colors.blue(captureScreen().pixel(target.bounds.left, target.bounds.top)) < 230)
-          break;
-        clickRect(target);
-      }
-      log('门票用完了');
-      click(width / 2, height / 2);
+  }
+  swipe(width / 2, height * 0.8, width / 2, height * 0.2, 500);
+  sleep(1000);
+  var target = ocrUntilFound(res => res.filter(e => e.text.includes('REPEAT')), 5, 200);
+  clickRect(target[target.length - 1]);
+  clickRect(ocrUntilFound(res => res.find(
+    e => e.text.endsWith('战斗')
+  ), 20, 3000));
+  log('进入战斗');
+  sleep(2000);
+  if (ocrUntilFound(e => e.text.includes('REPEAT'), 5, 500) == null) {
+    while (true) {
+      sleep(40 * 1000);
+      target = ocrUntilFound(res => res.find(
+        e => e.text.endsWith('重新开始')
+      ), 20, 5000);
+      if (colors.blue(captureScreen().pixel(target.bounds.left, target.bounds.top)) < 230)
+        break;
+      clickRect(target);
     }
+    log('门票用完了');
+    click(width / 2, height / 2);
   }
   ocrUntilFound(e => e.text.includes('REPEAT'), 50, 5000);
   sleep(500);

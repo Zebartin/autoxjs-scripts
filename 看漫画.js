@@ -36,8 +36,14 @@ ocrUntilFound(res => {
     click(width / 2, height / 2);
     sleep(1000);
     return true;
-  } else if (res.text.includes("重试"))
+  } else if (res.text.includes("重试")) {
     clickRect(res.find(e => e.text == '重试'));
+  } else if (res.text.match(/该话.有.容/) != null) {
+    clickRect(res.find(e => e.text == '返回'));
+    className("android.view.View").depth(12)
+      .indexInParent(random(14, 16))
+      .click();
+  }
   return false;
 }, 50, 1000);
 
@@ -58,6 +64,11 @@ var threadRead = threads.start(() => {
     if (text('阅读漫画赚赛季积分').exists())
       break;
   }
+  back();
+  sleep(500);
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('福利')), 20, 1000));
+  text('阅读漫画赚赛季积分').waitFor();
+  sleep(5000);
   for (let i = 0; i < 3; ++i) {
     back();
     sleep(500);

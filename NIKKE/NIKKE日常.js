@@ -123,7 +123,7 @@ function 爬塔() {
     if (cnt == 0)
       continue;
     sleep(5000);
-    click(width / 2, height / 2);
+    click(width / 2, height / 2 - 100);
     sleep(1000);
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('进入战斗')), 10, 3000));
     for (let j = 0; j < cnt; ++j) {

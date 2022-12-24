@@ -14,8 +14,7 @@ function 启动NIKKE() {
 
   app.launchApp("NIKKE");
   log("打开NIKKE");
-  sleep(1000);
-  if (ocrUntilFound(res => res.text.match(/(大厅|基地|物品|方舟)/), 1, 1) != null)
+  if (ocrUntilFound(res => res.text.match(/(大厅|基地|物品|方舟)/), 5, 400) != null)
     return;
   sleep(20 * 1000);
   ocrUntilFound(res => {
@@ -25,6 +24,14 @@ function 启动NIKKE() {
       sleep(500);
       click(width / 2, height * 0.8);
       sleep(40 * 1000);
+    }
+    else if (res.text.includes('正在下载')){
+      sleep(10000);
+      return false;
+    }
+    else if (res.text.match(/(確認|确认)/) != null) {
+      clickRect(res.find(e=>e.text.match(/(確認|确认)$/) != null));
+      return false;
     }
     else if (res.text.includes('登出'))
       return true;
@@ -73,6 +80,7 @@ function 返回首页() {
       break;
     sleep(300);
   }
+  sleep(1000);
   click(result.x, result.y);
   log('返回首页');
   homeImage.recycle();

@@ -17,7 +17,7 @@ if (typeof module === 'undefined') {
 
   进入活动();
   // 签到();
-  刷story();
+  刷story(8);
   玩小游戏();
   领取活动任务();
   玩小游戏();
@@ -57,7 +57,8 @@ function 签到() {
   back();
   ocrUntilFound(e => e.text.includes('小游戏'), 50, 5000);
 }
-function 刷story() {
+function 刷story(eventId) {
+  // 刷1-eventId，eventId可以取最后一关以外的数字
   clickRect(ocrUntilFound(res => res.find(
     e => e.text.startsWith('STORY') && e.bounds.left > width / 2 && e.bounds.top > height / 2
   ), 20, 3000));
@@ -69,10 +70,16 @@ function 刷story() {
     clickRect(target);
     sleep(1000);
   }
-  swipe(width / 2, height * 0.8, width / 2, height * 0.2, 500);
+  // 滑到最顶
+  swipe(width / 2, height * 0.4, width / 2, height * 0.8, 500);
   sleep(1000);
-  var target = ocrUntilFound(res => res.filter(e => e.text.includes('REPEAT')), 5, 200);
-  clickRect(target[target.length - 1]);
+  target = ocrUntilFound(res => res.filter(e => e.text.includes('EVENT') && e.level == 1), 5, 200);
+  if (eventId >= target.length) {
+    var dis = eventId - target.length + 1;
+    swipe(width / 2, target[dis].bounds.top, width / 2, target[0].bounds.top, 1000 * dis);
+    eventId -= dis;
+  }
+  clickRect(target[eventId - 1]);
   clickRect(ocrUntilFound(res => res.find(
     e => e.text.endsWith('战斗')
   ), 20, 3000));

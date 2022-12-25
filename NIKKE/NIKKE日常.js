@@ -46,9 +46,9 @@ function 商店() {
 function 基地收菜() {
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('基地')), 10, 3000));
   log('进入基地');
-  var target = ocrUntilFound(res => res.find(e => e.text.includes('公告栏')), 10, 3000);
+  var target = ocrUntilFound(res => res.find(e => e.text.endsWith('公告栏')), 10, 3000);
   sleep(2000);
-  click(target.bounds.centerX(), target.bounds.centerY() - 50);
+  click(target.bounds.centerX(), target.bounds.centerY() - 100);
   log('进入公告栏');
   sleep(1000);
   target = ocrUntilFound(res => res.find(e => e.text.includes('全部派')), 10, 3000);
@@ -115,10 +115,10 @@ function 爬塔() {
       break;
     }
     var cnt = ocrUntilFound(res => {
-      var t = res.text.match(/关次[^\d]+(\d)\/3/);
+      var t = res.text.match(/[余关]次[^\d]+(\d)\/3/);
       if (t != null)
         return parseInt(t[1]);
-    }, 10, 100);
+    }, 30, 300);
     log(`通关次数 ${cnt}/3`);
     if (cnt == 0)
       continue;
@@ -146,6 +146,7 @@ function 爬塔() {
         click(width / 2, height / 2);
         break;
       }
+      sleep(1000);
       clickRect(target);
     }
     sleep(5000);
@@ -194,6 +195,7 @@ function 竞技场() {
     clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('战斗')), 20, 3000));
     sleep(5000);
     ocrUntilFound(res => res.text.includes('RANK'), 20, 3000);
+    sleep(1000);
     click(width / 2, height * 0.2);
   }
   返回首页();

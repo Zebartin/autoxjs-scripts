@@ -12,8 +12,8 @@ if (typeof module === 'undefined') {
   unlockIfNeed();
   requestScreenCaptureAuto();
 
-  启动NIKKE();
-  日常();
+  // 启动NIKKE();
+  // 日常();
 
   进入活动();
   // 签到();
@@ -22,7 +22,7 @@ if (typeof module === 'undefined') {
   领取活动任务();
   玩小游戏();
   返回首页();
-  退出NIKKE();
+  // 退出NIKKE();
   exit();
 } else {
   module.exports = {

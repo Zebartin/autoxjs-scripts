@@ -80,9 +80,13 @@ function 返回首页() {
       break;
     sleep(300);
   }
-  sleep(1000);
-  click(result.x, result.y);
-  log('返回首页');
   homeImage.recycle();
-  sleep(2000);
+  sleep(1000);
+  while(true){
+    click(result.x, result.y);
+    sleep(2000);
+    if (ocrUntilFound(res => res.text.match(/(大厅|基地|物品|方舟)/), 5, 400) != null)
+      break;
+  }
+  log('返回首页');
 }

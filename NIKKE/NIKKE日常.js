@@ -184,7 +184,7 @@ function 竞技场() {
         return res.text;
       return null;
     }, 20, 3000);
-    if (t.includes('免费') == false)
+    if (t.includes('免') == false)
       break;
     while (ocrUntilFound(res => res.text.match(regexp), 1, 0) == null) {
       clickRect(refresh);

@@ -61,7 +61,7 @@ function 基地收菜() {
       if (x.length > 3)
         return x;
       return null;
-    }, 20, 200);
+    }, 30, 400);
     clickRect(target[target.length - 1]);
     log('点击派遣');
     ocrUntilFound(res => res.find(e => e.text.includes('全部')), 10, 3000);
@@ -76,7 +76,7 @@ function 基地收菜() {
     }
   }
   back();
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('DEFENSE')), 10, 3000));
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('DEFENSE')), 20, 3000));
   log('OUTPOST DEFENSE');
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('奖励')), 10, 3000));
   log('点击获得奖励');
@@ -135,14 +135,20 @@ function 爬塔() {
       ocrUntilFound(res => {
         if (res.text.includes('AUTO'))
           return false;
-        if (res.text.includes('REWARD'))
+        if (res.text.includes('REWARD')||res.text.includes('FAIL'))
           return true;
       }, 30, 3000);
       sleep(1000);
       target = ocrUntilFound(res => res.find(
         e => e.text.match(/(下.[^步]|返回)/) != null
       ), 100, 100);
+      if (target.text.includes('返回')) {
+        clickRect(target);
+        log('作战失败');
+        break;
+      }
       if (colors.blue(captureScreen().pixel(target.bounds.left, target.bounds.top)) < 200) {
+        sleep(1000);
         click(width / 2, height / 2);
         break;
       }
@@ -169,7 +175,13 @@ function getIntoNextTower() {
 
 function 竞技场() {
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('方舟')), 10, 3000));
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('技场')), 10, 3000));
+  var arena = ocrUntilFound(res => res.find(e => e.text.includes('技场')), 10, 3000);
+  var target = ocrUntilFound(res => res.find(e=>e.text.startsWith('SPECIAL')), 10, 500);
+  if (target != null) {
+    clickRect(target);
+    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 10, 3000));
+  }
+  clickRect(arena);
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('新人')), 10, 3000));
   const regexp = new RegExp(`(${arenaTargets.join('|')})`);
   const refresh = ocrUntilFound(res => res.find(e => e.text.includes('目录')), 10, 3000);
@@ -240,7 +252,7 @@ function 咨询() {
     clickRect(ranks[ri]);
     单次咨询(counsel);
     back();
-    sleep(1000);
+    ocrUntilFound(res => res.text.includes('可以'), 30, 3000);
   }
   返回首页();
 }

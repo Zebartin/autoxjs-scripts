@@ -7,7 +7,7 @@ var {
 } = require('./utils.js');
 var { width, height } = device;
 // 自行设定想打的对手名单，OCR精度不足，名字越简单越好
-var arenaTargets = ['ROMAY', 'GATO'];
+var arenaTargets = ['ROMAY', 'CARUS'];
 if (typeof module === 'undefined') {
   auto.waitFor();
   unlockIfNeed();
@@ -135,12 +135,12 @@ function 爬塔() {
       ocrUntilFound(res => {
         if (res.text.includes('AUTO'))
           return false;
-        if (res.text.includes('REWARD')||res.text.includes('FAIL'))
+        if (res.text.includes('REWARD') || res.text.includes('FAIL'))
           return true;
-      }, 30, 3000);
+      }, 30, 5000);
       sleep(1000);
       target = ocrUntilFound(res => res.find(
-        e => e.text.match(/(下.[^步]|返回)/) != null
+        e => e.text.match(/(下[^步方法]{2}|返回)/) != null
       ), 100, 100);
       if (target.text.includes('返回')) {
         clickRect(target);
@@ -176,7 +176,7 @@ function getIntoNextTower() {
 function 竞技场() {
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('方舟')), 10, 3000));
   var arena = ocrUntilFound(res => res.find(e => e.text.includes('技场')), 10, 3000);
-  var target = ocrUntilFound(res => res.find(e=>e.text.startsWith('SPECIAL')), 10, 500);
+  var target = ocrUntilFound(res => res.find(e => e.text.startsWith('SPECIAL')), 10, 500);
   if (target != null) {
     clickRect(target);
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 10, 3000));
@@ -318,6 +318,8 @@ function 单次咨询(counsel) {
   let whichOne = null, similarOne = -1;
   for (let i = 0; i < 2; ++i) {
     var t = mostSimilar(options[i], counsel[name]);
+    log(`选项${i + 1}：${options[i]}`);
+    log(`匹配：${t.result}，相似度${t.similarity}`);
     if (t.similarity > similarOne) {
       similarOne = t.similarity;
       whichOne = i;
@@ -329,9 +331,22 @@ function 单次咨询(counsel) {
   else
     click(width / 2, counselImage.getHeight() / 2 + optionBottom);
   counselImage.recycle();
-  clickRect(ocrUntilFound(res => res.find(e =>
-    e.text.match(/[LAUTOG]/) == null && e.text.match(/SK.P/) != null
-  ), 20, 400));
+  while (true) {
+    target = ocrUntilFound(res => {
+      if (res.text.includes('咨询'))
+        return 'over';
+      return res.find(e =>
+        e.text.match(/[LAUTOG]/) == null && e.text.match(/SK.P/) != null
+      );
+    }, 3, 400);
+    if (target != null) {
+      if (target != 'over')
+        clickRect(target);
+      break;
+    }
+    click(width / 2, height / 2);
+    sleep(500);
+  }
   sleep(1000);
   ocrUntilFound(res => res.text.includes('咨询'), 20, 3000);
   var target = ocrUntilFound(res => res.find(

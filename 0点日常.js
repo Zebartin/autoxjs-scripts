@@ -7,24 +7,29 @@ unlockIfNeed();
 
 function 饿了么签到() {
   app.launchApp("饿了么");
+  const threadClose = threads.start(()=>{
+    const adClose = className('ImageView').depth(7).drawingOrder(2);
+    const negativeClose = id('negative_btn');
+    const close = id('close_btn');
+    const openNotify = text('立即开启');
+    const closeQueue = [adClose, negativeClose, close, openNotify];
+    while(true){
+      for (let i of closeQueue) {
+        if (i.findOne(1000) != null) {
+          if (i.clickable())
+            i.click();
+          else
+            back();
+        }
+      }
+    }
+  });
   log("打开饿了么");
   sleep(random(3000, 7000));
-  var adClose = className('ImageView').depth(7).drawingOrder(2);
-  if (adClose.findOne(2000) != null) {
-    log("点掉广告");
-    adClose.click();
-  }
-  // 新版本弹窗信息
-  if (!id('home_bottom_tab_4_text').exists())
-    id('close_btn').click();
   const myBtn = id('home_bottom_tab_4_text').findOne();
   click(myBtn.bounds().centerX(), myBtn.bounds().centerY());
   log("进入我的");
   sleep(random(3000, 7000));
-  if (adClose.findOne(2000) != null) {
-    log("点掉广告");
-    adClose.click();
-  }
 
   const memberPage = textStartsWith("成长值").findOne();
   click(memberPage.bounds().centerX(), memberPage.bounds().centerY());
@@ -46,6 +51,7 @@ function 饿了么签到() {
     }
   }
   log('饿了么已签到');
+  threadClose.interrupt();
   // 连按返回退出程序
   for (let i = 0; i < 4; ++i) {
     back();
@@ -56,10 +62,11 @@ function 饿了么签到() {
 function 米游社签到() {
   app.launchApp("米游社");
   log("打开米游社");
-  sleep(5000);
-  var btn = text('我知道了').findOne(5000);
-  if (btn != null)
+  const threadClose = threads.start(()=>{
+    const btn = text('我知道了');
+    btn.waitFor();
     btn.click();
+  });
   text('签到福利').findOne().parent().parent().click();
   textEndsWith('天空岛').waitFor();
   sleep(random(3000, 5000));
@@ -67,8 +74,9 @@ function 米游社签到() {
   days[days.length - 1].parent().click();
   sleep(random(3000, 7000));
   log("米游社已签到");
+  threadClose.interrupt();
   // 连按返回退出程序
-  for (let i = 0; i < 4; ++i) {
+  for (let i = 0; i < 3; ++i) {
     back();
     sleep(500);
   }

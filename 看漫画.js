@@ -16,8 +16,10 @@ app.launchApp('哔哩哔哩漫画');
 var myBtn = ocrUntilFound(res => res.find(e =>
   e.text == '我的' && e.bounds.top > height * 0.8
 ), 20, 3000);
-if (ocrUntilFound(res => res.text.match(/(立即..|点击..|我知道了)/), 4, 300) != null)
-  back();
+sleep(2000);
+back();
+// if (ocrUntilFound(res => res.text.match(/(立即..|点击..|我知道了)/), 4, 300) != null)
+//   back();
 clickRect(myBtn);
 // 点击“福利中心”
 ocrUntilFound(res => res.text.includes('活动中心'), 20, 1000);

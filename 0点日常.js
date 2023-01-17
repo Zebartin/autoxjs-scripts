@@ -2,7 +2,7 @@ auto.waitFor();
 var { unlockIfNeed } = require('./utils.js');
 
 unlockIfNeed();
-饿了么签到();
+// 饿了么签到();
 米游社签到();
 
 function 饿了么签到() {
@@ -11,13 +11,15 @@ function 饿了么签到() {
     const adClose = className('ImageView').depth(7).drawingOrder(2);
     const negativeClose = id('negative_btn');
     const close = id('close_btn');
-    const openNotify = text('立即开启');
+    const openNotify = textMatches(/(立即开启|放弃)/);
     const closeQueue = [adClose, negativeClose, close, openNotify];
     while(true){
       for (let i of closeQueue) {
-        if (i.findOne(1000) != null) {
-          if (i.clickable())
-            i.click();
+        let t = i.findOne(1000);
+        if (t != null) {
+          log('关闭弹窗');
+          if (t.clickable() && t.text() != '放弃')
+            t.click();
           else
             back();
         }
@@ -63,7 +65,7 @@ function 米游社签到() {
   app.launchApp("米游社");
   log("打开米游社");
   const threadClose = threads.start(()=>{
-    const btn = text('我知道了');
+    const btn = textMatches(/(我知道了|下次再说)/);
     btn.waitFor();
     btn.click();
   });

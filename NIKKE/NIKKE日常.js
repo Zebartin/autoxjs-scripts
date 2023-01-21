@@ -12,10 +12,15 @@ if (typeof module === 'undefined') {
   auto.waitFor();
   unlockIfNeed();
   requestScreenCaptureAuto();
-
-  启动NIKKE();
-  日常();
-  退出NIKKE();
+  try {
+    启动NIKKE();
+    日常();
+  } catch(error) {
+    log(error);
+    log(error.stack);
+  } finally {
+    退出NIKKE();
+  }
   exit();
 }
 else {
@@ -78,6 +83,16 @@ function 基地收菜() {
   back();
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('DEFENSE')), 20, 3000));
   log('OUTPOST DEFENSE');
+  clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('歼灭')), 10, 3000));
+  ocrUntilFound(res => res.text.includes('今日'), 10, 3000);
+  clickRect(ocrUntilFound(res => res.find(e => e.text.startsWith('进行')), 10, 3000));
+  target = ocrUntilFound(res => res.text.match(/(优先|点击)/), 10, 1000);
+  if (target[0] == '优先')
+    back();
+  else if (target[0] == '点击')
+    click(width/2, height*0.8);
+  ocrUntilFound(res => res.text.includes('今日'), 10, 3000);
+  back();
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('奖励')), 10, 3000));
   log('点击获得奖励');
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 10, 3000));
@@ -110,7 +125,7 @@ function 爬塔() {
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('正常开启')), 10, 3000));
   for (let i = 0; i < 7; ++i) {
     var curTower = getIntoNextTower();
-    if (curTower.match(/(无|限|朝|圣|者)/)) {
+    if (curTower.match(/(无|限)/)) {
       log('没有下一个塔了');
       break;
     }

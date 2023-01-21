@@ -11,16 +11,25 @@ var { width, height } = device;
 auto.waitFor();
 unlockIfNeed();
 requestScreenCaptureAuto();
-
-进入活动();
-刷关(9);
+try {
+  启动NIKKE();
+  日常();
+  进入活动();
+  刷关(9, 10);
+} catch(error) {
+  log(error);
+  log(error.stack);
+} finally {
+  退出NIKKE();
+}
+exit();
 
 function 进入活动() {
   clickRect(ocrUntilFound(res => res.find(e => e.text.startsWith('OUTSIDER')), 10, 3000));
   clickRect(ocrUntilFound(res => res.find(e => e.text.startsWith('HERE')), 10, 3000));
 }
 
-function 刷关(eventId) {
+function 刷关(eventId, eventCntOnScreen) {
   // 刷1-eventId，eventId可以取最后一关以外的数字
   ocrUntilFound(res => res.find(e => e.text.includes('EVENT')), 20, 3000);
   var target = ocrUntilFound(res => res.find(e => e.text.match(/hard/i) != null), 5, 300);
@@ -29,11 +38,16 @@ function 刷关(eventId) {
     clickRect(target);
     sleep(1000);
   }
-  checkAccess(e => e.text.match(/^S[OQ]L/) != null && e.level == 1);
+  // checkAccess(e => e.text.match(/^S[OQ]L/i) != null && e.level == 1);
   // 滑到最顶
   swipe(width / 2, height * 0.4, width / 2, height * 0.8, 500);
   sleep(1000);
-  target = ocrUntilFound(res => res.filter(e => e.text.includes('EVENT') && e.level == 1), 5, 200);
+  target = ocrUntilFound(res => {
+    let ret = res.filter(e => e.text.includes('EVENT') && e.level == 1);
+    if (ret.length == eventCntOnScreen)
+      return ret;
+    return null;
+  }, 30, 200);
   if (eventId >= target.length) {
     var dis = eventId - target.length + 1;
     swipe(width / 2, target[dis].bounds.top, width / 2, target[0].bounds.top, 1000 * dis);
@@ -79,12 +93,17 @@ function checkAccess(clearCond) {
     events = ocrRes.filter(e => e.text.includes('EVENT') && e.level == 1);
     clears = ocrRes.filter(clearCond);
   }
-  if (events.length == clears.length)
+  log(`EVENT数量：${events.length}`);
+  log(`已通关数量：${clears.length}`);
+  if (events.length <= clears.length)
     return;
   clickRect(events[events.length - 1]);
-  clickRect(ocrUntilFound(res => res.find(
+  var enterCombatBtn = ocrUntilFound(res => res.find(
     e => e.text.endsWith('战斗')
-  ), 20, 3000));
+  ), 5, 3000);
+  if (enterCombatBtn == null)
+    return;
+  clickRect(enterCombatBtn);
   log('进入战斗');
   sleep(1000);
   if (ocrUntilFound(e => e.text.includes('EVENT'), 5, 500) != null)

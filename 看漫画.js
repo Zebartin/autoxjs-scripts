@@ -26,9 +26,6 @@ ocrUntilFound(res => res.text.includes('活动中心'), 20, 1000);
 clickRect(ocrUntilFound(res => res.find(e => e.text.includes('福利')), 20, 1000));
 // 等待加载，随机找一个漫画
 text('阅读漫画赚赛季积分').waitFor(); // 可能会弹出签到板
-const close = className("android.view.View").depth(14).indexInParent(15).findOne(3000);
-if (close != null)
-  close.click();
 className("android.view.View").depth(12)
   .indexInParent(random(14, 16))
   .click();

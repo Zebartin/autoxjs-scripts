@@ -7,6 +7,8 @@ var { ocrUntilFound, clickRect } = require('./utils.js');
 function 启动NIKKE() {
   const { width, height } = device;
   device.setMusicVolume(0);
+  if (ocrUntilFound(res => res.text.match(/(大厅|基地|物品|方舟)/), 5, 400) != null)
+    return;
   app.launchApp("v2rayNG");
   if (id('tv_test_state').findOne().text() != '未连接')
     id('fab').click();
@@ -25,8 +27,6 @@ function 启动NIKKE() {
 
   app.launchApp("NIKKE");
   log("打开NIKKE");
-  if (ocrUntilFound(res => res.text.match(/(大厅|基地|物品|方舟)/), 5, 400) != null)
-    return;
   sleep(20 * 1000);
   ocrUntilFound(res => {
     if (res.text.includes('今日不再')) {
@@ -55,20 +55,13 @@ function 启动NIKKE() {
   sleep(1000);
   click(width / 2, height * 0.9);
   // 检查是否有daily login
-  if (ocrUntilFound(res => res.text.match(/D\s*A\s*I\s*L\s*Y/i), 10, 1000) != null)
+  if (ocrUntilFound(res => res.find(e => 
+    e.text.match(/D\s*A\s*I\s*L\s*Y/i) != null && e.bounds.left >= width / 2
+  ), 10, 1000) != null)
     back();
 }
 
 function 退出NIKKE() {
-  sleep(3000);
-  back();
-  clickRect(ocrUntilFound(res => {
-    var t = res.find(e => e.text == '确认');
-    if (t == null)
-      back();
-    return t;
-  }, 20, 1000));
-
   app.launchApp("v2rayNG");
   if (id('tv_test_state').findOne().text() != '未连接')
     id('fab').click();
@@ -86,7 +79,7 @@ function 返回首页() {
   var result = null;
   for (let i = 0; i < 10; ++i) {
     result = images.findImage(captureScreen(), homeImage, {
-      threshold: 0.7,
+      threshold: 0.6,
       region: [50, height * 0.8]
     });
     if (result != null)

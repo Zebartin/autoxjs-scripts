@@ -2,7 +2,7 @@ auto.waitFor();
 var { unlockIfNeed } = require('./utils.js');
 
 unlockIfNeed();
-// 饿了么签到();
+饿了么签到();
 米游社签到();
 
 function 饿了么签到() {

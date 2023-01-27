@@ -36,7 +36,7 @@ function 日常() {
   竞技场();
   爬塔();
   咨询();
-  模拟室(50);
+  模拟室(30);
 }
 function 商店() {
   clickRect(ocrUntilFound(res => res.find(e => e.text == '商店'), 10, 3000));

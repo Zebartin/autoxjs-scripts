@@ -21,6 +21,10 @@ else {
 }
 
 function 模拟室(maxPass) {
+  if (ocrUntilFound(res=>res.text.includes('SIMULATION'), 4,500) == null) {
+    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('方舟')), 10, 3000));
+    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('模拟室')), 10, 3000));
+  }
   let status = {
     loaded: getBuffLoaded(),
     newBuffLevelIsSSR: true,
@@ -34,13 +38,13 @@ function 模拟室(maxPass) {
       break;
     }
   for (let pass = 0; pass < maxPass; ++pass) {
+    log('已有BUFF：', Object.keys(status.loaded));
     if (Object.keys(status.loaded).length >= 8)
       break;
     status.getNewBuff = false;
     status.earlyStop = false;
     status.skipMode = !status.newBuffLevelIsSSR;
     log(`第${pass + 1}轮模拟室：skipMode = ${status.skipMode}`);
-    log('已有BUFF：', Object.keys(status.loaded));
     clickRect(ocrUntilFound(res => res.find(e => e.text.startsWith('开始')), 10, 300));
     clickRect(ocrUntilFound(res => res.find(e => e.text == '4'), 20, 300));
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('开始')), 10, 300));
@@ -108,12 +112,11 @@ function getBuffLoaded() {
     if (buffs.length < 2)
       break;
     const centerX = buffs[0].bounds.centerX();
-    const centerY = buffs[buffs.length - 1].bounds.centerY();
-    const distance = buffs[1].bounds.top - buffs[0].bounds.top;
+    const endPoint = ocrUntilFound(res=>res.find(e=>e.text.startsWith('拥有')), 10, 300);
     swipe(
-      centerX, centerY,
-      centerX, centerY - distance * buffs.length,
-      2000 * buffs.length
+      centerX, buffs[buffs.length - 1].bounds.bottom,
+      centerX, endPoint.bounds.bottom,
+      1000 * buffs.length
     );
   }
   back();
@@ -383,11 +386,14 @@ function getBuffs(expectedCount) {
         e.bounds.bottom < nameText[0].bounds.bottom &&
         e.text.match(/[适透]用/) != null
       );
+      let newBounds = nameText[0].bounds;
+      newBounds.top = r[i].bounds.top;
+      newBounds.bottom = l[i].bounds.bottom;
       ret.push({
         level: r[i].text,
         name: correctBuffName(nameText[0].text),
         forSomebody: forSomebody != null,
-        bounds: nameText[0].bounds
+        bounds: newBounds
       });
     }
     return ret;

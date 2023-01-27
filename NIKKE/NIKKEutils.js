@@ -18,25 +18,27 @@ else {
     返回首页: 返回首页
   };
 }
-function 启动NIKKE() {
+function 启动NIKKE(openNikkeOnly) {
   device.setMusicVolume(0);
   if (ocrUntilFound(res => res.text.match(/(大厅|基地|物品|方舟)/), 5, 400) != null)
     return;
-  app.launchApp("v2rayNG");
-  if (id('tv_test_state').findOne().text() != '未连接')
+  if (!openNikkeOnly) {
+    app.launchApp("v2rayNG");
+    if (id('tv_test_state').findOne().text() != '未连接')
+      id('fab').click();
     id('fab').click();
-  id('fab').click();
-  sleep(500);
-  id('layout_test').click();
-  let i;
-  const maxRetry = 7;
-  for (i = 0; i < maxRetry; ++i) {
-    sleep(1000);
-    if (id('tv_test_state').findOne().text().includes('延时'))
-      break;
+    sleep(500);
+    id('layout_test').click();
+    let i;
+    const maxRetry = 7;
+    for (i = 0; i < maxRetry; ++i) {
+      sleep(1000);
+      if (id('tv_test_state').findOne().text().includes('延时'))
+        break;
+    }
+    if (i == maxRetry)
+      exit();
   }
-  if (i == maxRetry)
-    exit();
 
   app.launchApp("NIKKE");
   log("打开NIKKE");
@@ -75,7 +77,11 @@ function 启动NIKKE() {
     back();
 }
 
-function 退出NIKKE() {
+function 退出NIKKE(exitNikkeOnly) {
+  if (!!exitNikkeOnly) {
+    home();
+    return;
+  }
   app.launchApp("v2rayNG");
   if (id('tv_test_state').findOne().text() != '未连接')
     id('fab').click();
@@ -104,7 +110,7 @@ function 返回首页() {
   sleep(1000);
   while (true) {
     click(result.x, result.y);
-    sleep(2000);
+    sleep(4000);
     if (ocrUntilFound(res => res.text.match(/(大厅|基地|物品|方舟)/), 5, 400) != null)
       break;
   }

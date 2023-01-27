@@ -32,7 +32,7 @@ function ocrUntilFound(found, retry, interval) {
     if (res || res === 0)
       return res;
   }
-  log("OCR失败");
+  console.trace("OCR失败");
   return null;
 }
 function clickRect(rect) {

@@ -1,4 +1,5 @@
 var { 启动NIKKE, 退出NIKKE, 返回首页 } = require('./NIKKEutils.js');
+var { 模拟室 } = require('./模拟室.js');
 var {
   unlockIfNeed,
   requestScreenCaptureAuto,
@@ -35,6 +36,7 @@ function 日常() {
   竞技场();
   爬塔();
   咨询();
+  模拟室(50);
 }
 function 商店() {
   clickRect(ocrUntilFound(res => res.find(e => e.text == '商店'), 10, 3000));

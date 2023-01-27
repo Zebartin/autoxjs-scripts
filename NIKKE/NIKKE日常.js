@@ -8,7 +8,7 @@ var {
 } = require('./utils.js');
 var { width, height } = device;
 // 自行设定想打的对手名单，OCR精度不足，名字越简单越好
-var arenaTargets = ['ROMAY', 'CARUS'];
+var arenaTargets = ['.*', '.*'];
 if (typeof module === 'undefined') {
   auto.waitFor();
   unlockIfNeed();

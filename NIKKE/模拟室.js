@@ -21,7 +21,7 @@ else {
 }
 
 function 模拟室(maxPass) {
-  if (ocrUntilFound(res=>res.text.includes('SIMULATION'), 4,500) == null) {
+  if (ocrUntilFound(res => res.text.includes('SIMULATION'), 4, 500) == null) {
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('方舟')), 10, 3000));
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('模拟室')), 10, 3000));
   }
@@ -112,7 +112,7 @@ function getBuffLoaded() {
     if (buffs.length < 2)
       break;
     const centerX = buffs[0].bounds.centerX();
-    const endPoint = ocrUntilFound(res=>res.find(e=>e.text.startsWith('拥有')), 10, 300);
+    const endPoint = ocrUntilFound(res => res.find(e => e.text.startsWith('拥有')), 10, 300);
     swipe(
       centerX, buffs[buffs.length - 1].bounds.bottom,
       centerX, endPoint.bounds.bottom,
@@ -215,12 +215,11 @@ function doWithOption(option, status) {
           e.bounds.bottom > firstOption.bounds.bottom &&
           e.bounds.bottom < t1.bounds.top
         );
-        if (t3 != null && !t3.text.includes('SSR'))
-          t3 = null;
       }
       return [t1, t2, t3];
     }, 20, 1000);
-    if (ssrOption != null) {
+    log(ssrOption);
+    if (ssrOption != null && ssrOption.text.includes('SSR')) {
       status.newBuffLevelIsSSR = true;
       clickRect(ssrOption);
       sleep(600);

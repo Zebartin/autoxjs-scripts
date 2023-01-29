@@ -31,8 +31,9 @@ function 模拟室(maxPass, maxSsrNumber) {
   }
   let status = {
     loaded: getBuffLoaded(),
+    layer: 0,
     bestBuffToKeep: null,  // 最后保留的buff，必须正确初始化
-    newBuffs: {},               // 主要作用是防止选到重复buff，导致需要进行更换
+    newBuffs: {},          // 主要作用是防止选到重复buff，导致需要进行更换
     earlyStop: false,
     skipMode: false
   };
@@ -58,7 +59,7 @@ function 模拟室(maxPass, maxSsrNumber) {
     clickRect(ocrUntilFound(res => res.find(e => e.text.startsWith('开始')), 10, 300));
     clickRect(ocrUntilFound(res => res.find(e => e.text == '4'), 20, 300));
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('开始')), 10, 300));
-    for (let i = 0; i < 7; ++i) {
+    for (status.layer = 0; status.layer < 7; ++status.layer) {
       selectOption(status);
       if (status.earlyStop)
         break;
@@ -123,7 +124,12 @@ function getBuffLoaded() {
 }
 
 function selectOption(status) {
-  const options = getOptions();
+  let optionNumber = 3;
+  if (status.layer == 5)
+    optionNumber = 2;
+  else if (status.layer == 6)
+  optionNumber = 1;
+  const options = getOptions(optionNumber);
   let bestOption = null;
   // NORMAL > 强化 > 归队 > HARD > 指挥能力测试
   const optionTypePriority = {
@@ -356,7 +362,7 @@ function scanBuffs(wantedBuffName) {
   return wantedBuff == null ? allBuff : wantedBuff;
 }
 
-function getOptions() {
+function getOptions(expectedOptionNumber) {
   const optionReg = {
     normal: /N[DO]RMAL/,
     hard: /HAR[DO]/,
@@ -367,7 +373,7 @@ function getOptions() {
   const pattern = new RegExp(`(${Object.values(optionReg).map(x => x.source).join('|')})`);
   return ocrUntilFound(res => {
     let t = res.filter(e => e.level == 3 && pattern.test(e.text)).toArray();
-    if (t.length == 0)
+    if (t.length != expectedOptionNumber)
       return null;
     const verticalSplits = t.map(x => x.bounds.left).concat([width]);
     let ret = [];

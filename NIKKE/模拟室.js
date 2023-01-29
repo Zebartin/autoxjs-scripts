@@ -181,11 +181,6 @@ function selectOption(status) {
 }
 
 function doWithOption(option, status) {
-  // 目标是新buff，但没有刷出来，提前终止
-  if (option.type == 'specUp' && !status.skipMode && Object.keys(status.newBuffs).length == 0) {
-    status.earlyStop = true;
-    return;
-  }
   clickRect(option);
   sleep(1000);
   if (option.type == 'ICU') {
@@ -246,7 +241,7 @@ function doWithOption(option, status) {
       }
     } else {
       // 没有刷到SSR提升选项，提前结束
-      if (status.skipMode && Object.keys(status.newBuffs) == 0)
+      if (status.skipMode || !status.bestBuffToKeep.name)
         status.earlyStop = true;
       clickRect(cancelBtn);
       clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('确认')), 10, 500));

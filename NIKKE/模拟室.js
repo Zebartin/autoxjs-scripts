@@ -11,7 +11,7 @@ if (typeof module === 'undefined') {
   auto.waitFor();
   unlockIfNeed();
   requestScreenCaptureAuto();
-  模拟室(50,5);
+  模拟室(50, 4);
   exit();
 }
 else {
@@ -79,7 +79,7 @@ function 模拟室(maxPass, maxSsrNumber) {
       ocrUntilFound(res => res.text.includes('选择'), 10, 1000);
       sleep(600);
       let buff = null;
-      if (!status.bestBuffToKeep.name){
+      if (!status.bestBuffToKeep.name) {
         buff = getBuffs(1);
         buff = buff.length > 0 ? buff[0] : null;
       }
@@ -335,7 +335,7 @@ function scanBuffs(wantedBuffName) {
     for (i = buffs.length - 1; i >= 0; --i) {
       if (buffs[i].name in allBuff)
         break;
-      if (buffs[i].name == wantedBuffName){
+      if (buffs[i].name == wantedBuffName) {
         wantedBuff = buffs[i];
         break;
       }
@@ -353,7 +353,7 @@ function scanBuffs(wantedBuffName) {
       1000 * buffs.length
     );
   }
-  return wantedBuff == null ? allBuff:wantedBuff;
+  return wantedBuff == null ? allBuff : wantedBuff;
 }
 
 function getOptions() {

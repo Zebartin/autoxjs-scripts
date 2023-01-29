@@ -18,12 +18,11 @@ else {
     返回首页: 返回首页
   };
 }
-function 启动NIKKE(openNikkeOnly) {
+function 启动NIKKE() {
   device.setMusicVolume(0);
   if (ocrUntilFound(res => res.text.match(/(大厅|基地|物品|方舟)/), 5, 400) != null)
     return;
-  if (!openNikkeOnly) {
-    app.launchApp("v2rayNG");
+  if (app.launchApp("v2rayNG")) {
     if (id('tv_test_state').findOne().text() != '未连接')
       id('fab').click();
     id('fab').click();
@@ -36,8 +35,10 @@ function 启动NIKKE(openNikkeOnly) {
       if (id('tv_test_state').findOne().text().includes('延时'))
         break;
     }
-    if (i == maxRetry)
+    if (i == maxRetry) {
+      console.error('启动v2rayNG服务失败');
       exit();
+    }
   }
 
   app.launchApp("NIKKE");
@@ -73,24 +74,18 @@ function 启动NIKKE(openNikkeOnly) {
   if (ocrUntilFound(res => res.find(e =>
     e.text.match(/D\s*A\s*I\s*L\s*Y/i) != null &&
     e.bounds != null && e.bounds.left >= width / 2
-  ), 10, 1000) != null)
+  ), 5, 1000) != null)
     back();
 }
 
-function 退出NIKKE(exitNikkeOnly) {
-  if (!!exitNikkeOnly) {
-    home();
-    return;
-  }
-  app.launchApp("v2rayNG");
-  if (id('tv_test_state').findOne().text() != '未连接')
-    id('fab').click();
+function 退出NIKKE() {
   home();
-  sleep(1000);
-  swipe(device.width / 2, device.height - 10, device.width / 2, device.height * 0.7, 1500);
-  sleep(2000);
-  var x = packageName('com.huawei.android.launcher').id('clearbox').findOne();
-  click(x.bounds().centerX(), x.bounds().centerY());
+  关闭应用('NIKKE');
+  if (app.launchApp("v2rayNG")) {
+    if (id('tv_test_state').findOne().text() != '未连接')
+      id('fab').click();
+    关闭应用('v2rayNG');
+  }
 }
 
 
@@ -136,5 +131,33 @@ function 刷刷刷() {
     }
     log('门票用完了');
     click(width / 2, height / 2);
+  }
+}
+
+function 关闭应用(packageName) {
+  var name = getPackageName(packageName);
+  if (!name) {
+    if (getAppName(packageName)) {
+      name = packageName;
+    } else {
+      return false;
+    }
+  }
+  app.openAppSetting(name);
+  while (text(app.getAppName(name)).findOne(2000) == null) {
+    back();
+    app.openAppSetting(name);
+  }
+  let is_sure = textMatches(/[强行停止结束]{2,}/).findOne();
+  if (is_sure.enabled()) {
+    is_sure.click();
+    sleep(1000);
+    textMatches(/(确定|[强行停止结束]{2,})/).click();
+    log(app.getAppName(name) + "应用已被关闭");
+    sleep(1000);
+    back();
+  } else {
+    log(app.getAppName(name) + "应用不能被正常关闭或不在后台运行");
+    back();
   }
 }

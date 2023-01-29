@@ -32,29 +32,7 @@ AutoX.js在初版Auto.js（现为[Auto.js Pro](https://pro.autojs.org/)）的基
 
 打开AutoX.js，可以修改各个脚本。
 
-找到`NIKKE日常.js`的以下内容：
-
-```javascript
-  try {
-    启动NIKKE();
-    ...
-  } finally {
-    退出NIKKE();
-  }
-```
-
-修改为：
-
-```javascript
-  try {
-    启动NIKKE(true);
-    ...
-  } finally {
-    退出NIKKE(true);
-  }
-```
-
-另外，如果需要自动解锁屏幕，需要修改`utils.js`中的代码：
+如果想要尝试自动解锁手机屏幕的功能，需要修改`utils.js`中的代码：
 
 ```javascript
 enterPwd('手机锁屏密码');

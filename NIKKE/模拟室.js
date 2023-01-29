@@ -59,12 +59,7 @@ function 模拟室(maxPass, maxSsrNumber) {
     clickRect(ocrUntilFound(res => res.find(e => e.text == '4'), 20, 300));
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('开始')), 10, 300));
     for (let i = 0; i < 7; ++i) {
-      log(status);
       selectOption(status);
-      if (i == 4){
-        status.earlyStop = true;
-        toast(status.bestBuffToKeep.name+status.bestBuffToKeep.level);
-      }
       if (status.earlyStop)
         break;
     }

@@ -128,22 +128,30 @@ function selectOption(status) {
   if (status.layer == 5)
     optionNumber = 2;
   else if (status.layer == 6)
-  optionNumber = 1;
+    optionNumber = 1;
   const options = getOptions(optionNumber);
   let bestOption = null;
-  // NORMAL > 强化 > 归队 > HARD > 指挥能力测试
-  const optionTypePriority = {
-    normal: 0,
-    specUp: 1,
-    ICU: 2,
-    hard: 3,
-    abilitiesTest: 4
-  };
   if (status.skipMode) {
+    // 强化 > 归队 > NORMAL > HARD > 指挥能力测试
+    let optionTypePriority = {
+      specUp: 0,
+      ICU: 1,
+      normal: 2,
+      hard: 3,
+      abilitiesTest: 4
+    };
     bestOption = options.reduce((prev, curr) => {
       return optionTypePriority[prev.type] < optionTypePriority[curr.type] ? prev : curr;
     });
   } else {
+    // NORMAL > 强化 > 归队 > HARD > 指挥能力测试
+    let optionTypePriority = {
+      normal: 0,
+      specUp: 1,
+      ICU: 2,
+      hard: 3,
+      abilitiesTest: 4
+    };
     let buffPriority = {};
     let buffScore = 1;
     for (let [buffName, buff] of Object.entries(getAllBuff())) {
@@ -329,7 +337,6 @@ function scanBuffs(wantedBuffName) {
   while (true) {
     sleep(1000);
     let buffs = getBuffs(0);
-    log(buffs);
     if (buffs.length == 0)
       break;
     let i;

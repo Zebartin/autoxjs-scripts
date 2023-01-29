@@ -3,6 +3,7 @@ var {
   ocrUntilFound,
   clickRect
 } = require('./utils.js');
+var { 返回首页 } = require('./NIKKEutils.js');
 if (typeof module === 'undefined') {
   let {
     unlockIfNeed,
@@ -25,9 +26,11 @@ else {
  */
 function 模拟室(maxPass, maxSsrNumber) {
   maxSsrNumber = Math.min(maxSsrNumber, Object.keys(getAllBuff()).length);
+  let returnToMainPage = false;
   if (ocrUntilFound(res => res.text.includes('SIMULATION'), 4, 500) == null) {
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('方舟')), 10, 3000));
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('模拟室')), 10, 3000));
+    returnToMainPage = true;
   }
   let status = {
     loaded: getBuffLoaded(),
@@ -69,7 +72,7 @@ function 模拟室(maxPass, maxSsrNumber) {
       clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('结束')), 20, 300));
       clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('确认')), 10, 300));
     } else {
-      log('保留增益：', status.bestBuffToKeep);
+      log(`bestBuffToKeep = ${status.bestBuffToKeep}`);
       clickRect(ocrUntilFound(res => res.find(e =>
         e.text.endsWith('结束') &&
         e.bounds != null &&
@@ -100,6 +103,7 @@ function 模拟室(maxPass, maxSsrNumber) {
       clickRect(confirmBtn);
       // 表示选择了某个增益
       if ('name' in chosenTarget) {
+        log('保留增益：', chosenTarget);
         // 替换buff
         if (chosenTarget.name in status.loaded) {
           sleep(600);
@@ -111,6 +115,9 @@ function 模拟室(maxPass, maxSsrNumber) {
       }
     }
   }
+  log('完成模拟室任务');
+  if (returnToMainPage)
+    返回首页();
 }
 
 function getBuffLoaded() {
@@ -192,15 +199,16 @@ function doWithOption(option, status) {
   clickRect(option);
   sleep(1000);
   if (option.type == 'ICU') {
+    sleep(1000);
     let [firstOption, confirmBtn] = ocrUntilFound(res => {
       let t1 = res.find(e => e.text.includes('所有'));
       let t2 = res.find(e => e.text.includes('确认'));
       if (!t1 || !t2)
         return null;
       return [t1, t2];
-    }, 10, 300)
+    }, 10, 600);
     clickRect(firstOption);
-    sleep(1000);
+    sleep(600);
     clickRect(confirmBtn);
     sleep(1000);
     clickRect(ocrUntilFound(res => res.find(e => e.text.match(/(確認|确认)/) != null), 10, 2000));
@@ -257,7 +265,8 @@ function doWithOption(option, status) {
     }
     return;
   }
-  ocrUntilFound(res => res.text.includes('战斗'), 20, 1000);
+  while (ocrUntilFound(res => res.text.includes('战斗'), 3, 1000) == null)
+    clickRect(option);
   if (option.type == 'normal') {
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('快速')), 10, 300));
   } else if (option.type == 'hard') {
@@ -347,7 +356,7 @@ function scanBuffs(wantedBuffName) {
         wantedBuff = buffs[i];
         break;
       }
-      allBuff[buffs[i].name] = buffs[i].level;
+      allBuff[buffs[i].name] = buffs[i];
     }
     if (i >= 0 || buffs.length < 2)
       break;
@@ -399,7 +408,7 @@ function getOptions(expectedOptionNumber) {
         let buffType = 'other';
         const typeList = {
           '生存': /生存/,
-          '攻击': /[攻玫]击/,
+          '攻击': /[攻政玫]击/,
           '操作': /操作/
         }
         for (let [name, reg] of Object.entries(typeList))

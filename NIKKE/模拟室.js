@@ -161,12 +161,9 @@ function selectOption(status) {
   } else {
     let buffPriority = {};
     let buffScore = 1;
-    for (let [buffType, buffList] of Object.entries(getAllBuff())) {
-      for (let buffName of Object.keys(buffList))
-        if (!status.loaded[buffName] && !status.newBuffs[buffName]) {
-          buffPriority[buffType] = buffScore++;
-          break;
-        }
+    for (let [buffName, buff] of Object.entries(getAllBuff())) {
+      if (!status.loaded[buffName] && !status.newBuffs[buffName] && !buffPriority[buff.buffType])
+        buffPriority[buff.buffType] = buffScore++;
     }
     // 已经刷够的buff类型优先级比other还低
     buffPriority['other'] = buffScore++;
@@ -285,7 +282,7 @@ function doWithOption(option, status) {
 function selectBuff(buffType, status) {
   let bestBuff = null;
   if (!status.skipMode) {
-    const allBuff = getAllBuff('other');
+    const allBuff = getAllBuff();
     let buffOptions = getBuffs(3);
     log(`备选${buffType}型增益：`, buffOptions);
     // 过滤掉allBuff中不包括的buff
@@ -461,63 +458,49 @@ function getBuffs(expectedCount) {
 }
 
 function correctBuffName(buffName) {
-  const allBuff = getAllBuff('other');
-  for (let [name, buff] of Object.entries(allBuff))
+  for (let [name, buff] of Object.entries(getAllBuff()))
     if (buff.reg.test(buffName))
       return name;
   log(`无法纠正BUFF名：${buffName}`);
   return buffName;
 }
 
-function getAllBuff(buffType) {
-  const ret = {
-    生存: {
-      重启载体: {
-        forSomebody: true,
-        reg: /重启[載载]+体/
-      },
-      引流转换器: {
-        forSomebody: false,
-        reg: /引流转[換换]+器/
-      }
+function getAllBuff() {
+  return {
+    引流转换器: {
+      forSomebody: false,
+      buffType: '生存',
+      reg: /引流转[換换]+器/
     },
-    攻击: {
-      高品质粉末: {
-        forSomebody: false,
-        reg: /高品质粉[末未]+/
-      },
-      聚焦瞄准镜: {
-        forSomebody: true,
-        reg: /聚焦[喵瞄]+准[鏡镜]*/
-      },
-      冲击引流器: {
-        forSomebody: false,
-        reg: /冲[陆击]+引流器/
-      },
-      控制引导器: {
-        forSomebody: false,
-        reg: /控制引导器/
-      }
+    高品质粉末: {
+      forSomebody: false,
+      buffType: '攻击',
+      reg: /高品质粉[末未]+/
     },
-    操作: {
-      隐形粉: {
-        forSomebody: true,
-        reg: /隐形粉/
-      },
-      快速充电器: {
-        forSomebody: true,
-        reg: /快[連德遠速]+充电器/
-      }
+    冲击引流器: {
+      forSomebody: false,
+      buffType: '攻击',
+      reg: /冲[陆击]+引流器/
+    },
+    控制引导器: {
+      forSomebody: false,
+      buffType: '攻击',
+      reg: /控制引导器/
+    },
+    聚焦瞄准镜: {
+      forSomebody: true,
+      buffType: '攻击',
+      reg: /聚焦[喵瞄]+准[鏡镜]*/
+    },
+    隐形粉: {
+      forSomebody: true,
+      buffType: '操作',
+      reg: /隐形粉/
+    },
+    快速充电器: {
+      forSomebody: true,
+      buffType: '操作',
+      reg: /快[連德遠速]+充电器/
     }
   };
-  if (buffType == undefined)
-    return ret;
-  if (!ret[buffType]) {
-    let flatRet = {};
-    for (let i of Object.values(ret))
-      for (let [k, v] of Object.entries(i))
-        flatRet[k] = v;
-    return flatRet;
-  }
-  return ret[buffType];
 }

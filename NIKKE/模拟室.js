@@ -162,6 +162,10 @@ function selectOption(status) {
     let buffPriority = {};
     let buffScore = 1;
     for (let [buffName, buff] of Object.entries(getAllBuff())) {
+      // 没必要考虑优先级低于bestBuffToKeep的buff类型
+      // 比如已经刷到高品质粉末，就可以无视操作型增益了
+      if (status.bestBuffToKeep.name == buffName)
+        break;
       if (!status.loaded[buffName] && !status.newBuffs[buffName] && !buffPriority[buff.buffType])
         buffPriority[buff.buffType] = buffScore++;
     }

@@ -24,6 +24,7 @@ else {
  * maxSsrNumber: 最多要刷多少个SSR
  */
 function 模拟室(maxPass, maxSsrNumber) {
+  maxSsrNumber = Math.min(maxSsrNumber, Object.keys(getAllBuff()).length);
   if (ocrUntilFound(res => res.text.includes('SIMULATION'), 4, 500) == null) {
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('方舟')), 10, 3000));
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('模拟室')), 10, 3000));
@@ -58,7 +59,12 @@ function 模拟室(maxPass, maxSsrNumber) {
     clickRect(ocrUntilFound(res => res.find(e => e.text == '4'), 20, 300));
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('开始')), 10, 300));
     for (let i = 0; i < 7; ++i) {
+      log(status);
       selectOption(status);
+      if (i == 4){
+        status.earlyStop = true;
+        toast(status.bestBuffToKeep.name+status.bestBuffToKeep.level);
+      }
       if (status.earlyStop)
         break;
     }

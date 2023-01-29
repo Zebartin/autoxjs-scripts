@@ -11,7 +11,7 @@ if (typeof module === 'undefined') {
   auto.waitFor();
   unlockIfNeed();
   requestScreenCaptureAuto();
-  模拟室(50);
+  模拟室(50,5);
   exit();
 }
 else {
@@ -19,31 +19,40 @@ else {
     模拟室: 模拟室
   };
 }
-
-function 模拟室(maxPass) {
+/*
+ * maxPass: 最多执行多少轮次
+ * maxSsrNumber: 最多要刷多少个SSR
+ */
+function 模拟室(maxPass, maxSsrNumber) {
   if (ocrUntilFound(res => res.text.includes('SIMULATION'), 4, 500) == null) {
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('方舟')), 10, 3000));
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('模拟室')), 10, 3000));
   }
   let status = {
     loaded: getBuffLoaded(),
-    newBuffLevelIsSSR: true,
-    getNewBuff: false,
+    bestBuffToKeep: null,  // 最后保留的buff，必须正确初始化
+    newBuffs: {},               // 主要作用是防止选到重复buff，导致需要进行更换
     earlyStop: false,
     skipMode: false
   };
-  for (let buffLevel of Object.values(status.loaded))
-    if (buffLevel != 'SSR') {
-      status.newBuffLevelIsSSR = false;
-      break;
-    }
   for (let pass = 0; pass < maxPass; ++pass) {
-    log('已有BUFF：', Object.keys(status.loaded));
-    if (Object.keys(status.loaded).length >= 8)
-      break;
-    status.getNewBuff = false;
     status.earlyStop = false;
-    status.skipMode = !status.newBuffLevelIsSSR;
+    status.bestBuffToKeep = {
+      name: null,
+      level: null
+    };
+    status.newBuffs = {};
+    status.skipMode = false;
+    log('已有BUFF：', Object.keys(status.loaded));
+    if (Object.keys(status.loaded).length >= maxSsrNumber) {
+      for (let buff of Object.values(status.loaded))
+        if (buff.level != 'SSR') {
+          status.skipMode = true;
+          break;
+        }
+      if (!status.skipMode)
+        break;
+    }
     log(`第${pass + 1}轮模拟室：skipMode = ${status.skipMode}`);
     clickRect(ocrUntilFound(res => res.find(e => e.text.startsWith('开始')), 10, 300));
     clickRect(ocrUntilFound(res => res.find(e => e.text == '4'), 20, 300));
@@ -58,6 +67,7 @@ function 模拟室(maxPass) {
       clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('结束')), 20, 300));
       clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('确认')), 10, 300));
     } else {
+      log('保留增益：', status.bestBuffToKeep);
       clickRect(ocrUntilFound(res => res.find(e =>
         e.text.endsWith('结束') &&
         e.bounds != null &&
@@ -67,9 +77,15 @@ function 模拟室(maxPass) {
       clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('确认')), 10, 300));
       ocrUntilFound(res => res.text.includes('选择'), 10, 1000);
       sleep(600);
-      let buff = getBuffs(1);
+      let buff = null;
+      if (!status.bestBuffToKeep.name){
+        buff = getBuffs(1);
+        buff = buff.length > 0 ? buff[0] : null;
+      }
+      else
+        buff = findSpecificBuff(status.bestBuffToKeep.name);
       let [chosenTarget, confirmBtn] = ocrUntilFound(res => {
-        let t1 = buff.length > 0 ? buff[0] : null;
+        let t1 = buff;
         if (t1 == null)
           t1 = res.find(e => e.text.includes('不选择'));
         let t2 = res.find(e => e.text.includes('确认'));
@@ -80,12 +96,16 @@ function 模拟室(maxPass) {
       clickRect(chosenTarget);
       sleep(600);
       clickRect(confirmBtn);
-      if (!status.getNewBuff) {
-        sleep(600);
-        buff = getBuffs(2);
-        clickRect(buff[1]);
-        sleep(600);
-        clickRect(ocrUntilFound(res => res.find(e => e.text.includes('确认')), 10, 300));
+      // 表示选择了某个增益
+      if ('name' in chosenTarget) {
+        // 替换buff
+        if (chosenTarget.name in status.loaded) {
+          sleep(600);
+          clickRect(getBuffs(2)[1]);
+          sleep(600);
+          clickRect(ocrUntilFound(res => res.find(e => e.text.includes('确认')), 10, 300));
+        }
+        status.loaded[chosenTarget.name] = chosenTarget;
       }
     }
   }
@@ -105,7 +125,7 @@ function getBuffLoaded() {
     for (i = buffs.length - 1; i >= 0; --i) {
       if (buffs[i].name in ret)
         break;
-      ret[buffs[i].name] = buffs[i].level;
+      ret[buffs[i].name] = buffs[i];
     }
     if (i >= 0)
       break;
@@ -143,7 +163,7 @@ function selectOption(status) {
     let buffScore = 1;
     for (let [buffType, buffList] of Object.entries(getAllBuff())) {
       for (let buffName of Object.keys(buffList))
-        if (!status.loaded[buffName]) {
+        if (!status.loaded[buffName] && !status.newBuffs[buffName]) {
           buffPriority[buffType] = buffScore++;
           break;
         }
@@ -176,7 +196,7 @@ function selectOption(status) {
 
 function doWithOption(option, status) {
   // 目标是新buff，但没有刷出来，提前终止
-  if (option.type == 'specUp' && !status.skipMode && !status.getNewBuff) {
+  if (option.type == 'specUp' && !status.skipMode && Object.keys(status.newBuffs).length == 0) {
     status.earlyStop = true;
     return;
   }
@@ -218,9 +238,12 @@ function doWithOption(option, status) {
       }
       return [t1, t2, t3];
     }, 20, 1000);
-    log(ssrOption);
-    if (ssrOption != null && ssrOption.text.includes('SSR')) {
-      status.newBuffLevelIsSSR = true;
+    if (ssrOption != null)
+      log('提升选项：', ssrOption.text);
+    if (
+      ssrOption != null && ssrOption.text.includes('SSR') &&
+      status.bestBuffToKeep.level != 'SSR'
+    ) {
       clickRect(ssrOption);
       sleep(600);
       clickRect(confirmBtn);
@@ -228,13 +251,16 @@ function doWithOption(option, status) {
       if (ssrOption.text.includes('所有'))
         clickRect(ocrUntilFound(res => res.find(e => e.text.match(/(確認|确认)/) != null), 10, 1000));
       else {
-        clickRect(getBuffs(1)[0]);
+        if (!status.bestBuffToKeep.name)
+          clickRect(getBuffs(1)[0]);
+        else
+          clickRect(findSpecificBuff(status.bestBuffToKeep.name));
         clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('确认')), 10, 500));
         clickRect(ocrUntilFound(res => res.find(e => e.text.match(/(確認|确认)/) != null), 10, 1000));
       }
     } else {
       // 没有刷到SSR提升选项，提前结束
-      if (status.skipMode && status.getNewBuff == false)
+      if (status.skipMode && Object.keys(status.newBuffs) == 0)
         status.earlyStop = true;
       clickRect(cancelBtn);
       clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('确认')), 10, 500));
@@ -259,30 +285,32 @@ function doWithOption(option, status) {
 function selectBuff(buffType, status) {
   let bestBuff = null;
   if (!status.skipMode) {
-    const buffOptions = getBuffs(3);
-    let buffPriority = {};
-    let buffScore = 1;
-    for (let [buffName, buff] of Object.entries(getAllBuff(buffType))) {
-      if (!status.loaded[buffName]) {
-        buffPriority[`${buffName}#${buff.forSomebody}`] = buffScore++;
-      }
-    }
-    bestBuff = buffOptions.reduce((prev, curr) => {
-      let s1 = buffPriority[`${prev.name}#${prev.forSomebody}`];
-      let s2 = buffPriority[`${curr.name}#${curr.forSomebody}`];
-      if (!s1)
-        s1 = buffScore;
-      if (!s2)
-        s2 = buffScore;
-      if (prev.level == 'SSR' && curr.level != 'SSR')
-        return s1 != buffScore ? prev : curr;
-      if (curr.level == 'SSR')
-        return s2 != buffScore ? curr : prev;
-      return s1 < s2 ? prev : curr;
-    });
-    if (!buffPriority[`${bestBuff.name}#${bestBuff.forSomebody}`])
-      bestBuff = null;
+    const allBuff = getAllBuff('other');
+    let buffOptions = getBuffs(3);
     log(`备选${buffType}型增益：`, buffOptions);
+    // 过滤掉allBuff中不包括的buff
+    // 过滤掉已有buff，包括本轮开始之前已有的和本轮开始后新增的
+    buffOptions = buffOptions.filter(x =>
+      x.name in allBuff &&
+      x.forSomebody == allBuff[x.name].forSomebody &&
+      !(x.name in status.loaded) &&
+      !(x.name in status.newBuffs)
+    );
+    if (buffOptions.length != 0) {
+      let buffPriority = {};
+      let buffScore = 1;
+      for (let buffName of Object.keys(allBuff)) {
+        buffPriority[buffName] = buffScore++;
+      }
+      buffPriority[null] = buffScore;
+      bestBuff = buffOptions.reduce((prev, curr) => {
+        let s1 = buffPriority[prev.name] + (curr.level == 'SSR' ? buffScore : 0);
+        let s2 = buffPriority[curr.name] + (prev.level == 'SSR' ? buffScore : 0);
+        return s1 < s2 ? prev : curr;
+      }, status.bestBuffToKeep);
+      if (bestBuff.name == status.bestBuffToKeep.name)
+        bestBuff = null;
+    }
     log('选择：', bestBuff);
   }
   const [cancelBtn, confirmBtn] = ocrUntilFound(res => {
@@ -300,12 +328,45 @@ function selectBuff(buffType, status) {
     clickRect(bestBuff);
     sleep(600);
     clickRect(confirmBtn);
-    status.getNewBuff = true;
-    status.skipMode = true;
-    status.newBuffLevelIsSSR = bestBuff.level == 'SSR';
-    status.loaded[bestBuff.name] = bestBuff.level;
+    status.bestBuffToKeep = {
+      name: bestBuff.name,
+      level: bestBuff.level
+    };
+    status.newBuffs[bestBuff.name] = {
+      name: bestBuff.name,
+      level: bestBuff.level
+    };
   }
   sleep(1000);
+}
+
+function findSpecificBuff(buffName) {
+  // 滑到最顶
+  swipe(width / 2, height / 2, width / 2, height * 0.8, 200);
+  let allBuff = {};
+  while (true) {
+    sleep(1000);
+    let buffs = getBuffs(0);
+    if (buffs.length == 0)
+      return null;
+    let i;
+    for (i = buffs.length - 1; i >= 0; --i) {
+      if (buffs[i].name in allBuff)
+        return buffs[0];
+      if (buffs[i].name == buffName)
+        return buffs[i];
+      allBuff[buffs[i].name] = buffs[i].level;
+    }
+    if (i >= 0 || buffs.length < 2)
+      return buffs[0];
+    const centerX = buffs[0].bounds.centerX();
+    const endPoint = ocrUntilFound(res => res.find(e => e.text.startsWith('拥有')), 10, 300);
+    swipe(
+      centerX, buffs[buffs.length - 1].bounds.bottom,
+      centerX, endPoint.bounds.bottom,
+      1000 * buffs.length
+    );
+  }
 }
 
 function getOptions() {

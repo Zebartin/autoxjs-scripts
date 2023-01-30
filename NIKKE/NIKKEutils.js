@@ -20,7 +20,7 @@ else {
 }
 function 启动NIKKE() {
   device.setMusicVolume(0);
-  if (ocrUntilFound(res => res.text.match(/(大厅|基地|物品|方舟)/), 5, 400) != null)
+  if (ocrUntilFound(res => res.text.match(/(大厅|基地|物品|方舟)/), 1, 100) != null)
     return;
   if (app.launchApp("v2rayNG")) {
     if (id('tv_test_state').findOne().text() != '未连接')

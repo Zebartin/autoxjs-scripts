@@ -12,11 +12,12 @@ var arenaTargets = ['.*', '.*'];
 if (typeof module === 'undefined') {
   auto.waitFor();
   unlockIfNeed();
+  checkConfig();
   requestScreenCaptureAuto();
   try {
     启动NIKKE();
     日常();
-  } catch(error) {
+  } catch (error) {
     log(error);
     log(error.stack);
   } finally {
@@ -30,14 +31,37 @@ else {
   };
 }
 function 日常() {
-  商店();
-  基地收菜();
-  好友();
-  竞技场();
-  爬塔();
-  咨询();
-  模拟室(30, 4);
+  const NIKKEstorage = storages.create("NIKKEconfig");
+  const todoTask = JSON.parse(NIKKEstorage.get('todoTask', null));
+  const simulationRoom = JSON.parse(NIKKEstorage.get('simulationRoom', null));
+  const taskFunc = {
+    商店: 商店,
+    基地收菜: 基地收菜,
+    好友: 好友,
+    竞技场: 竞技场,
+    爬塔: 爬塔,
+    咨询: 咨询,
+    模拟室: () => 模拟室(simulationRoom.maxPass, simulationRoom.maxSsrNumber)
+  }
+  for (let task of todoTask)
+    taskFunc[task]();
 }
+
+function checkConfig() {
+  const NIKKEstorage = storages.create("NIKKEconfig");
+  const todoTask = JSON.parse(NIKKEstorage.get('todoTask', null));
+  if (todoTask == null) {
+    toastLog('未进行配置，请运行NIKKE设置.js并保存设置');
+    exit();
+  }
+  const simulationRoom = JSON.parse(NIKKEstorage.get('simulationRoom', null));
+  if (simulationRoom == null) {
+    toast('配置存在问题，请重新运行NIKKE设置.js并保存设置');
+    console.error('todoTask != null, simulationRoom == null');
+    exit();
+  }
+}
+
 function 商店() {
   clickRect(ocrUntilFound(res => res.find(e => e.text == '商店'), 10, 3000));
   log('进入商店');
@@ -92,7 +116,7 @@ function 基地收菜() {
   if (target[0] == '优先')
     back();
   else if (target[0] == '点击')
-    click(width/2, height*0.8);
+    click(width / 2, height * 0.8);
   ocrUntilFound(res => res.text.includes('今日'), 10, 3000);
   back();
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('奖励')), 10, 3000));

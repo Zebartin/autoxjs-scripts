@@ -12,7 +12,13 @@ if (typeof module === 'undefined') {
   auto.waitFor();
   unlockIfNeed();
   requestScreenCaptureAuto();
-  模拟室(50, 4);
+  const NIKKEstorage = storages.create("NIKKEconfig");
+  const simulationRoom = JSON.parse(NIKKEstorage.get('simulationRoom', null));
+  if (simulationRoom == null) {
+    toast('未配置模拟室选项，请运行NIKKE设置.js并保存设置');
+    exit();
+  }
+  模拟室(false, simulationRoom.maxPass, simulationRoom.maxSsrNumber, simulationRoom.preferredBuff);
   exit();
 }
 else {
@@ -21,19 +27,20 @@ else {
   };
 }
 /*
+ * fromIndex: 当前画面是否是游戏首页
  * maxPass: 最多执行多少轮次
  * maxSsrNumber: 最多要刷多少个SSR
+ * preferredBuff: 只考虑这些buff
  */
-function 模拟室(maxPass, maxSsrNumber) {
+function 模拟室(fromIndex, maxPass, maxSsrNumber, preferredBuff) {
   maxSsrNumber = Math.min(maxSsrNumber, Object.keys(getAllBuff()).length);
-  let returnToMainPage = false;
-  if (ocrUntilFound(res => res.text.includes('SIMULATION'), 4, 500) == null) {
+  if (fromIndex) {
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('方舟')), 10, 3000));
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('模拟室')), 10, 3000));
-    returnToMainPage = true;
   }
   let status = {
     loaded: getBuffLoaded(),
+    preferredBuff: preferredBuff,
     layer: 0,
     bestBuffToKeep: null,  // 最后保留的buff，必须正确初始化
     newBuffs: {},          // 主要作用是防止选到重复buff，导致需要进行更换
@@ -72,7 +79,7 @@ function 模拟室(maxPass, maxSsrNumber) {
       clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('结束')), 20, 300));
       clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('确认')), 10, 300));
     } else {
-      log(`bestBuffToKeep = ${status.bestBuffToKeep}`);
+      log(`bestBuffToKeep = ${status.bestBuffToKeep.name}(${status.bestBuffToKeep.level})`);
       clickRect(ocrUntilFound(res => res.find(e =>
         e.text.endsWith('结束') &&
         e.bounds != null &&
@@ -116,7 +123,7 @@ function 模拟室(maxPass, maxSsrNumber) {
     }
   }
   log('完成模拟室任务');
-  if (returnToMainPage)
+  if (fromIndex)
     返回首页();
 }
 
@@ -166,7 +173,10 @@ function selectOption(status) {
       // 比如已经刷到高品质粉末，就可以无视操作型增益了
       if (status.bestBuffToKeep.name == buffName)
         break;
-      if (!status.loaded[buffName] && !status.newBuffs[buffName] && !buffPriority[buff.buffType])
+      if (
+        status.preferredBuff.includes(buffName) && !status.loaded[buffName] &&
+        !status.newBuffs[buffName] && !buffPriority[buff.buffType]
+      )
         buffPriority[buff.buffType] = buffScore++;
     }
     // 已经刷够的buff类型优先级比other还低
@@ -289,7 +299,7 @@ function selectBuff(buffType, status) {
     // 过滤掉allBuff中不包括的buff
     // 过滤掉已有buff，包括本轮开始之前已有的和本轮开始后新增的
     buffOptions = buffOptions.filter(x =>
-      x.name in allBuff &&
+      status.preferredBuff.includes(x.name) &&
       x.forSomebody == allBuff[x.name].forSomebody &&
       !(x.name in status.loaded) &&
       !(x.name in status.newBuffs)
@@ -507,7 +517,7 @@ function getAllBuff() {
     快速充电器: {
       forSomebody: true,
       buffType: '操作',
-      reg: /快[連德遠速]+充电器/
+      reg: /快[連德逮遠速]+充电器/
     }
   };
 }

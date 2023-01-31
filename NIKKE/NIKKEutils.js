@@ -69,7 +69,7 @@ function 启动NIKKE() {
   // 等待游戏内公告出现
   ocrUntilFound(res => res.text.includes('公告'), 30, 5000);
   sleep(1000);
-  click(width / 2, height * 0.9);
+  back();
   // 检查是否有daily login
   if (ocrUntilFound(res => res.find(e =>
     e.text.match(/D\s*A\s*I\s*L\s*Y/i) != null &&

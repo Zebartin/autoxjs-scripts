@@ -21,6 +21,7 @@ else {
 }
 function 启动NIKKE() {
   unlockIfNeed();
+  home();
   let NIKKEstorage = storages.create("NIKKEconfig");
   if (NIKKEstorage.get('mute', false)) {
     try {
@@ -57,7 +58,7 @@ function 启动NIKKE() {
   log("打开NIKKE");
   waitForActivity('com.shiftup.nk.MainActivity');
   // 保证申请截屏权限时，屏幕是游戏画面
-  sleep(10 * 1000);
+  sleep(20 * 1000);
   requestScreenCaptureAuto();
   let [width, height] = getDisplaySize();
   if (ocrUntilFound(res => res.text.match(/(大厅|基地|物品|方舟)/), 1, 100) != null)
@@ -68,6 +69,10 @@ function 启动NIKKE() {
       clickRect(target);
       sleep(500);
       click(width / 2, height * 0.8);
+    }
+    else if (res.text.includes('SIGN IN')) {
+      toastLog('未登录游戏，停止运行脚本');
+      exit();
     }
     else if (res.text.includes('正在下载')) {
       sleep(20000);
@@ -109,24 +114,14 @@ function 退出NIKKE() {
 
 
 function 返回首页() {
-  const homeImage = images.read('./images/home.jpg');
-  var result = null;
-  for (let i = 0; i < 10; ++i) {
-    result = images.findImage(captureScreen(), homeImage, {
-      threshold: 0.6,
-      region: [50, height * 0.8]
-    });
-    if (result != null)
-      break;
-    sleep(300);
-  }
-  homeImage.recycle();
-  sleep(1000);
+  let index = null;
   while (true) {
-    click(result.x, result.y);
-    sleep(4000);
-    if (ocrUntilFound(res => res.text.match(/(大厅|基地|物品|方舟)/), 5, 400) != null)
+    back();
+    index = ocrUntilFound(res => res.find(e=>e.text.includes('大厅')), 2, 400);
+    if (index != null){
+      clickRect(index);
       break;
+    }
   }
   log('返回首页');
 }

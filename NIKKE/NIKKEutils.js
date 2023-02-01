@@ -114,14 +114,24 @@ function 退出NIKKE() {
 
 
 function 返回首页() {
-  let index = null;
-  while (true) {
-    back();
-    index = ocrUntilFound(res => res.find(e=>e.text.includes('大厅')), 2, 400);
-    if (index != null){
-      clickRect(index);
+  const homeImage = images.read('./images/home.jpg');
+  var result = null;
+  for (let i = 0; i < 10; ++i) {
+    result = images.findImage(captureScreen(), homeImage, {
+      threshold: 0.6,
+      region: [50, height * 0.8]
+    });
+    if (result != null)
       break;
-    }
+    sleep(300);
+  }
+  homeImage.recycle();
+  sleep(1000);
+  while (true) {
+    click(result.x, result.y);
+    sleep(4000);
+    if (ocrUntilFound(res => res.text.match(/(大厅|基地|物品|方舟)/), 5, 400) != null)
+      break;
   }
   log('返回首页');
 }

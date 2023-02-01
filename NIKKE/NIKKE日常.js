@@ -40,10 +40,11 @@ function 日常() {
     竞技场: 竞技场,
     爬塔: 爬塔,
     咨询: 咨询,
-    模拟室: () => 模拟室(true, simulationRoom.maxPass,
-                         simulationRoom.maxSsrNumber, 
-                         simulationRoom.preferredBuff
-                        )
+    模拟室: () => 模拟室(
+      true, simulationRoom.maxPass,
+      simulationRoom.maxSsrNumber,
+      simulationRoom.preferredBuff
+    )
   }
   for (let task of todoTask)
     taskFunc[task]();
@@ -64,14 +65,42 @@ function checkConfig() {
 }
 
 function 商店() {
-  clickRect(ocrUntilFound(res => res.find(e => e.text == '商店'), 10, 3000));
+  clickRect(ocrUntilFound(res => res.find(e => e.text == '商店'), 30, 1000));
   log('进入商店');
-  ocrUntilFound(res => res.text.includes('普通'), 20, 3000);
-  var freeGood = ocrUntilFound(res => res.find(e => e.text.includes('100%')), 10, 300);
-  if (freeGood != null) {
-    clickRect(freeGood);
-    clickRect(ocrUntilFound(res => res.find(e => e.text == '购买'), 10, 3000));
-    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 10, 2000));
+  ocrUntilFound(res => res.text.includes('普通'), 50, 1000);
+  let buyFree = () => {
+    let freeGood = ocrUntilFound(res => res.find(e => e.text.match(/(100%|sold [oq]ut)/i) != null), 10, 300);
+    if (freeGood != null && freeGood.text == '100%') {
+      log('购买免费物品');
+      clickRect(freeGood);
+      clickRect(ocrUntilFound(res => res.find(e => e.text == '购买'), 30, 1000));
+      clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 20, 1000));
+    }
+  };
+  buyFree();
+  clickRect(ocrUntilFound(res => res.find(e => e.text.match(/(距离|更新|还有)/) != null), 10, 300));
+  log('尝试刷新商店');
+  let costGems = ocrUntilFound(res => {
+    let left = res.find(e => e.text.endsWith('珠宝'));
+    let topRight = res.find(e => e.text.includes('次数'));
+    let bottom = res.find(e => e.text == '确认');
+    if (!left || !topRight || !bottom)
+      return null;
+    return res.find(e =>
+      e.bounds != null &&
+      e.bounds.left >= left.bounds.right &&
+      e.bounds.left < topRight.bounds.right &&
+      e.bounds.top >= topRight.bounds.bottom &&
+      e.bounds.bottom <= bottom.bounds.top
+    );
+  }, 10, 300);
+  if (costGems != null && costGems.text != '0') {
+    back();
+    log('放弃刷新商店');
+  }
+  else {
+    clickRect(ocrUntilFound(res => res.find(e => e.text == '确认'), 10, 300));
+    buyFree();
   }
   返回首页();
 }

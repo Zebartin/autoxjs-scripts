@@ -1,10 +1,11 @@
-var { ocrUntilFound, clickRect } = require('./utils.js');
-var { width, height } = device;
+var {
+  ocrUntilFound,
+  clickRect,
+  unlockIfNeed,
+  requestScreenCaptureAuto,
+  getDisplaySize
+} = require('./utils.js');
 if (typeof module === 'undefined') {
-  var {
-    unlockIfNeed,
-    requestScreenCaptureAuto
-  } = require('./utils.js');
   auto.waitFor();
   unlockIfNeed();
   requestScreenCaptureAuto();
@@ -19,9 +20,20 @@ else {
   };
 }
 function 启动NIKKE() {
-  device.setMusicVolume(0);
-  if (ocrUntilFound(res => res.text.match(/(大厅|基地|物品|方舟)/), 1, 100) != null)
-    return;
+  unlockIfNeed();
+  let NIKKEstorage = storages.create("NIKKEconfig");
+  if (NIKKEstorage.get('mute', false)) {
+    try {
+      device.setMusicVolume(0);
+    } catch (error) {
+      if (error.message.includes('系统设置权限'))
+        toastLog('需要为AutoX.js打开修改系统设置权限');
+      else
+        toastLog(error);
+      exit();
+    }
+  }
+  // 个人留的一个后门，自行启动v2rayNG科学上网
   if (app.launchApp("v2rayNG")) {
     if (id('tv_test_state').findOne().text() != '未连接')
       id('fab').click();
@@ -29,7 +41,7 @@ function 启动NIKKE() {
     sleep(500);
     id('layout_test').click();
     let i;
-    const maxRetry = 7;
+    const maxRetry = 10;
     for (i = 0; i < maxRetry; ++i) {
       sleep(1000);
       if (id('tv_test_state').findOne().text().includes('延时'))
@@ -43,17 +55,22 @@ function 启动NIKKE() {
 
   app.launchApp("NIKKE");
   log("打开NIKKE");
-  sleep(20 * 1000);
+  waitForActivity('com.shiftup.nk.MainActivity');
+  // 保证申请截屏权限时，屏幕是游戏画面
+  sleep(10 * 1000);
+  requestScreenCaptureAuto();
+  let [width, height] = getDisplaySize();
+  if (ocrUntilFound(res => res.text.match(/(大厅|基地|物品|方舟)/), 1, 100) != null)
+    return;
   ocrUntilFound(res => {
     if (res.text.includes('今日不再')) {
       var target = res.find(e => e.text.match(/.{0,4}今日不再/) != null);
       clickRect(target);
       sleep(500);
       click(width / 2, height * 0.8);
-      sleep(40 * 1000);
     }
     else if (res.text.includes('正在下载')) {
-      sleep(10000);
+      sleep(20000);
       return false;
     }
     else if (res.text.match(/(確認|确认)/) != null) {
@@ -63,19 +80,21 @@ function 启动NIKKE() {
     else if (res.text.includes('登出'))
       return true;
     return false;
-  }, 30, 5000);
+  }, 60, 5000);
   click(width / 2, height / 2);
   sleep(1000);
   // 等待游戏内公告出现
   ocrUntilFound(res => res.text.includes('公告'), 30, 5000);
   sleep(1000);
   back();
-  // 检查是否有daily login
-  if (ocrUntilFound(res => res.find(e =>
-    e.text.match(/D\s*A\s*I\s*L\s*Y/i) != null &&
-    e.bounds != null && e.bounds.left >= width / 2
-  ), 5, 1000) != null)
+  // 检查是否有每天签到
+  let dailyLogin = ocrUntilFound(res => res.find(e => e.text.match(/[领領]取/) != null), 5, 1000);
+  if (dailyLogin != null) {
+    clickRect(target);
+    ocrUntilFound(res => res.text.includes('点击') != null, 5, 1000);
+    click(width / 2, height * 0.8);
     back();
+  }
 }
 
 function 退出NIKKE() {
@@ -113,6 +132,7 @@ function 返回首页() {
 }
 
 function 刷刷刷() {
+  let [width, height] = getDisplaySize();
   clickRect(ocrUntilFound(res => res.find(
     e => e.text.endsWith('战斗')
   ), 20, 3000));

@@ -1,8 +1,9 @@
-var { width, height } = device;
 var {
   ocrUntilFound,
-  clickRect
+  clickRect,
+  getDisplaySize
 } = require('./utils.js');
+let width, height;
 var { 返回首页 } = require('./NIKKEutils.js');
 if (typeof module === 'undefined') {
   let {
@@ -12,12 +13,13 @@ if (typeof module === 'undefined') {
   auto.waitFor();
   unlockIfNeed();
   requestScreenCaptureAuto();
-  const NIKKEstorage = storages.create("NIKKEconfig");
+  let NIKKEstorage = storages.create("NIKKEconfig");
   const simulationRoom = JSON.parse(NIKKEstorage.get('simulationRoom', null));
   if (simulationRoom == null) {
     toast('未配置模拟室选项，请运行NIKKE设置.js并保存设置');
     exit();
   }
+  [width, height] = getDisplaySize();
   模拟室(false, simulationRoom.maxPass, simulationRoom.maxSsrNumber, simulationRoom.preferredBuff);
   exit();
 }

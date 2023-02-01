@@ -1,5 +1,4 @@
 if (typeof module === 'undefined') {
-  requestScreenCaptureAuto();
   getOcrRes();
 }
 else {
@@ -8,12 +7,14 @@ else {
     clickRect: clickRect,
     unlockIfNeed: unlockIfNeed,
     requestScreenCaptureAuto: requestScreenCaptureAuto,
-    getOcrRes: getOcrRes
+    getOcrRes: getOcrRes,
+    getDisplaySize: getDisplaySize
   };
 }
 
 
 function getOcrRes() {
+  requestScreenCaptureAuto();
   sleep(5000);
   ocrUntilFound(res => {
     for (let i of res.children) {
@@ -23,6 +24,12 @@ function getOcrRes() {
     return true;
   }, 1, 1);
 }
+
+function getDisplaySize() {
+  let metrics = context.getResources().getDisplayMetrics();
+  return [metrics.widthPixels, metrics.heightPixels];
+}
+
 function ocrUntilFound(found, retry, interval) {
   var res;
   for (let i = 0; i < retry; ++i) {
@@ -46,7 +53,7 @@ function unlockIfNeed() {
   if (!device.isScreenOn()) {
     device.wakeUp();
     sleep(1000);
-    const { width, height } = device;
+    let [width, height] = getDisplaySize();
     swipe(width / 2, height * 0.8, width / 2, 0, 500);
   }
   if (!isLocked()) {
@@ -90,8 +97,17 @@ function requestScreenCaptureAuto() {
       text('允许').click();
     });
   }
-  //申请截屏权限
-  if (!requestScreenCapture()) {
+  // 检查屏幕方向
+  let rotation = context.getDisplay().getRotation();
+  // 旋转0度/180度，为竖屏
+  // 对平板/宽屏来说，竖屏时横边长，竖边短
+  if (rotation == android.view.Surface.ROTATION_0 ||
+    rotation == android.view.Surface.ROTATION_180)
+    isLandscape = false;
+  else
+    isLandscape = true
+  toastLog(`申请截屏权限：${isLandscape ? '横' : '竖'}屏`);
+  if (!requestScreenCapture(isLandscape)) {
     log("请求截图失败");
     exit();
   }

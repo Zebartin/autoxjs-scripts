@@ -1,19 +1,17 @@
 var { 启动NIKKE, 退出NIKKE, 返回首页 } = require('./NIKKEutils.js');
 var { 模拟室 } = require('./模拟室.js');
 var {
-  unlockIfNeed,
-  requestScreenCaptureAuto,
   ocrUntilFound,
-  clickRect
+  clickRect,
+  getDisplaySize
 } = require('./utils.js');
-var { width, height } = device;
+let width, height;
+let NIKKEstorage = storages.create("NIKKEconfig");
 // 自行设定想打的对手名单，OCR精度不足，名字越简单越好
 var arenaTargets = ['.*', '.*'];
 if (typeof module === 'undefined') {
   auto.waitFor();
-  unlockIfNeed();
   checkConfig();
-  requestScreenCaptureAuto();
   try {
     启动NIKKE();
     日常();
@@ -21,7 +19,8 @@ if (typeof module === 'undefined') {
     log(error);
     log(error.stack);
   } finally {
-    退出NIKKE();
+    if (NIKKEstorage.get('exitGame', true))
+      退出NIKKE();
   }
   exit();
 }
@@ -31,7 +30,7 @@ else {
   };
 }
 function 日常() {
-  const NIKKEstorage = storages.create("NIKKEconfig");
+  [width, height] = getDisplaySize();
   const todoTask = JSON.parse(NIKKEstorage.get('todoTask', null));
   const simulationRoom = JSON.parse(NIKKEstorage.get('simulationRoom', null));
   const taskFunc = {
@@ -51,7 +50,6 @@ function 日常() {
 }
 
 function checkConfig() {
-  const NIKKEstorage = storages.create("NIKKEconfig");
   const todoTask = JSON.parse(NIKKEstorage.get('todoTask', null));
   if (todoTask == null) {
     toastLog('未进行配置，请运行NIKKE设置.js并保存设置');

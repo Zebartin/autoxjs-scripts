@@ -16,10 +16,6 @@ var arenaTargets = ['.*', '.*'];
 if (typeof module === 'undefined') {
   auto.waitFor();
   checkConfig();
-  requestScreenCaptureAuto();
-  [width, height] = getDisplaySize();
-  基地收菜();
-  exit();
   启动NIKKE();
   // 保证申请截屏权限时，屏幕是游戏画面
   sleep(3000);
@@ -119,58 +115,72 @@ function 商店() {
 }
 function 基地收菜() {
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('基地')), 10, 3000));
-  log('进入基地');
-  var target = ocrUntilFound(res => res.find(e => e.text.endsWith('公告栏')), 10, 3000);
+  toastLog('进入基地');
   sleep(2000);
-  click(target.bounds.centerX(), target.bounds.centerY() - 100);
-  log('进入公告栏');
-  sleep(1000);
-  target = ocrUntilFound(res => res.find(e => e.text.includes('全部派')), 10, 3000);
-  if (colors.red(captureScreen().pixel(target.bounds.right, target.bounds.top)) > 240) {
-    clickRect(target);
-    log('点击全部派遣');
-    sleep(2000);
-    target = ocrUntilFound(res => {
-      var x = res.filter(e => e.text.match(/派.$/) != null);
-      if (x.length > 3)
-        return x;
+  let target = ocrUntilFound(res => {
+    let headquarter = res.find(e => e.text.endsWith('中心'));
+    let ret = res.find(e => e.text.endsWith('公告栏'));
+    if (!headquarter || !ret)
       return null;
-    }, 30, 400);
-    clickRect(target[target.length - 1]);
-    log('点击派遣');
-    ocrUntilFound(res => res.find(e => e.text.includes('全部')), 10, 3000);
-    sleep(1000);
-  }
+    // 将识别区域扩宽到整个公告栏图标
+    ret.bounds.top = headquarter.bounds.bottom;
+    return ret;
+  }, 30, 1000);
+  clickRect(target);
+  toastLog('进入公告栏');
+  // 等待派遣内容加载
+  if (ocrUntilFound(res => res.text.match(/(时间|完成)/) != null, 20, 500) == null)
+    toastLog('今日派遣已完成');
   else {
-    target = ocrUntilFound(res => res.find(e => e.text.match('全部(领|領)') != null), 10, 3000);
+    target = ocrUntilFound(res => res.find(e => e.text.includes('全部派')), 30, 1000);
+    if (colors.red(captureScreen().pixel(target.bounds.right, target.bounds.top)) > 240) {
+      clickRect(target);
+      toastLog('点击全部派遣');
+      sleep(2000);
+      target = ocrUntilFound(res => {
+        var x = res.filter(e => e.text.match(/派.$/) != null);
+        if (x.length > 3)
+          return x;
+        return null;
+      }, 30, 400);
+      clickRect(target[target.length - 1]);
+      toastLog('点击派遣');
+      ocrUntilFound(res => res.text.includes('全部'), 30, 1000);
+      sleep(600);
+    }
+    target = ocrUntilFound(res => res.find(e => e.text.match('全部(领|領)') != null), 30, 1000);
     if (colors.red(captureScreen().pixel(target.bounds.right, target.bounds.top)) < 100) {
       clickRect(target);
       clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 10, 3000));
-      sleep(1000);
+      ocrUntilFound(res => res.text.includes('全部'), 30, 1000);
+      sleep(600);
     }
   }
   back();
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('DEFENSE')), 20, 3000));
-  log('OUTPOST DEFENSE');
-  clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('歼灭')), 10, 3000));
-  ocrUntilFound(res => res.text.includes('今日'), 10, 3000);
-  clickRect(ocrUntilFound(res => res.find(e => e.text.startsWith('进行')), 10, 3000));
-  target = ocrUntilFound(res => res.text.match(/(优先|点击)/), 10, 1000);
-  if (target[0] == '优先')
-    back();
-  else if (target[0] == '点击')
-    click(width / 2, height * 0.8);
-  ocrUntilFound(res => res.text.includes('今日'), 10, 3000);
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('DEFENSE')), 30, 1000));
+  toastLog('尝试一举歼灭');
+  clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('歼灭')), 30, 1000));
+  ocrUntilFound(res => res.text.includes('今日'), 30, 1000);
+  clickRect(ocrUntilFound(res => res.find(e => e.text.startsWith('进行')), 30, 1000));
+  ocrUntilFound(res => {
+    if (res.text.match('(优先|珠宝|确认)') != null)
+      back();
+    else if (res.text.includes('点击'))
+      clickRect(res.find(e => e.text.includes('点击')));
+    else
+      return false;
+    return true;
+  }, 10, 1000);
+  ocrUntilFound(res => res.text.includes('今日'), 30, 1000);
   back();
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('奖励')), 10, 3000));
-  log('点击获得奖励');
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('奖励')), 30, 1000));
+  toastLog('点击获得奖励');
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 10, 3000));
-  log('点击领取奖励');
   sleep(1000);
   target = ocrUntilFound(res => res.find(e => e.text.includes('点击')), 5, 300);
   if (target != null) {
     clickRect(target);
-    log('升级了');
+    toastLog('升级了');
   }
   sleep(1000);
   返回首页();

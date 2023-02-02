@@ -1,8 +1,12 @@
-var { 启动NIKKE, 退出NIKKE, 返回首页 } = require('./NIKKEutils.js');
+var {
+  启动NIKKE, 等待NIKKE加载,
+  退出NIKKE, 返回首页
+} = require('./NIKKEutils.js');
 var { 模拟室 } = require('./模拟室.js');
 var {
   ocrUntilFound,
   clickRect,
+  requestScreenCaptureAuto,
   getDisplaySize
 } = require('./utils.js');
 let width, height;
@@ -12,16 +16,17 @@ var arenaTargets = ['.*', '.*'];
 if (typeof module === 'undefined') {
   auto.waitFor();
   checkConfig();
-  try {
-    启动NIKKE();
-    日常();
-  } catch (error) {
-    log(error);
-    log(error.stack);
-  } finally {
-    if (NIKKEstorage.get('exitGame', true))
-      退出NIKKE();
-  }
+  requestScreenCaptureAuto();
+  [width, height] = getDisplaySize();
+  基地收菜();
+  exit();
+  启动NIKKE();
+  // 保证申请截屏权限时，屏幕是游戏画面
+  sleep(3000);
+  if (NIKKEstorage.get('alreadyInGame', false) == false)
+    sleep(15000);
+  requestScreenCaptureAuto();
+  日常();
   exit();
 }
 else {
@@ -45,9 +50,34 @@ function 日常() {
       simulationRoom.maxSsrNumber,
       simulationRoom.preferredBuff
     )
-  }
+  };
+  let alreadyRetry = 0;
+  const maxRetry = NIKKEstorage.get('maxRetry', 1);
+  let retryFunc = (func) => {
+    for (; alreadyRetry <= maxRetry; ++alreadyRetry) {
+      try {
+        等待NIKKE加载();
+        return func();
+      } catch (error) {
+        if (error.message.includes('ScriptInterruptedException'))
+          throw error;
+        toast(error.message);
+        console.error(error.message);
+        console.error(error.stack);
+        if (alreadyRetry != maxRetry) {
+          toastLog(`脚本出错，即将重试(${alreadyRetry + 1}/${maxRetry})`);
+          sleep(3000);
+          退出NIKKE();
+          启动NIKKE();
+        }
+      }
+    }
+  };
   for (let task of todoTask)
-    taskFunc[task]();
+    retryFunc(taskFunc[task]);
+  if (NIKKEstorage.get('exitGame', false))
+    退出NIKKE();
+  toastLog('NIKKE脚本结束运行');
 }
 
 function checkConfig() {

@@ -79,16 +79,16 @@ ui.layout(
         </card>
       </vertical>
       <vertical id='simulationRoom' visibility='gone'>
-        <text textSize="16sp" margin="8">模拟室选项</text>
+        <text textSize="16sp" margin="8">模拟室设置</text>
         <horizontal margin="10 2">
-          <text id="maxPassText" textSize="14sp">重复1轮后停止：</text>
-          <seekbar id="maxPass" w="*" />
+          <text id="maxPassText" textSize="14sp" w="0" layout_weight="4">重复1轮后停止：</text>
+          <seekbar id="maxPass" w="0" layout_weight="6"/>
         </horizontal>
         <horizontal margin="10 2">
-          <text id="maxSsrText" textSize="14sp">刷到1个SSR后停止：</text>
-          <seekbar id="maxSsrNumber" w="*" />
+          <text id="maxSsrText" textSize="14sp" w="0" layout_weight="4">刷到1个SSR后停止：</text>
+          <seekbar id="maxSsrNumber" w="0" layout_weight="6"/>
         </horizontal>
-        <text margin="10 2" textSize="14sp">勾选偏好增益效果：</text>
+        <text margin="10 2" textSize="14sp">只考虑以下增益效果：</text>
         <vertical>
           <card w="*" h="auto" margin="10 2" cardCornerRadius="2dp"
             cardElevation="1dp">
@@ -162,6 +162,24 @@ ui.layout(
           </card>
         </vertical>
       </vertical>
+      <text textSize="16sp" margin="8 50 8 8">其他设置</text>
+      <horizontal margin="10" gravity="center_vertical" weightSum="10">
+        <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">运行结束后退出游戏</text>
+        <checkbox id="exitGame" w="0" layout_weight="2" />
+      </horizontal>
+      <horizontal margin="10" gravity="center_vertical" weightSum="10">
+        <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">已启动游戏且位于首页位置</text>
+        <checkbox id="alreadyInGame" w="0" layout_weight="2" />
+      </horizontal>
+      <vertical margin="10">
+        <horizontal gravity="center_vertical|left">
+          <text textSize="16sp" textColor="#222222">发生错误时重试次数：</text>
+          <text id="maxRetryText" textSize="16sp" textColor="#222222">不重试</text>
+        </horizontal>
+        <horizontal weightSum="10">
+          <seekbar id="maxRetry" layout_weight="5" />
+        </horizontal>
+      </vertical>
       <button id="save" text="保存设置" />
     </vertical>
   </ScrollView>
@@ -196,7 +214,6 @@ ui.findView('模拟室').on('check', function (checked) {
     ui.simulationRoom.attr('visibility', 'visible');
 });
 
-
 ui.maxPass.setMin(1);
 ui.maxPass.setMax(50);
 ui.maxPass.setOnSeekBarChangeListener({
@@ -220,6 +237,20 @@ for (let task of todoTask)
 for (let buffName of simulationRoom.preferredBuff)
   ui.findView(buffName).setChecked(true);
 
+ui.exitGame.setChecked(NIKKEstorage.get('exitGame', false));
+ui.alreadyInGame.setChecked(NIKKEstorage.get('alreadyInGame', false));
+ui.maxRetry.setOnSeekBarChangeListener({
+  onProgressChanged: function (seekbar, p, fromUser) {
+    if (p == 0)
+      ui.maxRetryText.setText('不重试');
+    else
+      ui.maxRetryText.setText(`${p}次`);
+  }
+});
+ui.maxRetry.setMin(0);
+ui.maxRetry.setMax(5);
+ui.maxRetry.setProgress(NIKKEstorage.get('maxRetry', 1));
+
 ui.save.on("click", function () {
   todoTask = [];
   for (let task of [
@@ -241,5 +272,11 @@ ui.save.on("click", function () {
     if (ui.findView(buffName).isChecked())
       simulationRoom.preferredBuff.push(buffName);
   NIKKEstorage.put('simulationRoom', JSON.stringify(simulationRoom));
+
+  NIKKEstorage.put('exitGame', ui.exitGame.isChecked());
+  NIKKEstorage.put('alreadyInGame', ui.alreadyInGame.isChecked());
+  NIKKEstorage.put('maxRetry', ui.maxRetry.getProgress());
+
+  ui.finish();
   toastLog('设置已保存');
 });

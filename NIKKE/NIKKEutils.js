@@ -15,6 +15,7 @@ if (typeof module === 'undefined') {
 else {
   module.exports = {
     启动NIKKE: 启动NIKKE,
+    等待NIKKE加载: 等待NIKKE加载,
     退出NIKKE: 退出NIKKE,
     返回首页: 返回首页
   };
@@ -57,13 +58,14 @@ function 启动NIKKE() {
   app.launchApp("NIKKE");
   log("打开NIKKE");
   waitForActivity('com.shiftup.nk.MainActivity');
-  // 保证申请截屏权限时，屏幕是游戏画面
-  sleep(20 * 1000);
-  requestScreenCaptureAuto();
-  let [width, height] = getDisplaySize();
-  if (ocrUntilFound(res => res.text.match(/(大厅|基地|物品|方舟)/), 1, 100) != null)
+}
+
+function 等待NIKKE加载() {
+  if (ocrUntilFound(res => res.text.match(/(大厅|方舟|物品栏)/), 3, 300) != null)
     return;
-  ocrUntilFound(res => {
+  let [width, height] = getDisplaySize();
+  if (ocrUntilFound(res => {
+    toastLog('等待加载……');
     if (res.text.includes('今日不再')) {
       var target = res.find(e => e.text.match(/.{0,4}今日不再/) != null);
       clickRect(target);
@@ -78,18 +80,20 @@ function 启动NIKKE() {
       sleep(20000);
       return false;
     }
-    else if (res.text.match(/(確認|确认)/) != null) {
-      clickRect(res.find(e => e.text.match(/(確認|确认)$/) != null));
+    else if (res.text.match(/[確确][認认]/) != null) {
+      clickRect(res.find(e => e.text.match(/[確确][認认]/) != null));
       return false;
     }
     else if (res.text.includes('登出'))
       return true;
     return false;
-  }, 60, 5000);
+  }, 60, 5000) == null) 
+    throw new Error('游戏似乎一直在加载');
   click(width / 2, height / 2);
   sleep(1000);
   // 等待游戏内公告出现
-  ocrUntilFound(res => res.text.includes('公告'), 30, 5000);
+  if (ocrUntilFound(res => res.text.includes('公告'), 30, 5000) == null)
+    throw new Error('没有出现游戏公告');
   sleep(1000);
   back();
   // 检查是否有每天签到

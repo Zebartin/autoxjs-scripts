@@ -55,7 +55,7 @@ function 日常() {
         等待NIKKE加载();
         return func();
       } catch (error) {
-        if (error.message.includes('ScriptInterruptedException'))
+        if (error.message.includes('InterruptedException'))
           throw error;
         toast(error.message);
         console.error(error.message);

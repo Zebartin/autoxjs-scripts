@@ -95,7 +95,7 @@ function 启动NIKKE() {
   // 检查是否有每天签到
   let dailyLogin = ocrUntilFound(res => res.find(e => e.text.match(/[领領]取/) != null), 5, 1000);
   if (dailyLogin != null) {
-    clickRect(target);
+    clickRect(dailyLogin);
     ocrUntilFound(res => res.text.includes('点击') != null, 5, 1000);
     click(width / 2, height * 0.8);
     back();

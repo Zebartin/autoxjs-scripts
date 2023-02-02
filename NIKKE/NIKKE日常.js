@@ -16,10 +16,6 @@ var arenaTargets = ['.*', '.*'];
 if (typeof module === 'undefined') {
   auto.waitFor();
   checkConfig();
-  requestScreenCaptureAuto();
-  [width, height] = getDisplaySize();
-  基地收菜();
-  exit();
   启动NIKKE();
   // 保证申请截屏权限时，屏幕是游戏画面
   sleep(3000);

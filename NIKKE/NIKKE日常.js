@@ -16,6 +16,10 @@ var arenaTargets = ['.*', '.*'];
 if (typeof module === 'undefined') {
   auto.waitFor();
   checkConfig();
+  requestScreenCaptureAuto();
+  [width, height] = getDisplaySize();
+  基地收菜();
+  exit();
   启动NIKKE();
   // 保证申请截屏权限时，屏幕是游戏画面
   sleep(3000);
@@ -158,8 +162,8 @@ function 基地收菜() {
   }
   back();
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('DEFENSE')), 30, 1000));
-  toastLog('尝试一举歼灭');
   clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('歼灭')), 30, 1000));
+  toastLog('尝试一举歼灭');
   ocrUntilFound(res => res.text.includes('今日'), 30, 1000);
   clickRect(ocrUntilFound(res => res.find(e => e.text.startsWith('进行')), 30, 1000));
   ocrUntilFound(res => {

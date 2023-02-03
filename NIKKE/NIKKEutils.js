@@ -97,12 +97,18 @@ function 等待NIKKE加载() {
   sleep(1000);
   back();
   // 检查是否有每天签到
-  let dailyLogin = ocrUntilFound(res => res.find(e => e.text.match(/^[^已巳己]*[领領]取../) != null), 5, 1000);
-  if (dailyLogin != null) {
-    clickRect(dailyLogin);
-    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 20, 500));
+  let dailyLogin = ocrUntilFound(res => res.find(e => e.text.match(/[领領]取/) != null), 5, 1000);
+  if (dailyLogin == null)
+    toastLog('没有登录奖励');
+  else {
+    if (dailyLogin.text.match(/[已巳己]/) == null) {
+      toastLog('领取登录奖励');
+      clickRect(dailyLogin);
+      clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 20, 500));
+    } else
+      toastLog('登录奖励已被领取');
     back();
-  }
+  } 
 }
 
 function 退出NIKKE() {

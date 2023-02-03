@@ -70,7 +70,7 @@ function 等待NIKKE加载() {
       var target = res.find(e => e.text.match(/.{0,4}今日不再/) != null);
       clickRect(target);
       sleep(500);
-      click(width / 2, height * 0.8);
+      click(width / 2, height * 0.9);
     }
     else if (res.text.includes('SIGN IN')) {
       toastLog('未登录游戏，停止运行脚本');
@@ -87,7 +87,7 @@ function 等待NIKKE加载() {
     else if (res.text.includes('登出'))
       return true;
     return false;
-  }, 60, 5000) == null) 
+  }, 60, 5000) == null)
     throw new Error('游戏似乎一直在加载');
   click(width / 2, height / 2);
   sleep(1000);
@@ -97,11 +97,10 @@ function 等待NIKKE加载() {
   sleep(1000);
   back();
   // 检查是否有每天签到
-  let dailyLogin = ocrUntilFound(res => res.find(e => e.text.match(/[领領]取/) != null), 5, 1000);
+  let dailyLogin = ocrUntilFound(res => res.find(e => e.text.match(/^[^已巳己]*[领領]取../) != null), 5, 1000);
   if (dailyLogin != null) {
     clickRect(dailyLogin);
-    ocrUntilFound(res => res.text.includes('点击') != null, 5, 1000);
-    click(width / 2, height * 0.8);
+    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 20, 500));
     back();
   }
 }

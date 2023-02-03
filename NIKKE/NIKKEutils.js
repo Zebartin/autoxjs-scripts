@@ -32,7 +32,6 @@ function 启动NIKKE() {
         toastLog('需要为AutoX.js打开修改系统设置权限');
       else
         toastLog(error);
-      exit();
     }
   }
   // 个人留的一个后门，自行启动v2rayNG科学上网

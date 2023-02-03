@@ -82,11 +82,11 @@ ui.layout(
         <text textSize="16sp" margin="8">模拟室设置</text>
         <horizontal margin="10 2">
           <text id="maxPassText" textSize="14sp" w="0" layout_weight="4">重复1轮后停止：</text>
-          <seekbar id="maxPass" w="0" layout_weight="6"/>
+          <seekbar id="maxPass" w="0" layout_weight="6" />
         </horizontal>
         <horizontal margin="10 2">
           <text id="maxSsrText" textSize="14sp" w="0" layout_weight="4">刷到1个SSR后停止：</text>
-          <seekbar id="maxSsrNumber" w="0" layout_weight="6"/>
+          <seekbar id="maxSsrNumber" w="0" layout_weight="6" />
         </horizontal>
         <text margin="10 2" textSize="14sp">只考虑以下增益效果：</text>
         <vertical>
@@ -164,6 +164,10 @@ ui.layout(
       </vertical>
       <text textSize="16sp" margin="8 50 8 8">其他设置</text>
       <horizontal margin="10" gravity="center_vertical" weightSum="10">
+        <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">静音运行（需要修改系统设置权限）</text>
+        <checkbox id="mute" w="0" layout_weight="2" />
+      </horizontal>
+      <horizontal margin="10" gravity="center_vertical" weightSum="10">
         <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">运行结束后退出游戏</text>
         <checkbox id="exitGame" w="0" layout_weight="2" />
       </horizontal>
@@ -237,8 +241,8 @@ for (let task of todoTask)
 for (let buffName of simulationRoom.preferredBuff)
   ui.findView(buffName).setChecked(true);
 
-ui.exitGame.setChecked(NIKKEstorage.get('exitGame', false));
-ui.alreadyInGame.setChecked(NIKKEstorage.get('alreadyInGame', false));
+for (let generalOption of ['mute', 'exitGame', 'alreadyInGame'])
+  ui.findView(generalOption).setChecked(NIKKEstorage.get(generalOption, false));
 ui.maxRetry.setOnSeekBarChangeListener({
   onProgressChanged: function (seekbar, p, fromUser) {
     if (p == 0)
@@ -273,8 +277,8 @@ ui.save.on("click", function () {
       simulationRoom.preferredBuff.push(buffName);
   NIKKEstorage.put('simulationRoom', JSON.stringify(simulationRoom));
 
-  NIKKEstorage.put('exitGame', ui.exitGame.isChecked());
-  NIKKEstorage.put('alreadyInGame', ui.alreadyInGame.isChecked());
+  for (let generalOption of ['mute', 'exitGame', 'alreadyInGame'])
+    NIKKEstorage.put(generalOption, ui.findView(generalOption).isChecked());
   NIKKEstorage.put('maxRetry', ui.maxRetry.getProgress());
 
   ui.finish();

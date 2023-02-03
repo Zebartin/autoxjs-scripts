@@ -36,22 +36,33 @@ function 启动NIKKE() {
   }
   // 个人留的一个后门，自行启动v2rayNG科学上网
   if (app.launchApp("v2rayNG")) {
-    if (id('tv_test_state').findOne().text() != '未连接')
+    // 关闭连接，否则会影响真连接测试
+    while (id('tv_test_state').findOne().text() != '未连接')
       id('fab').click();
-    id('fab').click();
-    sleep(500);
-    id('layout_test').click();
     let i;
     const maxRetry = 10;
     for (i = 0; i < maxRetry; ++i) {
+      desc('更多选项').click();
+      text('测试全部配置真连接').waitFor();
+      click('测试全部配置真连接');
       sleep(1000);
-      if (id('tv_test_state').findOne().text().includes('延时'))
+      textEndsWith('ms').waitFor();
+      desc('更多选项').click();
+      text('按测试结果排序').waitFor();
+      click('按测试结果排序');
+      let firstCard = id("info_container").findOne();
+      let firstDelay = firstCard.findOne(textEndsWith('ms'));
+      if (firstDelay != null && firstDelay.text() != '-1ms') {
+        firstCard.click();
         break;
+      }
+      sleep(3000);
     }
     if (i == maxRetry) {
       console.error('启动v2rayNG服务失败');
       exit();
     }
+    id('fab').click();
   }
 
   app.launchApp("NIKKE");
@@ -107,7 +118,7 @@ function 等待NIKKE加载() {
     } else
       toastLog('登录奖励已被领取');
     back();
-  } 
+  }
 }
 
 function 退出NIKKE() {

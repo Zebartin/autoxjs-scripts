@@ -57,14 +57,16 @@ function 日常() {
       } catch (error) {
         if (error.message.includes('InterruptedException'))
           throw error;
-        toast(error.message);
-        console.error(error.message);
-        console.error(error.stack);
-        if (alreadyRetry != maxRetry) {
-          toastLog(`脚本出错，即将重试(${alreadyRetry + 1}/${maxRetry})`);
-          sleep(3000);
-          退出NIKKE();
-          启动NIKKE();
+        else {
+          toast(error.message);
+          console.error(error.message);
+          console.error(error.stack);
+          if (alreadyRetry != maxRetry) {
+            toastLog(`脚本出错，即将重试(${alreadyRetry + 1}/${maxRetry})`);
+            sleep(3000);
+            退出NIKKE();
+            启动NIKKE();
+          }
         }
       }
     }

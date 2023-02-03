@@ -95,8 +95,8 @@ ui.layout(
             <horizontal gravity="center_vertical">
               <checkbox id="引流转换器" marginLeft="4" marginRight="6" />
               <vertical padding="18 8" h="auto" w="0" layout_weight="1">
-                <text text="引流转换器" textColor="#222222" textSize="16sp" />
-                <text text="攻击命中时恢复体力" textColor="#999999" textSize="14sp" />
+                <text text="引流转换器" textColor="#222222" textSize="14sp" />
+                <text text="攻击命中时恢复体力" textColor="#999999" textSize="12sp" />
               </vertical>
             </horizontal>
           </card>
@@ -105,8 +105,8 @@ ui.layout(
             <horizontal gravity="center_vertical">
               <checkbox id="高品质粉末" marginLeft="4" marginRight="6" />
               <vertical padding="18 8" h="auto" w="0" layout_weight="1">
-                <text text="高品质粉末" textColor="#222222" textSize="16sp" />
-                <text text="提高攻击力（不限对象）" textColor="#999999" textSize="14sp" />
+                <text text="高品质粉末" textColor="#222222" textSize="14sp" />
+                <text text="提高攻击力（不限对象）" textColor="#999999" textSize="12sp" />
               </vertical>
             </horizontal>
           </card>
@@ -115,8 +115,8 @@ ui.layout(
             <horizontal gravity="center_vertical">
               <checkbox id="冲击引流器" marginLeft="4" marginRight="6" />
               <vertical padding="18 8" h="auto" w="0" layout_weight="1">
-                <text text="冲击引流器" textColor="#222222" textSize="16sp" />
-                <text text="提高暴击伤害（不限对象）" textColor="#999999" textSize="14sp" />
+                <text text="冲击引流器" textColor="#222222" textSize="14sp" />
+                <text text="提高暴击伤害（不限对象）" textColor="#999999" textSize="12sp" />
               </vertical>
             </horizontal>
           </card>
@@ -125,8 +125,8 @@ ui.layout(
             <horizontal gravity="center_vertical">
               <checkbox id="控制引导器" marginLeft="4" marginRight="6" />
               <vertical padding="18 8" h="auto" w="0" layout_weight="1">
-                <text text="控制引导器" textColor="#222222" textSize="16sp" />
-                <text text="提高暴击率（不限对象）" textColor="#999999" textSize="14sp" />
+                <text text="控制引导器" textColor="#222222" textSize="14sp" />
+                <text text="提高暴击率（不限对象）" textColor="#999999" textSize="12sp" />
               </vertical>
             </horizontal>
           </card>
@@ -135,8 +135,8 @@ ui.layout(
             <horizontal gravity="center_vertical">
               <checkbox id="聚焦瞄准镜" marginLeft="4" marginRight="6" />
               <vertical padding="18 8" h="auto" w="0" layout_weight="1">
-                <text text="聚焦瞄准镜" textColor="#222222" textSize="16sp" />
-                <text text="提高命中率" textColor="#999999" textSize="14sp" />
+                <text text="聚焦瞄准镜" textColor="#222222" textSize="14sp" />
+                <text text="提高命中率" textColor="#999999" textSize="12sp" />
               </vertical>
             </horizontal>
           </card>
@@ -145,8 +145,8 @@ ui.layout(
             <horizontal gravity="center_vertical">
               <checkbox id="隐形粉" marginLeft="4" marginRight="6" />
               <vertical padding="18 8" h="auto" w="0" layout_weight="1">
-                <text text="隐形粉" textColor="#222222" textSize="16sp" />
-                <text text="提高全蓄力攻击伤害" textColor="#999999" textSize="14sp" />
+                <text text="隐形粉" textColor="#222222" textSize="14sp" />
+                <text text="提高全蓄力攻击伤害" textColor="#999999" textSize="12sp" />
               </vertical>
             </horizontal>
           </card>
@@ -155,33 +155,33 @@ ui.layout(
             <horizontal gravity="center_vertical">
               <checkbox id="快速充电器" marginLeft="4" marginRight="6" />
               <vertical padding="18 8" h="auto" w="0" layout_weight="1">
-                <text text="快速充电器" textColor="#222222" textSize="16sp" />
-                <text text="减少蓄力时间" textColor="#999999" textSize="14sp" />
+                <text text="快速充电器" textColor="#222222" textSize="14sp" />
+                <text text="减少蓄力时间" textColor="#999999" textSize="12sp" />
               </vertical>
             </horizontal>
           </card>
         </vertical>
       </vertical>
       <text textSize="16sp" margin="8 50 8 8">其他设置</text>
-      <horizontal margin="10" gravity="center_vertical" weightSum="10">
-        <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">静音运行（需要修改系统设置权限）</text>
-        <checkbox id="mute" w="0" layout_weight="2" />
-      </horizontal>
-      <horizontal margin="10" gravity="center_vertical" weightSum="10">
-        <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">运行结束后退出游戏</text>
-        <checkbox id="exitGame" w="0" layout_weight="2" />
-      </horizontal>
-      <horizontal margin="10" gravity="center_vertical" weightSum="10">
-        <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">已启动游戏且位于首页位置</text>
-        <checkbox id="alreadyInGame" w="0" layout_weight="2" />
-      </horizontal>
-      <vertical margin="10">
-        <horizontal gravity="center_vertical|left">
-          <text textSize="16sp" textColor="#222222">发生错误时重试次数：</text>
-          <text id="maxRetryText" textSize="16sp" textColor="#222222">不重试</text>
+      <vertical>
+        <horizontal margin="10 2" gravity="center_vertical" weightSum="10" h="0" layout_weight="1">
+          <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">静音运行（需要修改系统设置权限）</text>
+          <checkbox id="mute" w="0" layout_weight="2" />
         </horizontal>
-        <horizontal weightSum="10">
-          <seekbar id="maxRetry" layout_weight="5" />
+        <horizontal margin="10 2" gravity="center_vertical" weightSum="10" h="0" layout_weight="1">
+          <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">运行结束后退出游戏</text>
+          <checkbox id="exitGame" w="0" layout_weight="2" />
+        </horizontal>
+        <horizontal margin="10 2" gravity="center_vertical" weightSum="10" h="0" layout_weight="1">
+          <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">已启动游戏且位于首页位置</text>
+          <checkbox id="alreadyInGame" w="0" layout_weight="2" />
+        </horizontal>
+        <horizontal margin="10 2" gravity="center_vertical|left" weightSum="10" h="0" layout_weight="1">
+          <horizontal w="0" layout_weight="6.5">
+            <text textSize="16sp" textColor="#222222">发生错误时重试次数：</text>
+            <text id="maxRetryText" textSize="16sp" textColor="#222222">不重试</text>
+          </horizontal>
+          <seekbar id="maxRetry" w="0" layout_weight="3.5" />
         </horizontal>
       </vertical>
       <button id="save" text="保存设置" />
@@ -202,8 +202,7 @@ const simulationRoomDefault = {
     "冲击引流器", "控制引导器"
   ]
 };
-// NIKKEstorage.clear();
-// exit();
+
 let todoTask = JSON.parse(NIKKEstorage.get('todoTask', null));
 if (todoTask == null)
   todoTask = todoTaskDefault;

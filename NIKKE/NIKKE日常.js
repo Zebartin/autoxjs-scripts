@@ -109,6 +109,8 @@ function 商店() {
     clickRect(ocrUntilFound(res => res.find(e => e.text.match(/(距离|更新|还有)/) != null), 10, 300));
     log('刷新商店');
     clickRect(ocrUntilFound(res => res.find(e => e.text == '确认'), 10, 300));
+    // 等待刷新完成
+    ocrUntilFound(res => res.text.match(/sold [oq]ut/i) == null, 20, 500);
     buyFree();
   }
   返回首页();

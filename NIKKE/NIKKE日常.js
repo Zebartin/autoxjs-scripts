@@ -41,11 +41,7 @@ function 日常() {
     竞技场: 竞技场,
     爬塔: 爬塔,
     咨询: 咨询,
-    模拟室: () => 模拟室(
-      true, simulationRoom.maxPass,
-      simulationRoom.maxSsrNumber,
-      simulationRoom.preferredBuff
-    )
+    模拟室: () => 模拟室(true)
   };
   let alreadyRetry = 0;
   const maxRetry = NIKKEstorage.get('maxRetry', 1);

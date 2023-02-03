@@ -13,14 +13,7 @@ if (typeof module === 'undefined') {
   auto.waitFor();
   unlockIfNeed();
   requestScreenCaptureAuto();
-  let NIKKEstorage = storages.create("NIKKEconfig");
-  const simulationRoom = JSON.parse(NIKKEstorage.get('simulationRoom', null));
-  if (simulationRoom == null) {
-    toast('未配置模拟室选项，请运行NIKKE设置.js并保存设置');
-    exit();
-  }
-  [width, height] = getDisplaySize();
-  模拟室(false, simulationRoom.maxPass, simulationRoom.maxSsrNumber, simulationRoom.preferredBuff);
+  模拟室(false);
   exit();
 }
 else {
@@ -34,8 +27,16 @@ else {
  * maxSsrNumber: 最多要刷多少个SSR
  * preferredBuff: 只考虑这些buff
  */
-function 模拟室(fromIndex, maxPass, maxSsrNumber, preferredBuff) {
-  maxSsrNumber = Math.min(maxSsrNumber, Object.keys(getAllBuff()).length);
+function 模拟室(fromIndex) {
+  const NIKKEstorage = storages.create("NIKKEconfig");
+  const simulationRoom = JSON.parse(NIKKEstorage.get('simulationRoom', null));
+  if (simulationRoom == null) {
+    toast('未配置模拟室选项，请运行NIKKE设置.js并保存设置');
+    exit();
+  }
+  [width, height] = getDisplaySize();
+  let { maxPass, maxSsrNumber, preferredBuff } = simulationRoom;
+  maxSsrNumber = Math.min(maxSsrNumber, preferredBuff.length, Object.keys(getAllBuff()).length);
   if (fromIndex) {
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('方舟')), 10, 3000));
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('模拟室')), 10, 3000));
@@ -69,7 +70,7 @@ function 模拟室(fromIndex, maxPass, maxSsrNumber, preferredBuff) {
     }
     log(`第${pass + 1}轮模拟室：skipMode = ${status.skipMode}`);
     clickRect(ocrUntilFound(res => res.find(e => e.text.startsWith('开始')), 10, 300));
-    clickRect(ocrUntilFound(res => res.find(e => e.text == '4'), 20, 300));
+    clickRect(ocrUntilFound(res => res.find(e => e.text == '3'), 20, 300));
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('开始')), 10, 300));
     for (status.layer = 0; status.layer < 7; ++status.layer) {
       selectOption(status);
@@ -123,6 +124,7 @@ function 模拟室(fromIndex, maxPass, maxSsrNumber, preferredBuff) {
         status.loaded[chosenTarget.name] = chosenTarget;
       }
     }
+    ocrUntilFound(res => res.text.includes('开始'), 30, 1000);
   }
   log('完成模拟室任务');
   if (fromIndex)
@@ -140,11 +142,7 @@ function getBuffLoaded() {
 }
 
 function selectOption(status) {
-  let optionNumber = 3;
-  if (status.layer == 5)
-    optionNumber = 2;
-  else if (status.layer == 6)
-    optionNumber = 1;
+  let optionNumber = status.layer == 6 ? 1 : 2;
   const options = getOptions(optionNumber);
   let bestOption = null;
   if (status.skipMode) {
@@ -250,7 +248,7 @@ function doWithOption(option, status) {
     if (ssrOption != null)
       log('提升选项：', ssrOption.text);
     if (
-      ssrOption != null && ssrOption.text.includes('SSR') &&
+      ssrOption != null && ssrOption.text.match(/[5s]{2}R/i) &&
       status.bestBuffToKeep.level != 'SSR'
     ) {
       clickRect(ssrOption);
@@ -396,7 +394,7 @@ function getOptions(expectedOptionNumber) {
   const pattern = new RegExp(`(${Object.values(optionReg).map(x => x.source).join('|')})`);
   return ocrUntilFound(res => {
     let t = res.filter(e => e.level == 3 && pattern.test(e.text)).toArray();
-    if (t.length != expectedOptionNumber)
+    if (t.length < expectedOptionNumber)
       return null;
     const verticalSplits = t.map(x => x.bounds.left).concat([width]);
     let ret = [];
@@ -440,7 +438,7 @@ function getOptions(expectedOptionNumber) {
 // 预计在当前画面能识别到至少expectedCount个增益效果
 function getBuffs(expectedCount) {
   return ocrUntilFound(res => {
-    const r = res.filter(e => e.text.match(/^(S{0,2}R|EP..)$/) != null && e.level == 3);
+    const r = res.filter(e => e.text.match(/^([5S]{0,2}R|EP..)$/i) != null && e.level == 3);
     const l = res.filter(e => e.text.match(/[連達连][結绪结]等[級级]/) != null && e.level == 3);
     if (r.length < expectedCount || l.length < expectedCount)
       return null;
@@ -466,7 +464,7 @@ function getBuffs(expectedCount) {
       newBounds.top = r[i].bounds.top;
       newBounds.bottom = l[i].bounds.bottom;
       ret.push({
-        level: r[i].text,
+        level: r[i].text.replace(/[5s]/, 'S'),
         name: correctBuffName(nameText[0].text),
         forSomebody: forSomebody != null,
         bounds: newBounds

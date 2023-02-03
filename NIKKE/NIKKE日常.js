@@ -33,7 +33,6 @@ else {
 function 日常() {
   [width, height] = getDisplaySize();
   const todoTask = JSON.parse(NIKKEstorage.get('todoTask', null));
-  const simulationRoom = JSON.parse(NIKKEstorage.get('simulationRoom', null));
   const taskFunc = {
     商店: 商店,
     基地收菜: 基地收菜,
@@ -184,14 +183,17 @@ function 基地收菜() {
   返回首页();
 }
 function 好友() {
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('好友')), 10, 3000));
-  log('点击好友');
-  sleep(2000);
-  var target = ocrUntilFound(res => res.find(e => e.text.endsWith('赠送')), 10, 3000);
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('好友')), 30, 1000));
+  toastLog('点击好友');
+  // 等待列表加载
+  ocrUntilFound(res => 
+    res.text.match(/(分钟|小时|天)/) != null || 
+    res.find(e => e.text.endsWith('登入')) != null, 30, 1000);
+  let target = ocrUntilFound(res => res.find(e => e.text.endsWith('赠送')), 30, 1000);
   if (colors.red(captureScreen().pixel(target.bounds.left, target.bounds.top)) < 100) {
     clickRect(target);
-    log('点击赠送');
-    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('确认')), 10, 3000));
+    toastLog('点击赠送');
+    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('确认')), 30, 1000));
     sleep(1000);
   }
   back();

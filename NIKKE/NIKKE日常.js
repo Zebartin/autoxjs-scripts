@@ -126,7 +126,9 @@ function 基地收菜() {
   clickRect(target);
   toastLog('进入公告栏');
   // 等待派遣内容加载
-  if (ocrUntilFound(res => res.text.match(/(时间|完成)/) != null, 20, 500) == null)
+  target = ocrUntilFound(res => res.text.match(/(时间|完成|目前)/), 20, 500);
+  // 已经没有派遣内容
+  if (target[0] == '目前')
     toastLog('今日派遣已完成');
   else {
     target = ocrUntilFound(res => res.find(e => e.text.includes('全部派')), 30, 1000);

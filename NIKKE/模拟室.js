@@ -206,6 +206,16 @@ function selectOption(status) {
 }
 
 function doWithOption(option, status) {
+  if (option.type == 'specUp' && !status.skipMode && !status.bestBuffToKeep.name) {
+    status.earlyStop = true;
+    for (let buff of Object.values(status.loaded))
+      if (buff.level != 'SSR') {
+        status.earlyStop = false;
+        break;
+      }
+    if (status.earlyStop)
+      return;
+  }
   clickRect(option);
   sleep(1000);
   if (option.type == 'ICU') {
@@ -258,6 +268,8 @@ function doWithOption(option, status) {
       if (ssrOption.text.includes('所有'))
         clickRect(ocrUntilFound(res => res.find(e => e.text.match(/(確認|确认)/) != null), 10, 1000));
       else {
+        // 等一下
+        ocrUntilFound(res => res.text.includes('览'), 30, 1000);
         if (!status.bestBuffToKeep.name)
           clickRect(getBuffs(1)[0]);
         else
@@ -349,38 +361,42 @@ function selectBuff(buffType, status) {
 }
 
 function scanBuffs(wantedBuffName) {
-  // 滑到最顶
-  swipe(width / 2, height / 2, width / 2, height * 0.8, 200);
-  let allBuff = {};
   let wantedBuff = null;
-  while (true) {
-    sleep(1000);
-    let buffs = getBuffs(0);
-    if (buffs.length == 0)
-      break;
-    let i;
-    for (i = buffs.length - 1; i >= 0; --i) {
-      if (buffs[i].name in allBuff)
+  while (wantedBuff == null) {
+    let allBuff = {};
+    // 滑到最顶
+    swipe(width / 2, height / 2, width / 2, height * 0.8, 200);
+    while (true) {
+      sleep(1000);
+      let buffs = getBuffs(0);
+      if (buffs.length == 0)
         break;
-      if (buffs[i].name == wantedBuffName) {
-        wantedBuff = buffs[i];
-        break;
+      let i;
+      for (i = buffs.length - 1; i >= 0; --i) {
+        if (buffs[i].name in allBuff)
+          break;
+        if (buffs[i].name == wantedBuffName) {
+          wantedBuff = buffs[i];
+          break;
+        }
+        allBuff[buffs[i].name] = buffs[i];
       }
-      allBuff[buffs[i].name] = buffs[i];
+      if (i >= 0 || buffs.length < 2)
+        break;
+      const centerX = buffs[0].bounds.centerX();
+      // 如果不是在模拟室首页调用getBuffLoaded，这里可能会出错
+      // 因为该页面有另外一个位置满足endPoint
+      const endPoint = ocrUntilFound(res => res.find(e => e.text.startsWith('拥有')), 10, 300);
+      swipe(
+        centerX, buffs[buffs.length - 1].bounds.bottom,
+        centerX, endPoint.bounds.bottom,
+        1000 * buffs.length
+      );
     }
-    if (i >= 0 || buffs.length < 2)
-      break;
-    const centerX = buffs[0].bounds.centerX();
-    // 如果不是在模拟室首页调用getBuffLoaded，这里可能会出错
-    // 因为该页面有另外一个位置满足endPoint
-    const endPoint = ocrUntilFound(res => res.find(e => e.text.startsWith('拥有')), 10, 300);
-    swipe(
-      centerX, buffs[buffs.length - 1].bounds.bottom,
-      centerX, endPoint.bounds.bottom,
-      1000 * buffs.length
-    );
+    if (!wantedBuffName)
+      return allBuff;
   }
-  return wantedBuff == null ? allBuff : wantedBuff;
+  return wantedBuff;
 }
 
 function getOptions(expectedOptionNumber) {

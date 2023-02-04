@@ -107,17 +107,19 @@ function 等待NIKKE加载() {
   sleep(1000);
   back();
   // 检查是否有每天签到
-  let dailyLogin = ocrUntilFound(res => res.find(e => e.text.match(/[领領]取/) != null), 5, 1000);
-  if (dailyLogin == null)
+  let dailyLogin = ocrUntilFound(res => res.filter(e => e.text.match(/[领領]取/) != null), 5, 1000);
+  if (dailyLogin.length == 0)
     toastLog('没有登录奖励');
   else {
+    dailyLogin = dailyLogin[dailyLogin.length - 1];
     if (dailyLogin.text.match(/[已巳己]/) == null) {
       toastLog('领取登录奖励');
       clickRect(dailyLogin);
       clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 20, 500));
-    } else
+    } else {
       toastLog('登录奖励已被领取');
-    back();
+      back();
+    }
   }
 }
 
@@ -162,10 +164,9 @@ function 刷刷刷() {
   ), 20, 3000));
   log('进入战斗');
   sleep(2000);
-  if (ocrUntilFound(res => res.text.includes('AUT'), 10, 1000) != null) {
+  if (ocrUntilFound(res => res.text.includes('AUT'), 20, 1000) != null) {
     while (true) {
-      sleep(20 * 1000);
-      ocrUntilFound(res => res.text.includes('REWARD'), 30, 3000);
+      ocrUntilFound(res => res.text.includes('REWARD'), 30, 5000);
       var target = ocrUntilFound(res => res.find(
         e => e.text.endsWith('重新开始')
       ), 20, 1000);

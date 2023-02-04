@@ -86,27 +86,73 @@ function checkConfig() {
 }
 
 function 商店() {
-  clickRect(ocrUntilFound(res => res.find(e => e.text == '商店'), 30, 1000));
-  log('进入商店');
-  ocrUntilFound(res => res.text.includes('普通'), 50, 1000);
+  let buyGood = (good) => {
+    toastLog(`购买${good.text}`);
+    clickRect(good);
+    clickRect(ocrUntilFound(res => res.find(e => e.text == '购买'), 30, 1000));
+    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 20, 1000));
+  };
   let buyFree = () => {
-    let freeGood = ocrUntilFound(res => res.find(e => e.text.match(/(100%|sold [oq]ut)/i) != null), 10, 300);
+    let freeGood = ocrUntilFound(res => res.find(e => e.text.match(/(100%|s[oq]ld [oq]ut)/i) != null), 10, 300);
     if (freeGood != null && freeGood.text.includes('100%')) {
-      log('购买免费物品');
-      clickRect(freeGood);
-      clickRect(ocrUntilFound(res => res.find(e => e.text == '购买'), 30, 1000));
-      clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 20, 1000));
+      freeGood.text = '免费商品：' + freeGood.text;
+      buyGood(freeGood);
       return true;
     }
     return false;
   };
+  clickRect(ocrUntilFound(res => res.find(e => e.text == '商店'), 30, 1000));
+  toastLog('进入商店');
+  ocrUntilFound(res => res.text.includes('普通'), 50, 1000);
   if (buyFree()) {
     clickRect(ocrUntilFound(res => res.find(e => e.text.match(/(距离|更新|还有)/) != null), 10, 300));
-    log('刷新商店');
+    toastLog('刷新商店');
     clickRect(ocrUntilFound(res => res.find(e => e.text == '确认'), 10, 300));
     // 等待刷新完成
-    ocrUntilFound(res => res.text.match(/sold [oq]ut/i) == null, 20, 500);
+    ocrUntilFound(res => res.text.match(/s[oq]ld [oq]ut/i) == null, 20, 500);
     buyFree();
+  }
+  const buyCodeManual = NIKKEstorage.get('buyCodeManual', 3);
+  if (buyCodeManual != 0) {
+    clickRect(ocrUntilFound(res => res.find(e => e.text == 'R'), 30, 1000));
+    ocrUntilFound(res => res.text.includes('竞技场'), 20, 500);
+    let [manual, manualSelection, soldOut] = ocrUntilFound(res => {
+      let goods = res.filter(e =>
+        e.level == 3 &&
+        e.text.includes('代码手册')
+      ).toArray();
+      if (goods.length < 4)
+        return null;
+      let goodsSold = res.filter(e =>
+        e.level == 1 && e.bounds != null &&
+        e.text.match(/s[oq]ld [oq]ut/i) != null
+      ).toArray();
+      let ret1 = goods.filter(e => !e.text.startsWith('代'));
+      let ret2 = goods.find(e => e.text.startsWith('代'));
+      log(res.text);
+      return [ret1, ret2, goodsSold];
+    }, 30, 1000);
+    // 一一检查每个item是否有sold out标志
+    for (let i = 0; i < Math.min(3, buyCodeManual); ++i) {
+      let thisSold = soldOut.find(e =>
+        e.bounds.bottom < manualSelection.bounds.top &&
+        e.bounds.right > manual[i].bounds.left &&
+        e.bounds.left < manual[i].bounds.right
+      );
+      if (thisSold == null)
+        buyGood(manual[i]);
+      else
+        log(`${manual[i].text}已售`)
+    }
+    if (buyCodeManual == 4) {
+      let selectionSold = soldOut.find(e =>
+        e.bounds.bottom > manualSelection.bounds.bottom
+      );
+      if (selectionSold == null)
+        buyGood(manualSelection);
+      else
+        log(`${manualSelection.text}已售`)
+    }
   }
   返回首页();
 }
@@ -188,8 +234,8 @@ function 好友() {
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('好友')), 30, 1000));
   toastLog('点击好友');
   // 等待列表加载
-  ocrUntilFound(res => 
-    res.text.match(/(分钟|小时|天)/) != null || 
+  ocrUntilFound(res =>
+    res.text.match(/(分钟|小时|天)/) != null ||
     res.find(e => e.text.endsWith('登入')) != null, 30, 1000);
   let target = ocrUntilFound(res => res.find(e => e.text.endsWith('赠送')), 30, 1000);
   if (colors.red(captureScreen().pixel(target.bounds.left, target.bounds.top)) < 100) {

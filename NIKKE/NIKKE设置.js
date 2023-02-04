@@ -183,6 +183,10 @@ ui.layout(
           <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">已启动游戏且位于首页位置</text>
           <checkbox id="alreadyInGame" w="0" layout_weight="2" />
         </horizontal>
+        <horizontal margin="10 2" gravity="center_vertical" weightSum="10" h="0" layout_weight="1">
+          <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">v2rayNG魔法</text>
+          <checkbox id="v2rayNG" w="0" layout_weight="2" />
+        </horizontal>
         <horizontal margin="10 2" gravity="center_vertical|left" weightSum="10" h="0" layout_weight="1">
           <text id="maxRetryText" textSize="16sp" textColor="#222222" w="0" layout_weight="6">脚本出错时不重试</text>
           <seekbar id="maxRetry" w="0" layout_weight="4" />
@@ -258,7 +262,7 @@ for (let task of todoTask)
 for (let buffName of simulationRoom.preferredBuff)
   ui.findView(buffName).setChecked(true);
 
-for (let generalOption of ['mute', 'exitGame', 'alreadyInGame'])
+for (let generalOption of ['mute', 'exitGame', 'alreadyInGame', 'v2rayNG'])
   ui.findView(generalOption).setChecked(NIKKEstorage.get(generalOption, false));
 ui.maxRetry.setOnSeekBarChangeListener({
   onProgressChanged: function (seekbar, p, fromUser) {
@@ -297,7 +301,7 @@ ui.save.on("click", function () {
       simulationRoom.preferredBuff.push(buffName);
   NIKKEstorage.put('simulationRoom', JSON.stringify(simulationRoom));
 
-  for (let generalOption of ['mute', 'exitGame', 'alreadyInGame'])
+  for (let generalOption of ['mute', 'exitGame', 'alreadyInGame', 'v2rayNG'])
     NIKKEstorage.put(generalOption, ui.findView(generalOption).isChecked());
   NIKKEstorage.put('maxRetry', ui.maxRetry.getProgress());
 

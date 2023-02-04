@@ -34,8 +34,8 @@ function 启动NIKKE() {
         toastLog(error);
     }
   }
-  // 个人留的一个后门，自行启动v2rayNG科学上网
-  if (app.launchApp("v2rayNG")) {
+  // 自行启动v2rayNG科学上网
+  if (NIKKEstorage.get('v2rayNG', false) && app.launchApp("v2rayNG")) {
     // 关闭连接，否则会影响真连接测试
     while (id('tv_test_state').findOne().text() != '未连接')
       id('fab').click();
@@ -126,7 +126,7 @@ function 等待NIKKE加载() {
 function 退出NIKKE() {
   home();
   关闭应用('NIKKE');
-  if (app.launchApp("v2rayNG")) {
+  if (NIKKEstorage.get('v2rayNG', false) && app.launchApp("v2rayNG")) {
     if (id('tv_test_state').findOne().text() != '未连接')
       id('fab').click();
     关闭应用('v2rayNG');

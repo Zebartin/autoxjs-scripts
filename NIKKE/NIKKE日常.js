@@ -393,8 +393,6 @@ function 咨询() {
     }
     clickRect(ranks[ri]);
     单次咨询(counsel);
-    back();
-    ocrUntilFound(res => res.text.includes('可以'), 30, 3000);
   }
   返回首页();
 }
@@ -491,14 +489,13 @@ function 单次咨询(counsel) {
   }
   sleep(1000);
   ocrUntilFound(res => res.text.includes('咨询'), 20, 3000);
-  var target = ocrUntilFound(res => res.find(
-    e => e.text == '确认'
-  ), 5, 300);
-  if (target != null) {
-    log('RANK INCREASE');
-    clickRect(target);
+  back();
+  sleep(1000);
+  let pageFeat = ocrUntilFound(res => res.text.match(/(可以|查看花)/), 20, 1000);
+  if (pageFeat[0] == '查看花') {
+    back();
+    ocrUntilFound(res => res.text.includes('可以'), 30, 3000);
   }
-  ocrUntilFound(res => res.text.includes('查看花'), 10, 3000);
 }
 function mostSimilar(target, candidates) {
   var res = null, maxSim = -1;

@@ -68,7 +68,7 @@ function 模拟室(fromIndex) {
       if (!status.skipMode)
         break;
     }
-    log(`第${pass + 1}轮模拟室：skipMode = ${status.skipMode}`);
+    toastLog(`第${pass + 1}轮模拟室：skipMode = ${status.skipMode}`);
     clickRect(ocrUntilFound(res => res.find(e => e.text.startsWith('开始')), 10, 300));
     clickRect(ocrUntilFound(res => res.find(e => e.text == '3'), 20, 300));
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('开始')), 10, 300));
@@ -126,7 +126,7 @@ function 模拟室(fromIndex) {
     }
     ocrUntilFound(res => res.text.includes('开始'), 30, 1000);
   }
-  log('完成模拟室任务');
+  toastLog('完成模拟室任务');
   if (fromIndex)
     返回首页();
 }

@@ -13,6 +13,14 @@ let width, height;
 let NIKKEstorage = storages.create("NIKKEconfig");
 if (typeof module === 'undefined') {
   auto.waitFor();
+  // requestScreenCaptureAuto();
+  // [width, height] = getDisplaySize();
+  // // 竞技场();
+
+  // // const counsel = JSON.parse(files.read('./nikke.json'));
+  // // 单次咨询(counsel);
+  // 咨询();
+  // exit();
   checkConfig();
   启动NIKKE();
   // 保证申请截屏权限时，屏幕是游戏画面
@@ -177,7 +185,7 @@ function 基地收菜() {
     target = ocrUntilFound(res => res.find(e => e.text.includes('全部派')), 30, 1000);
     if (colors.red(captureScreen().pixel(target.bounds.right, target.bounds.top)) > 240) {
       clickRect(target);
-      toastLog('点击全部派遣');
+      toastLog('全部派遣');
       sleep(2000);
       target = ocrUntilFound(res => {
         var x = res.filter(e => e.text.match(/派.$/) != null);
@@ -190,8 +198,9 @@ function 基地收菜() {
       ocrUntilFound(res => res.text.includes('全部'), 30, 1000);
       sleep(600);
     }
-    target = ocrUntilFound(res => res.find(e => e.text.match('全部(领|領)') != null), 30, 1000);
+    target = ocrUntilFound(res => res.find(e => e.text.match('全部[领領]') != null), 30, 1000);
     if (colors.red(captureScreen().pixel(target.bounds.right, target.bounds.top)) < 100) {
+      toastLog('全部领取');
       clickRect(target);
       clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 10, 3000));
       ocrUntilFound(res => res.text.includes('全部'), 30, 1000);

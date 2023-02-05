@@ -249,6 +249,7 @@ function 爬塔() {
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('无限之塔')), 10, 3000));
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('正常开启')), 10, 3000));
   for (let i = 0; i < 7; ++i) {
+    let successFlag = false;
     var curTower = getIntoNextTower();
     if (curTower.match(/(无|限)/)) {
       log('没有下一个塔了');
@@ -294,8 +295,25 @@ function 爬塔() {
       }
       sleep(1000);
       clickRect(target);
+      successFlag = true;
     }
     sleep(5000);
+    ocrUntilFound(res => res.text.includes('之塔'), 20, 3000);
+    // 等待可能出现的限时礼包
+    if (successFlag) {
+      toastLog('等待限时礼包出现…');
+      let closeSale = ocrUntilFound(res => {
+        if (res.text.match(/(小时|分钟|免|点击)/) == null)
+          return null;
+        return res.find(e => e.text.includes('点击'));
+      }, 5, 1000);
+      if (closeSale != null) {
+        toastLog('关闭礼包页面');
+        clickRect(closeSale);
+        clickRect(ocrUntilFound(res => res.find(e => e.text.includes('确认')), 20, 1000));
+        ocrUntilFound(res => !res.text.includes('点击'), 20, 1500);
+      }
+    }
   }
   返回首页();
 }

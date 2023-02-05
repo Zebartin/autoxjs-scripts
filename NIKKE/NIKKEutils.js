@@ -75,7 +75,7 @@ function 等待NIKKE加载() {
     return;
   let [width, height] = getDisplaySize();
   if (ocrUntilFound(res => {
-    toastLog('等待加载……');
+    toast('等待加载……');
     if (res.text.includes('今日不再')) {
       var target = res.find(e => e.text.match(/.{0,4}今日不再/) != null);
       clickRect(target);
@@ -107,7 +107,7 @@ function 等待NIKKE加载() {
   sleep(1000);
   back();
   // 检查是否有每天签到
-  let dailyLogin = ocrUntilFound(res => res.filter(e => e.text.match(/[领領]取/) != null), 5, 1000);
+  let dailyLogin = ocrUntilFound(res => res.filter(e => e.text.match(/[领領]取/) != null), 5, 3000);
   if (dailyLogin.length == 0)
     toastLog('没有登录奖励');
   else {

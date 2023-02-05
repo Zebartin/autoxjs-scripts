@@ -188,7 +188,7 @@ function 基地收菜() {
       toastLog('全部派遣');
       sleep(2000);
       target = ocrUntilFound(res => {
-        var x = res.filter(e => e.text.match(/派.$/) != null);
+        let x = res.filter(e => e.text.match(/派.$/) != null);
         if (x.length > 3)
           return x;
         return null;
@@ -469,37 +469,45 @@ function 咨询() {
     clickRect(counselTarget);
     单次咨询(counsel);
   }
+  toastLog('完成咨询');
   返回首页();
 }
 function 单次咨询(counsel) {
-  var screenOCR = ocrUntilFound(res => {
-    if (res.text.includes('查看花'))
-      return res;
-    return false;
-  }, 20, 3000);
-  var target = screenOCR.find(
-    e => e.text.includes('咨询') && e.bounds != null && e.bounds.top > height / 2 && e.bounds.left > width / 2
-  );
-  if (colors.blue(captureScreen().pixel(target.bounds.right, target.bounds.top)) < 200) {
-    log('已完成今日咨询');
-    sleep(1000);
+  let [counselBtn, nameArea] = ocrUntilFound(res => {
+    if (!res.text.includes('查看花'))
+      return null;
+    let btn = res.find(e => 
+      e.text.includes('咨询') && e.bounds != null &&
+      e.bounds.top > height / 2 && e.bounds.left > width / 2
+    );
+    let upper = res.find(e => e.text.includes('查看花') && e.bounds != null);
+    let lower = res.find(e => e.text.includes('下') && e.bounds != null);
+    if (!btn || !upper || !lower)
+      return null;
+    let name = res.find(e =>
+      e.bounds != null && e.bounds.top > upper.bounds.top && 
+      e.bounds.bottom < lower.bounds.top && e.bounds.right < width / 2
+    );
+    if (!name)
+      return null;
+    return [btn, name];
+  }, 30, 2000);
+  if (colors.blue(captureScreen().pixel(counselBtn.bounds.right, counselBtn.bounds.top)) < 200) {
+    log('咨询按钮不可点击');
+    back();
+    ocrUntilFound(res => res.text.includes('可以'), 30, 3000);
     return;
   }
-  var upperBound = screenOCR.find(e => e.text.includes('查看花') && e.bounds != null).bounds.top;
-  var lowerBound = screenOCR.find(e => e.text.includes('下') && e.bounds != null).bounds.top;
-  var nameOCR = screenOCR.find(e =>
-    e.bounds != null && e.bounds.top > upperBound && e.bounds.bottom < lowerBound && e.bounds.right < width / 2
-  ).text;
-  var name = mostSimilar(nameOCR, Object.keys(counsel)).result;
+  let name = mostSimilar(nameArea.text, Object.keys(counsel)).result;
   log(`咨询对象：${name}`);
-  clickRect(target);
+  clickRect(counselBtn);
   clickRect(ocrUntilFound(res => res.find(
     e => e.text.includes('确认')
-  ), 20, 3000));
+  ), 50, 1000));
   sleep(2000);
   // 连点直到出现选项
-  var counselImage = images.read('./images/counsel.jpg');
-  var result = null;
+  let counselImage = images.read('./images/counsel.jpg');
+  let result = null;
   while (true) {
     result = images.matchTemplate(captureScreen(), counselImage, {
       threshold: 0.7,
@@ -511,13 +519,13 @@ function 单次咨询(counsel) {
     click(width / 2, height / 2);
     sleep(1000);
   }
-  var optionTop = result.topmost().point.y;
-  var optionBottom = result.bottommost().point.y;
-  var options = ocrUntilFound(res => {
-    var t = res.filter(
+  let optionTop = result.topmost().point.y;
+  let optionBottom = result.bottommost().point.y;
+  let options = ocrUntilFound(res => {
+    let t = res.filter(
       e => e.level == 1 && e.bounds.top >= optionTop
     );
-    var t1 = null, t2 = null;
+    let t1 = null, t2 = null;
     for (let i of t) {
       if (i.bounds.top < optionBottom)
         t1 = i;
@@ -532,9 +540,9 @@ function 单次咨询(counsel) {
   }, 10, 300);
   let whichOne = null, similarOne = -1;
   for (let i = 0; i < 2; ++i) {
-    var t = mostSimilar(options[i], counsel[name]);
-    log(`选项${i + 1}：${options[i]}`);
-    log(`匹配：${t.result}，相似度${t.similarity}`);
+    let t = mostSimilar(options[i], counsel[name]);
+    log(`选项${i + 1}："${options[i]}"`);
+    log(`匹配："${t.result}"，相似度${t.similarity.toFixed(2)}`);
     if (t.similarity > similarOne) {
       similarOne = t.similarity;
       whichOne = i;
@@ -547,16 +555,16 @@ function 单次咨询(counsel) {
     click(width / 2, counselImage.getHeight() / 2 + optionBottom);
   counselImage.recycle();
   while (true) {
-    target = ocrUntilFound(res => {
+    let skipBtn = ocrUntilFound(res => {
       if (res.text.includes('咨询'))
         return 'over';
       return res.find(e =>
         e.text.match(/[LAUTOG]/) == null && e.text.match(/SK.P/) != null
       );
     }, 3, 400);
-    if (target != null) {
-      if (target != 'over')
-        clickRect(target);
+    if (skipBtn != null) {
+      if (skipBtn != 'over')
+        clickRect(skipBtn);
       break;
     }
     click(width / 2, height / 2);
@@ -571,9 +579,10 @@ function 单次咨询(counsel) {
     back();
     ocrUntilFound(res => res.text.includes('可以'), 30, 3000);
   }
+  toast('回到咨询首页');
 }
 function mostSimilar(target, candidates) {
-  var res = null, maxSim = -1;
+  let res = null, maxSim = -1;
   for (let candidate of candidates) {
     if (target == candidate) {
       res = candidate;

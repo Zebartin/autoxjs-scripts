@@ -13,14 +13,6 @@ let width, height;
 let NIKKEstorage = storages.create("NIKKEconfig");
 if (typeof module === 'undefined') {
   auto.waitFor();
-  // requestScreenCaptureAuto();
-  // [width, height] = getDisplaySize();
-  // // 竞技场();
-
-  // // const counsel = JSON.parse(files.read('./nikke.json'));
-  // // 单次咨询(counsel);
-  // 咨询();
-  // exit();
   checkConfig();
   启动NIKKE();
   // 保证申请截屏权限时，屏幕是游戏画面
@@ -127,15 +119,34 @@ function 商店() {
         e.level == 3 &&
         e.text.includes('代码手册')
       ).toArray();
-      if (goods.length < 4)
+      let m = [], ms = null;
+      for (let g of goods) {
+        if (g.text.startsWith('代'))
+          ms = g;
+        else {
+          let t = g.text.split(/代码手册/);
+          let cnt = t.length - 1;
+          let w = g.bounds.width() / cnt;
+          for (let i = 0; i < cnt; ++i) {
+            let newBounds = {};
+            newBounds.left = Math.round(g.bounds.left + w * i);
+            newBounds.right = Math.round(newBounds.left + w);
+            newBounds.top = g.bounds.top;
+            newBounds.bottom = g.bounds.bottom;
+            m.push({
+              text: t[i] + '代码手册',
+              bounds: newBounds
+            });
+          }
+        }
+      }
+      if (m.length < 3 || ms == null)
         return null;
       let goodsSold = res.filter(e =>
         e.level == 1 && e.bounds != null &&
         e.text.match(/s[oq]ld [oq]ut/i) != null
       ).toArray();
-      let ret1 = goods.filter(e => !e.text.startsWith('代'));
-      let ret2 = goods.find(e => e.text.startsWith('代'));
-      return [ret1, ret2, goodsSold];
+      return [m, ms, goodsSold];
     }, 30, 1000);
     // 一一检查每个item是否有sold out标志
     for (let i = 0; i < Math.min(3, buyCodeManual); ++i) {
@@ -476,7 +487,7 @@ function 单次咨询(counsel) {
   let [counselBtn, nameArea] = ocrUntilFound(res => {
     if (!res.text.includes('查看花'))
       return null;
-    let btn = res.find(e => 
+    let btn = res.find(e =>
       e.text.includes('咨询') && e.bounds != null &&
       e.bounds.top > height / 2 && e.bounds.left > width / 2
     );
@@ -485,7 +496,7 @@ function 单次咨询(counsel) {
     if (!btn || !upper || !lower)
       return null;
     let name = res.find(e =>
-      e.bounds != null && e.bounds.top > upper.bounds.top && 
+      e.bounds != null && e.bounds.top > upper.bounds.top &&
       e.bounds.bottom < lower.bounds.top && e.bounds.right < width / 2
     );
     if (!name)

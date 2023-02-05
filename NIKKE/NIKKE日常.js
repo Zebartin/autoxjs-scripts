@@ -417,40 +417,56 @@ function 咨询() {
   const counsel = JSON.parse(files.read('./nikke.json'));
   clickRect(ocrUntilFound(res => res.find(e => e.text == '妮姬'), 20, 3000));
   clickRect(ocrUntilFound(res => res.find(e => e.text == '咨询'), 20, 3000));
-  var counselCnt = ocrUntilFound(res => {
-    var t = res.text.match(/([oO\d])\/[789]/);
-    if (t != null) {
-      if (t[1] == 'o' || t[1] == 'O')
-        return 0;
-      return parseInt(t[1]);
-    }
-    return null;
-  }, 20, 3000);
+  toastLog('开始咨询');
+  let counselCnt = ocrUntilFound(res => {
+    let allPos = res.find(e => e.text == 'ALL');
+    if (!allPos)
+      return null;
+    let cntPos = res.find(e =>
+      e.text.includes('/') && e.bounds != null &&
+      e.bounds.bottom > allPos.bounds.bottom
+    );
+    if (!cntPos)
+      return null;
+    let t = cntPos.text.match(/([oO\d]{1,2})\/[7891]/);
+    if (!t)
+      return null;
+    let ret = t[1].replace(/o/i, '0');
+    return parseInt(ret);
+  }, 50, 1000);
   log(`咨询次数：${counselCnt}`);
   for (let i = 0; i < counselCnt; ++i) {
-    let cases = [], ranks = [];
-    while (true) {
-      [cases, ranks] = ocrUntilFound(res => {
-        var x1 = res.filter(e => e.text.startsWith('CASE') && e.level == 1);
-        var x2 = res.filter(e => e.text.includes('RANK') && e.level == 1);
+    let counselTarget = null;
+    while (counselTarget == null) {
+      let [cases, ranks] = ocrUntilFound(res => {
+        let x1 = res.filter(e => e.text.startsWith('CASE') && e.level == 1).toArray();
+        let x2 = res.filter(e => e.text.includes('RANK') && e.level == 1).toArray();
+        x1.sort((a, b) => a.bounds.top - b.bounds.top);
+        x2.sort((a, b) => a.bounds.top - b.bounds.top);
         return [x1, x2];
       }, 20, 1000);
-      if (cases.length != ranks.length)
-        break;
-      log('整页都咨询过了');
-      swipe(width / 2, ranks[ranks.length - 1].bounds.top, width / 2, ranks[0].bounds.top, 5000);
-      sleep(1000);
+      // 不遍历最后一个RANK，以应对特殊情况：
+      // 屏幕最后一个RANK对应的CASE CLOSED正好不在当前页
+      for (let i = 0; i + 1 < ranks.length; ++i) {
+        let curCase = cases.find(e =>
+          e.bounds.bottom > ranks[i].bounds.top &&
+          e.bounds.top < ranks[i + 1].bounds.bottom
+        );
+        if (curCase == null) {
+          counselTarget = ranks[i];
+          break;
+        }
+      }
+      if (counselTarget == null) {
+        toastLog('整页都咨询过了');
+        swipe(
+          width / 2, cases[cases.length - 1].bounds.top,
+          width / 2, ranks[0].bounds.bottom, 777 * cases.length
+        );
+        sleep(1000);
+      }
     }
-    let ci = 0, ri = 0;
-    if (cases.length > 0 && cases[0].bounds.bottom < ranks[0].bounds.top)
-      ci++;
-    for (ri = 0; ri < ranks.length - 1; ++ri) {
-      if (ci < cases.length && cases[ci].bounds.bottom > ranks[ri].bounds.top && cases[ci].bounds.top < ranks[ri + 1].bounds.bottom)
-        ci++;
-      else
-        break;
-    }
-    clickRect(ranks[ri]);
+    clickRect(counselTarget);
     单次咨询(counsel);
   }
   返回首页();

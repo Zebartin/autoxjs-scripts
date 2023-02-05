@@ -93,7 +93,7 @@ function 商店() {
   let buyFree = () => {
     let freeGood = ocrUntilFound(res => res.find(e => e.text.match(/(100%|s[oq]ld [oq]ut)/i) != null), 10, 300);
     if (freeGood != null && freeGood.text.includes('100%')) {
-      freeGood.text = '免费商品：' + freeGood.text;
+      freeGood.text = '免费商品';
       buyGood(freeGood);
       return true;
     }
@@ -127,7 +127,6 @@ function 商店() {
       ).toArray();
       let ret1 = goods.filter(e => !e.text.startsWith('代'));
       let ret2 = goods.find(e => e.text.startsWith('代'));
-      log(res.text);
       return [ret1, ret2, goodsSold];
     }, 30, 1000);
     // 一一检查每个item是否有sold out标志

@@ -255,16 +255,17 @@ function 好友() {
 function 爬塔() {
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('方舟')), 10, 3000));
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('无限之塔')), 10, 3000));
+  toastLog('进入无限之塔');
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('正常开启')), 10, 3000));
   for (let i = 0; i < 7; ++i) {
     let successFlag = false;
-    var curTower = getIntoNextTower();
-    if (curTower.match(/(无|限)/)) {
-      log('没有下一个塔了');
+    let curTower = getIntoNextTower();
+    if (curTower.match(/[无限]/)) {
+      toastLog('没有下一个塔了');
       break;
     }
-    var cnt = ocrUntilFound(res => {
-      var t = res.text.match(/[余关]次[^\d]+(\d)\/3/);
+    let cnt = ocrUntilFound(res => {
+      let t = res.text.match(/[余关]次[^\d]+(\d)\/3/);
       if (t != null)
         return parseInt(t[1]);
     }, 30, 300);
@@ -273,12 +274,13 @@ function 爬塔() {
       continue;
     sleep(5000);
     click(width / 2, height / 2 - 100);
+    toast('点击屏幕中央');
     sleep(1000);
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('进入战斗')), 10, 3000));
+    toast('进入战斗');
     for (let j = 0; j < cnt; ++j) {
       sleep(9000);
-      var target = ocrUntilFound(res => res.text.includes('AUTO'), 10, 3000);
-      if (target == null)
+      if (ocrUntilFound(res => res.text.includes('AUTO'), 10, 3000) == null)
         break;
       sleep(40 * 1000);
       ocrUntilFound(res => {
@@ -288,21 +290,23 @@ function 爬塔() {
           return true;
       }, 30, 5000);
       sleep(1000);
-      target = ocrUntilFound(res => res.find(
+      let endCombat = ocrUntilFound(res => res.find(
         e => e.text.match(/(下[^步方法]{2}|返回)/) != null
       ), 100, 100);
-      if (target.text.includes('返回')) {
-        clickRect(target);
-        log('作战失败');
+      if (endCombat.text.includes('返回')) {
+        clickRect(endCombat);
+        toastLog('作战失败');
         break;
       }
-      if (colors.blue(captureScreen().pixel(target.bounds.left, target.bounds.top)) < 200) {
+      if (colors.blue(captureScreen().pixel(endCombat.bounds.left, endCombat.bounds.top)) < 200) {
         sleep(1000);
         click(width / 2, height / 2);
+        toastLog('每日次数已用完');
         break;
       }
       sleep(1000);
-      clickRect(target);
+      clickRect(endCombat);
+      toastLog('下一关卡');
       successFlag = true;
     }
     sleep(5000);
@@ -315,7 +319,9 @@ function 爬塔() {
           return null;
         return res.find(e => e.text.includes('点击'));
       }, 5, 1000);
-      if (closeSale != null) {
+      if (closeSale == null)
+        toastLog('没有出现限时礼包');
+      else {
         toastLog('关闭礼包页面');
         clickRect(closeSale);
         clickRect(ocrUntilFound(res => res.find(e => e.text.includes('确认')), 20, 1000));
@@ -326,17 +332,17 @@ function 爬塔() {
   返回首页();
 }
 function getIntoNextTower() {
-  var target = ocrUntilFound(res => res.find(
+  let towerName = ocrUntilFound(res => res.find(
     e => e.text.endsWith('之塔') && e.bounds.top > height / 2
   ), 20, 1000);
   sleep(1000);
-  click(width - 50, target.bounds.centerY());
+  click(width - 50, towerName.bounds.centerY());
   sleep(2000);
-  var curTower = ocrUntilFound(res => res.find(
+  let curTowerName = ocrUntilFound(res => res.find(
     e => e.text.endsWith('之塔') && e.bounds.top > height / 2
   ), 20, 1000).text;
-  log(`进入${curTower}`);
-  return curTower;
+  toastLog(`进入${curTowerName}`);
+  return curTowerName;
 }
 
 function 竞技场() {

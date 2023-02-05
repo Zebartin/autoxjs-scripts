@@ -11,8 +11,6 @@ var {
 } = require('./utils.js');
 let width, height;
 let NIKKEstorage = storages.create("NIKKEconfig");
-// 自行设定想打的对手名单，OCR精度不足，名字越简单越好
-var arenaTargets = ['.*', '.*'];
 if (typeof module === 'undefined') {
   auto.waitFor();
   checkConfig();
@@ -316,42 +314,71 @@ function getIntoNextTower() {
 }
 
 function 竞技场() {
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('方舟')), 10, 3000));
-  var arena = ocrUntilFound(res => res.find(e => e.text.includes('技场')), 10, 3000);
-  var target = ocrUntilFound(res => res.find(e => e.text.startsWith('SPECIAL')), 10, 500);
-  if (target != null) {
-    clickRect(target);
-    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 10, 3000));
-  }
-  clickRect(arena);
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('新人')), 10, 3000));
-  const regexp = new RegExp(`(${arenaTargets.join('|')})`);
-  const refresh = ocrUntilFound(res => res.find(e => e.text.includes('目录')), 10, 3000);
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('方舟')), 30, 1000));
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('技场')), 30, 1000));
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('新人')), 30, 1000));
+  toastLog('进入新人竞技场');
   const firstFight = ocrUntilFound(res => {
-    var t = res.filter(e => e.text.endsWith('战斗') && e.level == 1);
+    let t = res.filter(e => e.text.endsWith('战斗') && e.level == 1);
     if (t.length == 3)
       return t[0];
-  }, 10, 3000);
+    return null;
+  }, 30, 1000);
   while (true) {
-    var t = ocrUntilFound(res => {
+    let ocrText = ocrUntilFound(res => {
       if (res.text.includes('战斗'))
         return res.text;
       return null;
-    }, 20, 3000);
-    if (t.includes('免') == false)
+    }, 30, 1000);
+    if (ocrText.includes('免') == false)
       break;
-    while (ocrUntilFound(res => res.text.match(regexp), 1, 0) == null) {
-      clickRect(refresh);
-      sleep(1000);
-    }
     clickRect(firstFight);
-    sleep(3000);
-    clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('战斗')), 20, 3000));
+    ocrUntilFound(res =>
+      res.text.includes('变更') ||
+      !res.text.includes('目录'),
+      30, 1000);
+    clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('战斗')), 30, 1000));
+    toastLog('进入战斗');
     sleep(5000);
     ocrUntilFound(res => res.text.includes('RANK'), 20, 3000);
+    toastLog('结算界面');
     sleep(1000);
     click(width / 2, height * 0.2);
   }
+  back();
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('SPECIAL')), 30, 1000));
+  toastLog('进入特殊竞技场');
+  ocrUntilFound(res => res.text.includes('战斗'), 30, 1000);
+  // 如果识别出了百分号，直接点百分号
+  // 没有就点上方中央“特殊竞技场”下方位置，可能能点到
+  ocrUntilFound(res => {
+    let atk = res.find(e => e.text.includes('ATK'));
+    if (!atk)
+      return null;
+    let percentSign = res.find(e =>
+      e.text.includes('%') && e.bounds != null &&
+      e.bounds.bottom < atk.bounds.top
+    );
+    if (percentSign != null) {
+      if (percentSign.text != '0%') {
+        clickRect(percentSign);
+        toastLog('领取竞技场奖励');
+        clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 30, 1000));
+      }
+    }
+    else {
+      let title = res.find(e =>
+        e.text.startsWith('特殊') && e.bounds != null &&
+        e.bounds.left > atk.bounds.right
+      );
+      if (title == null)
+        return null;
+      click(title.bounds.centerX(), title.bounds.bottom + 10);
+      toastLog('领取竞技场奖励');
+      clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 30, 1000));
+    }
+    return true;
+  }, 30, 1000);
   返回首页();
 }
 function 咨询() {

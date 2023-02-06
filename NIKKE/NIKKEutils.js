@@ -107,17 +107,33 @@ function 等待NIKKE加载() {
   sleep(1000);
   back();
   // 检查是否有每天签到
-  let dailyLogin = ocrUntilFound(res => res.filter(e => e.text.match(/[领領]取/) != null), 5, 3000);
-  if (dailyLogin.length == 0)
-    toastLog('没有登录奖励');
+  let today = new Date().toLocaleDateString();
+  let lastChecked = NIKKEstorage.get('dailyLogin', null);
+  if (today == lastChecked){
+    log('今日已登录，不检查登录奖励');
+    return;
+  }
+  if (ocrUntilFound(res => res.text.match(/\d+(小时|天|分钟)/), 10, 2000) == null)
+    log('没有出现登录奖励');
   else {
-    dailyLogin = dailyLogin[dailyLogin.length - 1];
-    if (dailyLogin.text.match(/[已巳己]/) == null) {
-      toastLog('领取登录奖励');
-      clickRect(dailyLogin);
-      clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 20, 500));
-    } else {
-      toastLog('登录奖励已被领取');
+    sleep(1000);
+    NIKKEstorage.put('dailyLogin', today);
+    let dailyLogin = ocrUntilFound(res => res.filter(e =>
+      e.text.match(/[领領]取/) != null
+    ).toArray(), 1, 500);
+    if (dailyLogin.length == 0)
+      toastLog('没有登录奖励');
+    else {
+      dailyLogin = dailyLogin.reduce((prev, curr) =>
+        prev.bounds.top > curr.bounds.top ? prev : curr
+      );
+      if (dailyLogin.text.match(/[已巳己]/) == null) {
+        toastLog('领取登录奖励');
+        clickRect(dailyLogin);
+        clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 20, 1000));
+      } else {
+        toastLog('登录奖励已被领取');
+      }
       back();
     }
   }

@@ -16,7 +16,7 @@ if (typeof module === 'undefined') {
   checkConfig();
   启动NIKKE();
   // 保证申请截屏权限时，屏幕是游戏画面
-  sleep(3000);
+  sleep(5000);
   if (NIKKEstorage.get('alreadyInGame', false) == false)
     sleep(15000);
   requestScreenCaptureAuto();
@@ -193,9 +193,15 @@ function 基地收菜() {
   if (target[0] == '目前')
     toastLog('今日派遣已完成');
   else {
-    target = ocrUntilFound(res => res.find(e => e.text.includes('全部派')), 30, 1000);
-    if (colors.red(captureScreen().pixel(target.bounds.right, target.bounds.top)) > 240) {
-      clickRect(target);
+    let [send, receive] = ocrUntilFound(res => {
+      let t1 = res.find(e => e.text.includes('全部派'));
+      let t2 = res.find(e => e.text.match(/全部[领領邻]/) != null);
+      if (!t1 || !t2)
+        return null;
+      return [t1, t2];
+    }, 30, 1000);
+    if (colors.red(images.pixel(captureScreen(), send.bounds.right, send.bounds.top)) > 240) {
+      clickRect(send);
       toastLog('全部派遣');
       sleep(2000);
       target = ocrUntilFound(res => {
@@ -209,10 +215,9 @@ function 基地收菜() {
       ocrUntilFound(res => res.text.includes('全部'), 30, 1000);
       sleep(600);
     }
-    target = ocrUntilFound(res => res.find(e => e.text.match('全部[领領]') != null), 30, 1000);
-    if (colors.red(captureScreen().pixel(target.bounds.right, target.bounds.top)) < 100) {
+    if (colors.red(images.pixel(captureScreen(), receive.bounds.right, receive.bounds.top)) < 100) {
       toastLog('全部领取');
-      clickRect(target);
+      clickRect(receive);
       clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 10, 3000));
       ocrUntilFound(res => res.text.includes('全部'), 30, 1000);
       sleep(600);
@@ -400,7 +405,8 @@ function 竞技场() {
       return null;
     let percentSign = res.find(e =>
       e.text.includes('%') && e.bounds != null &&
-      e.bounds.bottom < atk.bounds.top
+      e.bounds.bottom < atk.bounds.top &&
+      e.bounds.left > atk.bounds.right
     );
     if (percentSign != null) {
       if (percentSign.text != '0%') {
@@ -449,22 +455,22 @@ function 咨询() {
   for (let i = 0; i < counselCnt; ++i) {
     let counselTarget = null;
     while (counselTarget == null) {
-      let [cases, ranks] = ocrUntilFound(res => {
+      let [cases, attrs] = ocrUntilFound(res => {
         let x1 = res.filter(e => e.text.startsWith('CASE') && e.level == 1).toArray();
-        let x2 = res.filter(e => e.text.includes('RANK') && e.level == 1).toArray();
+        let x2 = res.filter(e => e.text.includes('Attr') && e.level == 1).toArray();
         x1.sort((a, b) => a.bounds.top - b.bounds.top);
         x2.sort((a, b) => a.bounds.top - b.bounds.top);
         return [x1, x2];
       }, 20, 1000);
       // 不遍历最后一个RANK，以应对特殊情况：
       // 屏幕最后一个RANK对应的CASE CLOSED正好不在当前页
-      for (let i = 0; i + 1 < ranks.length; ++i) {
+      for (let i = 0; i + 1 < attrs.length; ++i) {
         let curCase = cases.find(e =>
-          e.bounds.bottom > ranks[i].bounds.top &&
-          e.bounds.top < ranks[i + 1].bounds.bottom
+          e.bounds.bottom > attrs[i].bounds.top &&
+          e.bounds.top < attrs[i + 1].bounds.bottom
         );
         if (curCase == null) {
-          counselTarget = ranks[i];
+          counselTarget = attrs[i];
           break;
         }
       }
@@ -472,7 +478,7 @@ function 咨询() {
         toastLog('整页都咨询过了');
         swipe(
           width / 2, cases[cases.length - 1].bounds.top,
-          width / 2, ranks[0].bounds.bottom, 777 * cases.length
+          width / 2, attrs[0].bounds.bottom, 777 * cases.length
         );
         sleep(1000);
       }
@@ -583,6 +589,7 @@ function 单次咨询(counsel) {
   }
   sleep(1000);
   ocrUntilFound(res => res.text.includes('咨询'), 20, 3000);
+  sleep(1000);
   back();
   sleep(1000);
   let pageFeat = ocrUntilFound(res => res.text.match(/(可以|查看花)/), 20, 1000);

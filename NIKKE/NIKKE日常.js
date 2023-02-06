@@ -128,7 +128,7 @@ function 商店() {
           let cnt = t.length - 1;
           let w = g.bounds.width() / cnt;
           for (let i = 0; i < cnt; ++i) {
-            let newBounds = {};
+            let newBounds = new android.graphics.Rect();
             newBounds.left = Math.round(g.bounds.left + w * i);
             newBounds.right = Math.round(newBounds.left + w);
             newBounds.top = g.bounds.top;

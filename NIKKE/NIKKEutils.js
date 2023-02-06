@@ -109,15 +109,15 @@ function 等待NIKKE加载() {
   // 检查是否有每天签到
   let today = new Date().toLocaleDateString();
   let lastChecked = NIKKEstorage.get('dailyLogin', null);
-  if (today == lastChecked){
+  if (today == lastChecked) {
     log('今日已登录，不检查登录奖励');
     return;
   }
-  if (ocrUntilFound(res => res.text.match(/\d+(小时|天|分钟)/), 10, 2000) == null)
+  NIKKEstorage.put('dailyLogin', today);
+  if (ocrUntilFound(res => res.text.match(/\d+(小时|天|分钟)/), 4, 5000) == null)
     log('没有出现登录奖励');
   else {
     sleep(1000);
-    NIKKEstorage.put('dailyLogin', today);
     let dailyLogin = ocrUntilFound(res => res.filter(e =>
       e.text.match(/[领領]取/) != null
     ).toArray(), 1, 500);

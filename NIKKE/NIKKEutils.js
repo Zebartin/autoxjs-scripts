@@ -131,6 +131,7 @@ function 等待NIKKE加载() {
         toastLog('领取登录奖励');
         clickRect(dailyLogin);
         clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 20, 1000));
+        sleep(1000);
       } else {
         toastLog('登录奖励已被领取');
       }

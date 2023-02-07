@@ -91,29 +91,36 @@ function 商店() {
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 20, 1000));
   };
   let buyFree = () => {
-    let freeGood = ocrUntilFound(res => res.find(e => e.text.match(/(100%|s[oq]ld [oq]ut)/i) != null), 10, 300);
+    let freeGood = ocrUntilFound(res => res.find(e => e.text.match(/(100%|s[oq0]l[od0] [oq0]ut)/i) != null), 10, 300);
     if (freeGood != null && freeGood.text.includes('100%')) {
       freeGood.text = '免费商品';
       buyGood(freeGood);
       return true;
-    }
+    } else
+      toastLog('免费商品已售');
     return false;
   };
   clickRect(ocrUntilFound(res => res.find(e => e.text == '商店'), 30, 1000));
   toastLog('进入商店');
-  ocrUntilFound(res => res.text.includes('普通'), 50, 1000);
+  ocrUntilFound(res => res.text.match(/(普[通逼]|100%|s[oq0]l[od0] [oq0]ut)/i) != null, 50, 1000);
   if (buyFree()) {
     clickRect(ocrUntilFound(res => res.find(e => e.text.match(/(距离|更新|还有)/) != null), 10, 300));
     toastLog('刷新商店');
     clickRect(ocrUntilFound(res => res.find(e => e.text == '确认'), 10, 300));
     // 等待刷新完成
-    ocrUntilFound(res => res.text.match(/s[oq]ld [oq]ut/i) == null, 20, 500);
+    ocrUntilFound(res => res.text.match(/s[oq0]l[od0] [oq0]ut/i) == null, 20, 500);
     buyFree();
   }
   const buyCodeManual = NIKKEstorage.get('buyCodeManual', 3);
   if (buyCodeManual != 0) {
-    clickRect(ocrUntilFound(res => res.find(e => e.text == 'R'), 30, 1000));
-    ocrUntilFound(res => res.text.includes('竞技场'), 20, 500);
+    let arenaShop = ocrUntilFound(res => res.find(e => e.text == 'R'), 30, 1000);
+    clickRect(arenaShop);
+    ocrUntilFound(res => {
+      if (res.text.match(/[竟竞]技场/))
+        return true;
+      clickRect(arenaShop);
+      return false;
+    }, 10, 1000);
     let [manual, manualSelection, soldOut] = ocrUntilFound(res => {
       let goods = res.filter(e =>
         e.level == 3 &&
@@ -144,7 +151,7 @@ function 商店() {
         return null;
       let goodsSold = res.filter(e =>
         e.level == 1 && e.bounds != null &&
-        e.text.match(/s[oq]ld [oq]ut/i) != null
+        e.text.match(/s[oq0]l[od0] [oq0]ut/i) != null
       ).toArray();
       return [m, ms, goodsSold];
     }, 30, 1000);
@@ -173,7 +180,7 @@ function 商店() {
   返回首页();
 }
 function 基地收菜() {
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('基地')), 10, 3000));
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('基地')), 30, 1000));
   toastLog('进入基地');
   sleep(2000);
   let target = ocrUntilFound(res => {
@@ -269,10 +276,10 @@ function 好友() {
   back();
 }
 function 爬塔() {
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('方舟')), 10, 3000));
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('无限之塔')), 10, 3000));
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('方舟')), 30, 1000));
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('无限之塔')), 30, 1000));
   toastLog('进入无限之塔');
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('正常开启')), 10, 3000));
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('正常开启')), 30, 1000));
   for (let i = 0; i < 7; ++i) {
     let successFlag = false;
     let curTower = getIntoNextTower();
@@ -292,7 +299,7 @@ function 爬塔() {
     click(width / 2, height / 2 - 100);
     toast('点击屏幕中央');
     sleep(1000);
-    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('进入战斗')), 10, 3000));
+    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('进入战斗')), 30, 1000));
     toast('进入战斗');
     for (let j = 0; j < cnt; ++j) {
       sleep(9000);
@@ -432,8 +439,8 @@ function 竞技场() {
 }
 function 咨询() {
   const counsel = JSON.parse(files.read('./nikke.json'));
-  clickRect(ocrUntilFound(res => res.find(e => e.text == '妮姬'), 20, 3000));
-  clickRect(ocrUntilFound(res => res.find(e => e.text == '咨询'), 20, 3000));
+  clickRect(ocrUntilFound(res => res.find(e => e.text == '妮姬'), 40, 1000));
+  clickRect(ocrUntilFound(res => res.find(e => e.text == '咨询'), 40, 1000));
   toastLog('开始咨询');
   let counselCnt = ocrUntilFound(res => {
     let allPos = res.find(e => e.text == 'ALL');
@@ -588,15 +595,12 @@ function 单次咨询(counsel) {
     sleep(500);
   }
   sleep(1000);
-  ocrUntilFound(res => res.text.includes('咨询'), 20, 3000);
-  sleep(1000);
-  back();
-  sleep(1000);
-  let pageFeat = ocrUntilFound(res => res.text.match(/(可以|查看花)/), 20, 1000);
-  if (pageFeat[0] == '查看花') {
+  ocrUntilFound(res => {
+    if (res.text.includes('可以'))
+      return true;
     back();
-    ocrUntilFound(res => res.text.includes('可以'), 30, 3000);
-  }
+    return false;
+  }, 20, 3000);
   toast('回到咨询首页');
 }
 function mostSimilar(target, candidates) {

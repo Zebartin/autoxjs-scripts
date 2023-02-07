@@ -3,8 +3,11 @@ var {
   clickRect,
   getDisplaySize
 } = require('./utils.js');
+var {
+  启动NIKKE, 等待NIKKE加载,
+  退出NIKKE, 返回首页
+} = require('./NIKKEutils.js');
 let width, height;
-var { 返回首页 } = require('./NIKKEutils.js');
 if (typeof module === 'undefined') {
   let {
     unlockIfNeed,
@@ -13,7 +16,31 @@ if (typeof module === 'undefined') {
   auto.waitFor();
   unlockIfNeed();
   requestScreenCaptureAuto();
-  模拟室(false);
+
+  const maxRetry = storages.create("NIKKEconfig").get('maxRetry', 1);
+  for (let alreadyRetry = 0; alreadyRetry <= maxRetry; ++alreadyRetry) {
+    try {
+      if (alreadyRetry == 0)
+        模拟室(false);
+      else {
+        等待NIKKE加载();
+        模拟室(true);
+      }
+      break;
+    } catch (error) {
+      if (!error.message.includes('InterruptedException')) {
+        toast(error.message);
+        console.error(error.message);
+        console.error(error.stack);
+        if (alreadyRetry != maxRetry) {
+          toastLog(`脚本出错，即将重试(${alreadyRetry + 1}/${maxRetry})`);
+          sleep(3000);
+          退出NIKKE();
+          启动NIKKE();
+        }
+      }
+    }
+  }
   exit();
 }
 else {
@@ -38,9 +65,11 @@ function 模拟室(fromIndex) {
   let { maxPass, maxSsrNumber, preferredBuff } = simulationRoom;
   maxSsrNumber = Math.min(maxSsrNumber, preferredBuff.length, Object.keys(getAllBuff()).length);
   if (fromIndex) {
-    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('方舟')), 10, 3000));
-    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('模拟室')), 10, 3000));
+    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('方舟')), 30, 1000));
+    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('模拟室')), 30, 1000));
+    sleep(2000);
   }
+  quitPrevSim();
   let status = {
     loaded: getBuffLoaded(),
     preferredBuff: preferredBuff,
@@ -122,6 +151,9 @@ function 模拟室(fromIndex) {
           clickRect(ocrUntilFound(res => res.find(e => e.text.includes('确认')), 10, 300));
         }
         status.loaded[chosenTarget.name] = chosenTarget;
+      } else {
+        // 按照目前策略不可能什么增益都没有就打BOSS战结束模拟，仅作为保险
+        clickRect(ocrUntilFound(res => res.find(e => e.text.includes('确认')), 10, 300));
       }
     }
     ocrUntilFound(res => res.text.includes('开始'), 30, 1000);
@@ -129,6 +161,63 @@ function 模拟室(fromIndex) {
   toastLog('完成模拟室任务');
   if (fromIndex)
     返回首页();
+}
+
+function quitPrevSim() {
+  let pageState = ocrUntilFound(res => {
+    if (res.text.includes('开始'))
+      return 'beginSim';
+    if (!res.text.includes('结')) {
+      console.error('未知模拟室页面');
+      log(res.text);
+      return null;
+    }
+    let keywords = [
+      '机会', 'EP', '不选择',
+      '所有', '战斗', 'RESET'
+    ];
+    let results = [
+      'specUp', 'selectEPIC', 'selectBuff',
+      'ICU', 'combat', 'selectOption'
+    ];
+    for (let i = 0; i < keywords.length; ++i)
+      if (res.text.includes(keywords[i]))
+        return results[i];
+    return null;
+  }, 10, 500);
+  log(`模拟室当前页面：${pageState}`)
+  if (pageState == 'beginSim')
+    return;
+  if (pageState == 'combat')
+    click(width / 2, height / 2);
+  else if (pageState != 'selectOption') {
+    clickRect(ocrUntilFound(res => res.find(e => e.text.match(/(不选择$|所有)/) != null), 10, 500));
+    clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('确认')), 10, 500));
+    if (pageState == 'ICU')
+      ocrUntilFound(res => res.text.includes('体力已'), 5, 1000);
+    else if (pageState == 'selectEPIC')
+      ocrUntilFound(res => res.text.includes('RESET'), 5, 1000);
+    if (pageState != 'selectBuff' && pageState != 'selectEPIC')
+      clickRect(ocrUntilFound(res => res.find(e => e.text.match(/(確認|确认)/) != null), 10, 1000));
+  }
+  clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('结束')), 20, 500));
+  let [keepBuff, confirmBtn] = ocrUntilFound(res => {
+    let btn = res.find(e => e.text.endsWith('确认'));
+    if (!btn)
+      return null;
+    if (res.text.match(/(成功|可保)/) != null)
+      return [true, btn];
+    if (res.text.match(/(失败|无法)/) != null)
+      return [false, btn];
+    return null;
+  }, 20, 1000);
+  clickRect(confirmBtn);
+  if (keepBuff) {
+    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('不选择')), 10, 500));
+    clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('确认')), 10, 500));
+    clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('确认')), 10, 1000));
+  }
+  ocrUntilFound(res => res.text.includes('开始'), 10, 3000);
 }
 
 function getBuffLoaded() {

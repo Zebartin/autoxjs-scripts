@@ -71,6 +71,7 @@ function 启动NIKKE() {
 }
 
 function 等待NIKKE加载() {
+  let NIKKEstorage = storages.create("NIKKEconfig");
   if (ocrUntilFound(res => res.text.match(/(大厅|方舟|物品栏)/), 3, 300) != null)
     return;
   let [width, height] = getDisplaySize();

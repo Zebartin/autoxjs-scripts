@@ -143,7 +143,7 @@ function 等待NIKKE加载() {
 function 退出NIKKE() {
   home();
   关闭应用('NIKKE');
-  if (NIKKEstorage.get('v2rayNG', false) && app.launchApp("v2rayNG")) {
+  if (storages.create("NIKKEconfig").get('v2rayNG', false) && app.launchApp("v2rayNG")) {
     if (id('tv_test_state').findOne().text() != '未连接')
       id('fab').click();
     关闭应用('v2rayNG');

@@ -116,7 +116,7 @@ function 商店() {
     let arenaShop = ocrUntilFound(res => res.find(e => e.text == 'R'), 30, 1000);
     clickRect(arenaShop);
     ocrUntilFound(res => {
-      if (res.text.match(/[竟竞]技场/))
+      if (res.text.match(/[竟竞]技场/) != null)
         return true;
       clickRect(arenaShop);
       return false;

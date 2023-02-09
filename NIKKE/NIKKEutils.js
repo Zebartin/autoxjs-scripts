@@ -184,11 +184,27 @@ function 刷刷刷() {
   sleep(2000);
   if (ocrUntilFound(res => res.text.includes('AUT'), 20, 1000) != null) {
     while (true) {
-      ocrUntilFound(res => res.text.includes('REWARD'), 30, 5000);
-      var target = ocrUntilFound(res => res.find(
-        e => e.text.endsWith('重新开始')
-      ), 20, 1000);
-      if (colors.blue(captureScreen().pixel(target.bounds.left, target.bounds.top)) < 230)
+      sleep(5000);
+      for (let i = 0; i < 2; ++i) {
+        skipBtn = ocrUntilFound(res => res.find(e =>
+          e.text.match(/[LAUTOG]/) == null && e.text.match(/SK.P/) != null
+        ), 3, 1000);
+        if (skipBtn != null) {
+          clickRect(skipBtn);
+          sleep(1000);
+        } else
+          break;
+      }
+      ocrUntilFound(res => res.text.includes('REWARD'), 30, 6000);
+      let target = ocrUntilFound(res => {
+        let restart = res.find(e => e.text.endsWith('重新开始'));
+        let nextCombat = res.find(e => e.text.match(/下[^步方法]{2}/) != null);
+        if (restart != null && restart.bounds.left >= width / 2)
+          return restart;
+        return nextCombat;
+      }, 20, 1000);
+      sleep(1000);
+      if (colors.blue(captureScreen().pixel(target.bounds.left, target.bounds.top)) < 200)
         break;
       clickRect(target);
     }

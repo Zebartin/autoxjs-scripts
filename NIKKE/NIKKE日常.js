@@ -231,6 +231,7 @@ function 基地收菜() {
     }
   }
   back();
+  sleep(3000);      // 返回时可能会卡顿，保险起见等一会儿
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('DEFENSE')), 30, 1000));
   clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('歼灭')), 30, 1000));
   toastLog('尝试一举歼灭');

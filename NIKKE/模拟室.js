@@ -164,6 +164,7 @@ function 模拟室(fromIndex) {
 }
 
 function quitPrevSim() {
+  sleep(5000);
   let pageState = ocrUntilFound(res => {
     if (res.text.includes('开始'))
       return 'beginSim';
@@ -172,35 +173,40 @@ function quitPrevSim() {
       log(res.text);
       return null;
     }
+    let ret = null;
     let keywords = [
-      '机会', 'EP', '不选择',
-      '所有', '战斗', 'RESET'
+      '机会', '连结',
+      '体力', '入战', 'RESET'
     ];
     let results = [
-      'specUp', 'selectEPIC', 'selectBuff',
+      'specUp', 'selectBuff',
       'ICU', 'combat', 'selectOption'
     ];
     for (let i = 0; i < keywords.length; ++i)
-      if (res.text.includes(keywords[i]))
-        return results[i];
-    return null;
+      if (res.text.includes(keywords[i])){
+        ret = results[i];
+        break;
+      }
+    if (ret == 'selectBuff' && res.text.includes('EP'))
+      ret = 'selectBuffEPIC';
+    return ret;
   }, 10, 500);
-  log(`模拟室当前页面：${pageState}`)
+  log(`模拟室当前页面：${pageState}`);
   if (pageState == 'beginSim')
     return;
   if (pageState == 'combat')
     click(width / 2, height / 2);
   else if (pageState != 'selectOption') {
-    clickRect(ocrUntilFound(res => res.find(e => e.text.match(/(不选择$|所有)/) != null), 10, 500));
+    clickRect(ocrUntilFound(res => res.find(e => e.text.match(/(不选择$|体力)/) != null), 10, 500));
     clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('确认')), 10, 500));
     if (pageState == 'ICU')
-      ocrUntilFound(res => res.text.includes('体力已'), 5, 1000);
-    else if (pageState == 'selectEPIC')
-      ocrUntilFound(res => res.text.includes('RESET'), 5, 1000);
-    if (pageState != 'selectBuff' && pageState != 'selectEPIC')
+      ocrUntilFound(res => res.text.match(/[已己巳]/) != null, 10, 1000);
+    else if (pageState == 'selectBuffEPIC')
+      ocrUntilFound(res => res.text.includes('RESET'), 10, 1000);
+    if (!pageState.startsWith('selectBuff'))
       clickRect(ocrUntilFound(res => res.find(e => e.text.match(/(確認|确认)/) != null), 10, 1000));
   }
-  clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('结束')), 20, 500));
+  clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('结束')), 20, 1000));
   let [keepBuff, confirmBtn] = ocrUntilFound(res => {
     let btn = res.find(e => e.text.endsWith('确认'));
     if (!btn)

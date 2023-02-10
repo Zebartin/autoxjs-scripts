@@ -382,8 +382,12 @@ function doWithOption(option, status) {
     }
     return;
   }
-  while (ocrUntilFound(res => res.text.includes('战斗'), 3, 1000) == null)
+  ocrUntilFound(res => {
+    if (res.text.includes('入战'))
+      return true;
     clickRect(option);
+    return null;
+  }, 3, 2000);
   if (option.type == 'normal') {
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('快速')), 10, 300));
   } else if (option.type == 'hard') {

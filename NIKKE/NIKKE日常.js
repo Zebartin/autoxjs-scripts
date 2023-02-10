@@ -595,12 +595,22 @@ function 单次咨询(counsel) {
     sleep(500);
   }
   sleep(1000);
-  ocrUntilFound(res => {
+  if (ocrUntilFound(res => {
     if (res.text.includes('可以'))
       return true;
     back();
     return false;
-  }, 20, 3000);
+  }, 5, 3000) == false) {
+    ocrUntilFound(res => {
+      if (res.text.includes('大厅'))
+        return true;
+      back();
+      return false;
+    }, 20, 1000);
+    clickRect(ocrUntilFound(res => res.find(e => e.text == '大厅'), 30, 1000));
+    clickRect(ocrUntilFound(res => res.find(e => e.text == '妮姬'), 30, 1000));
+    clickRect(ocrUntilFound(res => res.find(e => e.text == '咨询'), 30, 1000));
+  }
   toast('回到咨询首页');
 }
 function mostSimilar(target, candidates) {

@@ -533,7 +533,7 @@ function 单次咨询(counsel) {
   // 连点直到出现选项
   let counselImage = images.read('./images/counsel.jpg');
   let result = null;
-  while (true) {
+  for (let j = 0; j < 30; ++j) {
     result = images.matchTemplate(captureScreen(), counselImage, {
       threshold: 0.7,
       max: 2,
@@ -579,23 +579,21 @@ function 单次咨询(counsel) {
   else
     click(width / 2, counselImage.getHeight() / 2 + optionBottom);
   counselImage.recycle();
-  while (true) {
-    let skipBtn = ocrUntilFound(res => {
-      if (res.text.includes('咨询'))
-        return 'over';
-      return res.find(e =>
-        e.text.match(/[LAUTOG]/) == null && e.text.match(/SK.P/) != null
-      );
-    }, 3, 400);
-    if (skipBtn != null) {
-      if (skipBtn != 'over')
-        clickRect(skipBtn);
-      break;
+  ocrUntilFound(res => {
+    if (res.text.includes('咨询'))
+      return true;
+    let skipBtn = res.find(e =>
+      e.text.match(/[LAUTOG]/) == null && e.text.match(/SK.P/) != null
+    );
+    if (skipBtn == null)
+      click(width / 2, height / 2);
+    else {
+      clickRect(skipBtn);
+      return true;
     }
-    click(width / 2, height / 2);
-    sleep(500);
-  }
+  }, 30, 1000);
   sleep(1000);
+  back();
   if (ocrUntilFound(res => {
     if (res.text.includes('可以'))
       return true;

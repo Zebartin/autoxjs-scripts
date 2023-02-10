@@ -98,16 +98,11 @@ function requestScreenCaptureAuto() {
     });
   }
   // 检查屏幕方向
-  let rotation = context.getDisplay().getRotation();
-  // 旋转0度/180度，为竖屏
-  // 对平板/宽屏来说，竖屏时横边长，竖边短
-  if (rotation == android.view.Surface.ROTATION_0 ||
-    rotation == android.view.Surface.ROTATION_180)
-    isLandscape = false;
-  else
-    isLandscape = true
-  toastLog(`申请截屏权限：${isLandscape ? '横' : '竖'}屏`);
-  if (!requestScreenCapture(isLandscape)) {
+  let orientation = context.getResources().getConfiguration().orientation;
+  let isLandscape = (orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE);
+  let isTablet = (device.width > device.height);    // 平板横边 > 竖边
+  log(`申请截屏权限：${isLandscape ? '横' : '竖'}屏，设备类型：${isTablet ? '平板' : '手机'}`);
+  if (!requestScreenCapture((isLandscape ^ isTablet) == 1)) {
     log("请求截图失败");
     exit();
   }

@@ -511,7 +511,7 @@ function 单次咨询(counsel) {
       return null;
     let name = res.find(e =>
       e.bounds != null && e.bounds.top > upper.bounds.top &&
-      e.bounds.bottom < lower.bounds.top && e.bounds.right < width / 2
+      e.bounds.bottom < lower.bounds.top && e.bounds.right < upper.bounds.left
     );
     if (!name)
       return null;

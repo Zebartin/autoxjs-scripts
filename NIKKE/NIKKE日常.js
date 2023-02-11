@@ -459,11 +459,13 @@ function 咨询() {
     let ret = t[1].replace(/o/i, '0');
     return parseInt(ret);
   }, 50, 1000);
+  let cnt = 0;
   log(`咨询次数：${counselCnt}`);
-  for (let i = 0; i < counselCnt; ++i) {
+  while (cnt < counselCnt) {
     let counselTarget = null;
+    let cases, attrs;
     while (counselTarget == null) {
-      let [cases, attrs] = ocrUntilFound(res => {
+      [cases, attrs] = ocrUntilFound(res => {
         let x1 = res.filter(e => e.text.startsWith('CASE') && e.level == 1).toArray();
         let x2 = res.filter(e => e.text.includes('Attr') && e.level == 1).toArray();
         x1.sort((a, b) => a.bounds.top - b.bounds.top);
@@ -478,7 +480,7 @@ function 咨询() {
           e.bounds.top < attrs[i + 1].bounds.bottom
         );
         if (curCase == null) {
-          counselTarget = attrs[i];
+          counselTarget = i;
           break;
         }
       }
@@ -491,15 +493,21 @@ function 咨询() {
         sleep(1000);
       }
     }
-    clickRect(counselTarget);
-    单次咨询(counsel);
+    clickRect(attrs[counselTarget]);
+    if (单次咨询(counsel))
+      cnt++;
+    else
+      swipe(
+        width / 2, attrs[counselTarget + 1].bounds.top,
+        width / 2, attrs[0].bounds.top, 5000 * counselTarget + 5000
+      );
   }
   toastLog('完成咨询');
   返回首页();
 }
 function 单次咨询(counsel) {
   const maxRetry = 3;
-  let [counselBtn, nameArea] = ocrUntilFound(res => {
+  let [counselBtn, nameArea, hasMax] = ocrUntilFound(res => {
     if (!res.text.includes('查看花'))
       return null;
     let btn = res.find(e =>
@@ -514,28 +522,52 @@ function 单次咨询(counsel) {
       e.bounds != null && e.bounds.top > upper.bounds.top &&
       e.bounds.bottom < lower.bounds.top && e.bounds.right < upper.bounds.left
     );
-    if (!name)
+    let value = res.find(e =>
+      e.bounds != null && e.bounds.top > upper.bounds.top &&
+      e.bounds.bottom < lower.bounds.top && e.bounds.right > upper.bounds.left
+    );
+    if (!name || !value)
       return null;
-    return [btn, name];
+    return [btn, name, value.text.includes('MAX')];
   }, 30, 2000);
+  let name = mostSimilar(nameArea.text, Object.keys(counsel)).result;
+  log(`咨询对象：${name}`);
+  if (hasMax) {
+    log('已达好感度上限');
+    back();
+    ocrUntilFound(res => res.text.includes('可以'), 30, 3000);
+    return false;
+  }
   if (colors.blue(captureScreen().pixel(counselBtn.bounds.right, counselBtn.bounds.top)) < 200) {
     log('咨询按钮不可点击');
     back();
     ocrUntilFound(res => res.text.includes('可以'), 30, 3000);
-    return;
+    return false;
   }
-  let name = mostSimilar(nameArea.text, Object.keys(counsel)).result;
-  log(`咨询对象：${name}`);
   for (let i = 1; i <= maxRetry; ++i) {
     clickRect(counselBtn);
     clickRect(ocrUntilFound(res => res.find(
       e => e.text.includes('确认')
-    ), 50, 1000));
-    sleep(2000);
+    ), 30, 1000));
+    let pageStat = ocrUntilFound(res => {
+      if (res.text.match(/(查看花|RANK|次数|确认|取消)/) != null)
+        return 'outside';
+      if (res.text.match(/(AUTO|LOG|CANCEL)/) != null)
+        return 'inside';
+      return null;
+    }, 10, 2000);
+    if (pageStat == 'outside') {
+      log('已达好感度上限');
+      back();
+      sleep(1000);
+      back();
+      ocrUntilFound(res => res.text.includes('可以'), 10, 3000);
+      return false;
+    }
     // 连点直到出现选项
     let counselImage = images.read('./images/counsel.jpg');
     let result = null;
-    for (let j = 0; j < 30; ++j) {
+    for (let j = 0; j < 15; ++j) {
       result = images.matchTemplate(captureScreen(), counselImage, {
         threshold: 0.7,
         max: 2,
@@ -576,7 +608,7 @@ function 单次咨询(counsel) {
       }
     }
     if (similarOne < 0.75 && i < maxRetry) {
-      log(`相似度过低，放弃本次咨询(尝试次数${i}/${maxRetry})`);
+      toastLog(`相似度过低，放弃本次咨询(尝试次数${i}/${maxRetry})`);
       clickRect(ocrUntilFound(res => res.find(e =>
         e.text.match(/[UTOG]/) == null && e.text.includes('NCE')
       ), 30, 1000));
@@ -625,6 +657,7 @@ function 单次咨询(counsel) {
     clickRect(ocrUntilFound(res => res.find(e => e.text == '咨询'), 30, 1000));
   }
   toast('回到咨询首页');
+  return true;
 }
 function mostSimilar(target, candidates) {
   let res = null, maxSim = -1;

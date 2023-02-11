@@ -18,10 +18,6 @@ AutoX.js在初版Auto.js（现为[Auto.js Pro](https://pro.autojs.org/)）的基
 
 ## 复制脚本文件到设备中
 
-### 直接通过脚本更新
-
-如果设备网络通畅，可以只把`NIKKE设置.js`复制到AutoX.js的脚本目录下（一般在内部存储主目录下，名为`/脚本/`，如果没有，自行新建一个空脚本保存后就会出现）。运行该脚本，点击底部“更新脚本”按钮，等待片刻，即可将所需文件下载到当前目录下。打开软件右上角的日志，可以查看具体的更新内容。
-
 ### 手动下载所有内容
 
 下载[最新release](https://github.com/Zebartin/autoxjs-scripts/releases/latest)中的压缩包，把其中的文件解压到AutoX.js的脚本目录下。
@@ -35,6 +31,10 @@ AutoX.js在初版Auto.js（现为[Auto.js Pro](https://pro.autojs.org/)）的基
 - `README.md`
 
 `images/`应保持文件夹结构，不要单独拿出来。
+
+### 直接通过脚本更新
+
+如果设备网络通畅，可以只下载[最新release](https://github.com/Zebartin/autoxjs-scripts/releases/latest)中的`NIKKE.js`到AutoX.js的脚本目录下（一般在内部存储主目录下，名为`/脚本/`，如果没有，自行新建一个空脚本保存后就会出现）。将其重命名为`NIKKE设置.js`，运行该脚本，点击底部“更新脚本”按钮，等待片刻，即可将所需文件下载到当前目录下。打开软件右上角的日志，可以查看具体的更新内容。
 
 ## 修改脚本内容（可选）
 

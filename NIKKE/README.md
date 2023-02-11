@@ -2,8 +2,8 @@
 
 > ❗❗❗注意事项
 > 
-> - 暂不清楚使用此类软件是否会被视为外挂而被封禁账号，其他游戏比如明日方舟的[MAA](https://github.com/MaaAssistantArknights/MaaAssistantArknights)和碧蓝航线的[ALAS](https://github.com/LmeSzinc/AzurLaneAutoScript)，都也是基于图像识别的自动化软件，似乎并没有出现封禁的情况。至于NIKKE如何，自求多福吧；
-> - 运行脚本可能会增加不少耗电量，不太清楚；
+> - 暂不清楚使用此类软件是否会被视为外挂而被封禁账号，其他游戏比如明日方舟的[MAA](https://github.com/MaaAssistantArknights/MaaAssistantArknights)和碧蓝航线的[ALAS](https://github.com/LmeSzinc/AzurLaneAutoScript)，都也是基于图像识别的自动化软件，似乎并没有出现封禁的情况。至于NIKKE如何，自求多福吧。建议有顾虑但又想尝试的人可以先使用小号尝试，并使用模拟器、沙盒之类的方式将运行环境与其他手游和重要APP隔离开来；
+> - 运行脚本时，由于需要进行频繁的文字识别或图像匹配，可能会增加不少耗电量，不太确定；
 > - 脚本仅对本人使用的设备（分辨率2400×1080，竖屏）做了适配，不清楚对其他设备的兼容如何，因此**只建议愿意和喜欢折腾的人尝试**，不一定能正常使用（2023/02/04更新: 经尝试，模拟器上使用尚且算可用），如果遇到问题欢迎反馈
 
 ## 安装AutoX.js
@@ -34,7 +34,7 @@ AutoX.js在初版Auto.js（现为[Auto.js Pro](https://pro.autojs.org/)）的基
 
 ### 直接通过脚本更新
 
-如果设备网络通畅，可以只下载[最新release](https://github.com/Zebartin/autoxjs-scripts/releases/latest)中的`NIKKE.js`到AutoX.js的脚本目录下。将其重命名为`NIKKE设置.js`，运行该脚本，点击底部“更新脚本”按钮，等待片刻，即可将所有所需文件下载到当前目录下。打开软件右上角的日志，可以查看具体的更新内容。
+如果设备网络通畅，可以只下载[最新release](https://github.com/Zebartin/autoxjs-scripts/releases/latest)中的`NIKKE.js`到AutoX.js的脚本目录下。将其重命名为`NIKKE设置.js`，运行该脚本，点击底部“更新脚本”按钮，等待片刻，即可将所有所需文件下载到当前目录下。打开软件右上角的日志，可以查看具体的更新内容。注意这种方式会将原有同名文件全部覆盖，如果自行修改过某些文件，请谨慎使用该功能。
 
 ## 修改脚本内容（可选）
 

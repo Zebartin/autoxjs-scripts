@@ -193,6 +193,7 @@ ui.layout(
         </horizontal>
       </vertical>
       <button id="save" text="保存设置" />
+      <button id="update" text="更新脚本（需要能够访问GITHUB）" />
     </vertical>
   </ScrollView>
 );
@@ -307,4 +308,70 @@ ui.save.on("click", function () {
 
   ui.finish();
   toastLog('设置已保存');
+});
+
+ui.update.on("click", function () {
+  threads.start(() => {
+    const beforeReturn = () => {
+      log('控制台即将退出');
+      sleep(3000);
+      console.hide();
+    };
+    const releaseAPI = 'https://api.github.com/repos/Zebartin/autoxjs-scripts/releases/latest'
+    const curTagName = NIKKEstorage.get('tagName', '');
+    console.show();
+    log('开始更新，请确保Github访问正常');
+    let resp = http.get(releaseAPI);
+    if (resp.statusCode != 200) {
+      log("请求Github API失败: " + resp.statusCode + " " + resp.statusMessage);
+      beforeReturn();
+      return;
+    }
+    let respJson = resp.body.json();
+    let newTagName = respJson['tag_name'];
+    if (newTagName == curTagName) {
+      log("已经是最新版本：" + curTagName);
+      beforeReturn();
+      return;
+    }
+    log(`检测到新版本：${newTagName}，下载中……`);
+    log("如果耗时过长请关闭本窗口并检查网络");
+    // AutoX.js的解压不能替换原文件，只能先放到tmp目录下
+    let fileName = `NIKKE-scripts-${newTagName}.7z`;
+    let filePath = files.path(`./tmp/${fileName}`);
+    let fileResp = http.get(`https://github.com/Zebartin/autoxjs-scripts/releases/download/${newTagName}/${fileName}`);
+    if (fileResp.statusCode != 200) {
+      log(`下载${fileName}失败: ` + fileResp.statusCode + " " + fileResp.statusMessage);
+      beforeReturn();
+      return;
+    }
+    files.ensureDir(filePath);
+    files.writeBytes(filePath, fileResp.body.bytes());
+    log(`下载成功：${fileName}，解压中……`);
+    zips.X(filePath, files.path('./tmp'));
+    files.remove(filePath);
+    let fileList = [];
+    function walkDir(dir) {
+      for (let f of files.listDir(dir)) {
+        let absolutePath = `${dir}/${f}`;
+        if (files.isFile(absolutePath))
+          fileList.push(absolutePath);
+        else
+          walkDir(absolutePath);
+      }
+    }
+    walkDir('./tmp');
+    for (let f of fileList) {
+      let dest = files.path(`./${f.slice(6)}`);
+      files.ensureDir(dest);
+      files.copy(f, dest);
+    }
+    files.removeDir('./tmp');
+    NIKKEstorage.put('tagName', newTagName);
+    toastLog('更新结束');
+    log('更新内容：');
+    console.info(respJson.body);
+    beforeReturn();
+    ui.finish();
+  });
 });

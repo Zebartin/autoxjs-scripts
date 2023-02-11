@@ -8,6 +8,9 @@ var {
 var { width, height } = device;
 // 解锁、申请权限
 unlockIfNeed();
+sleep(1000);
+home();
+sleep(1000);
 requestScreenCaptureAuto();
 // 启动应用，等待首页加载
 app.launchApp('哔哩哔哩漫画');

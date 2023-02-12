@@ -453,7 +453,7 @@ function 咨询() {
     );
     if (!cntPos)
       return null;
-    let t = cntPos.text.match(/([oO\d]{1,2})\/[7891]/);
+    let t = cntPos.text.match(/([oO\d]{1,2})\/\d/);
     if (!t)
       return null;
     let ret = t[1].replace(/o/i, '0');

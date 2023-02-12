@@ -439,11 +439,11 @@ function 竞技场() {
   返回首页();
 }
 function 咨询() {
-  const counsel = JSON.parse(files.read('./nikke.json'));
+  const advise = JSON.parse(files.read('./nikke.json'));
   clickRect(ocrUntilFound(res => res.find(e => e.text == '妮姬'), 40, 1000));
   clickRect(ocrUntilFound(res => res.find(e => e.text == '咨询'), 40, 1000));
   toastLog('开始咨询');
-  let counselCnt = ocrUntilFound(res => {
+  let adviseCnt = ocrUntilFound(res => {
     let allPos = res.find(e => e.text == 'ALL');
     if (!allPos)
       return null;
@@ -460,11 +460,11 @@ function 咨询() {
     return parseInt(ret);
   }, 50, 1000);
   let cnt = 0;
-  log(`咨询次数：${counselCnt}`);
-  while (cnt < counselCnt) {
-    let counselTarget = null;
+  log(`咨询次数：${adviseCnt}`);
+  while (cnt < adviseCnt) {
+    let adviseTarget = null;
     let cases, attrs;
-    while (counselTarget == null) {
+    while (adviseTarget == null) {
       [cases, attrs] = ocrUntilFound(res => {
         let x1 = res.filter(e => e.text.startsWith('CASE') && e.level == 1).toArray();
         let x2 = res.filter(e => e.text.includes('Attr') && e.level == 1).toArray();
@@ -480,11 +480,11 @@ function 咨询() {
           e.bounds.top < attrs[i + 1].bounds.bottom
         );
         if (curCase == null) {
-          counselTarget = i;
+          adviseTarget = i;
           break;
         }
       }
-      if (counselTarget == null) {
+      if (adviseTarget == null) {
         toastLog('整页都咨询过了');
         swipe(
           width / 2, cases[cases.length - 1].bounds.top,
@@ -493,21 +493,21 @@ function 咨询() {
         sleep(1000);
       }
     }
-    clickRect(attrs[counselTarget]);
-    if (单次咨询(counsel))
+    clickRect(attrs[adviseTarget]);
+    if (单次咨询(advise))
       cnt++;
     else
       swipe(
-        width / 2, attrs[counselTarget + 1].bounds.top,
-        width / 2, attrs[0].bounds.top, 5000 * counselTarget + 5000
+        width / 2, attrs[adviseTarget + 1].bounds.top,
+        width / 2, attrs[0].bounds.top, 5000 * adviseTarget + 5000
       );
   }
   toastLog('完成咨询');
   返回首页();
 }
-function 单次咨询(counsel) {
+function 单次咨询(advise) {
   const maxRetry = 3;
-  let [counselBtn, nameArea, hasMax] = ocrUntilFound(res => {
+  let [adviseBtn, nameArea, hasMax] = ocrUntilFound(res => {
     if (!res.text.includes('查看花'))
       return null;
     let btn = res.find(e =>
@@ -530,7 +530,7 @@ function 单次咨询(counsel) {
       return null;
     return [btn, name, value.text.includes('MAX')];
   }, 30, 2000);
-  let name = mostSimilar(nameArea.text, Object.keys(counsel)).result;
+  let name = mostSimilar(nameArea.text, Object.keys(advise)).result;
   log(`咨询对象：${name}`);
   if (hasMax) {
     log('已达好感度上限');
@@ -538,14 +538,14 @@ function 单次咨询(counsel) {
     ocrUntilFound(res => res.text.includes('可以'), 30, 3000);
     return false;
   }
-  if (colors.blue(captureScreen().pixel(counselBtn.bounds.right, counselBtn.bounds.top)) < 200) {
+  if (colors.blue(captureScreen().pixel(adviseBtn.bounds.right, adviseBtn.bounds.top)) < 200) {
     log('咨询按钮不可点击');
     back();
     ocrUntilFound(res => res.text.includes('可以'), 30, 3000);
     return false;
   }
   for (let i = 1; i <= maxRetry; ++i) {
-    clickRect(counselBtn);
+    clickRect(adviseBtn);
     clickRect(ocrUntilFound(res => res.find(
       e => e.text.includes('确认')
     ), 30, 1000));
@@ -565,10 +565,10 @@ function 单次咨询(counsel) {
       return false;
     }
     // 连点直到出现选项
-    let counselImage = images.read('./images/counsel.jpg');
+    let adviseImage = images.read('./images/counsel.jpg');
     let result = null;
     for (let j = 0; j < 15; ++j) {
-      result = images.matchTemplate(captureScreen(), counselImage, {
+      result = images.matchTemplate(captureScreen(), adviseImage, {
         threshold: 0.7,
         max: 2,
         region: [0, height / 2, width / 2, height / 2]
@@ -599,7 +599,7 @@ function 单次咨询(counsel) {
     }, 10, 300);
     let whichOne = null, similarOne = -1;
     for (let i = 0; i < 2; ++i) {
-      let t = mostSimilar(options[i], counsel[name]);
+      let t = mostSimilar(options[i], advise[name]);
       log(`选项${i + 1}："${options[i]}"`);
       log(`匹配："${t.result}"，相似度${t.similarity.toFixed(2)}`);
       if (t.similarity > similarOne) {
@@ -619,10 +619,10 @@ function 单次咨询(counsel) {
       log(`已达最大尝试次数${maxRetry}，无视低相似度`);
     log(`咨询选择："${options[whichOne]}"`);
     if (whichOne == 0)
-      click(width / 2, counselImage.getHeight() / 2 + optionTop);
+      click(width / 2, adviseImage.getHeight() / 2 + optionTop);
     else
-      click(width / 2, counselImage.getHeight() / 2 + optionBottom);
-    counselImage.recycle();
+      click(width / 2, adviseImage.getHeight() / 2 + optionBottom);
+    adviseImage.recycle();
     ocrUntilFound(res => {
       if (res.text.includes('咨询'))
         return true;

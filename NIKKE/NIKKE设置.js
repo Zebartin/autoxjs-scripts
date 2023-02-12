@@ -54,6 +54,13 @@ ui.layout(
             </vertical>
           </horizontal>
         </card>
+        <vertical id="arena" aisibility="gone">
+          <text textSize="16sp" margin="8">竞技场设置</text>
+          <horizontal margin="10 2">
+            <text id="rookieArenaTargetText" textSize="14sp" w="0" layout_weight="4" >新人竞技场选择第1位对手</text>
+            <seekbar id="rookieArenaTarget" w="0" layout_weight="6" />
+          </horizontal>
+        </vertical>
         <card w="*" h="auto" margin="10 5" cardCornerRadius="2dp"
           cardElevation="1dp">
           <horizontal gravity="center_vertical">
@@ -222,6 +229,9 @@ if (simulationRoom == null)
 ui.findView('商店').on('check', function (checked) {
   ui.shopping.attr('visibility', checked ? 'visible' : 'gone');
 });
+ui.findView('竞技场').on('check', function (checked) {
+  ui.arena.attr('visibility', checked ? 'visible' : 'gone');
+});
 ui.findView('模拟室').on('check', function (checked) {
   ui.simulationRoom.attr('visibility', checked ? 'visible' : 'gone');
 });
@@ -239,6 +249,15 @@ ui.buyCodeManual.setOnSeekBarChangeListener({
   }
 });
 ui.buyCodeManual.setProgress(NIKKEstorage.get('buyCodeManual', 3));
+
+ui.rookieArenaTarget.setMin(1);
+ui.rookieArenaTarget.setMax(3);
+ui.rookieArenaTarget.setOnSeekBarChangeListener({
+  onProgressChanged: function (seekbar, p, fromUser) {
+      ui.rookieArenaTargetText.setText(`新人竞技场选择第${p}位对手`);
+  }
+});
+ui.rookieArenaTarget.setProgress(NIKKEstorage.get('rookieArenaTarget', 1));
 
 ui.maxPass.setMin(1);
 ui.maxPass.setMax(50);
@@ -289,6 +308,7 @@ ui.save.on("click", function () {
   NIKKEstorage.put('todoTask', JSON.stringify(todoTask));
 
   NIKKEstorage.put('buyCodeManual', ui.buyCodeManual.getProgress());
+  NIKKEstorage.put('rookieArenaTarget', ui.rookieArenaTarget.getProgress());
 
   simulationRoom = {};
   simulationRoom.maxPass = ui.maxPass.getProgress();

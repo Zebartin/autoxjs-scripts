@@ -374,21 +374,29 @@ function 竞技场() {
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('技场')), 30, 1000));
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('新人')), 30, 1000));
   toastLog('进入新人竞技场');
-  const firstFight = ocrUntilFound(res => {
-    let t = res.filter(e => e.text.endsWith('战斗') && e.level == 1);
-    if (t.length == 3)
-      return t[0];
-    return null;
+  const targetFight = ocrUntilFound(res => {
+    let t = res.filter(e =>
+      e.text.endsWith('战斗') && e.level == 1 &&
+      e.bounds != null && e.bounds.left > width / 2
+    ).toArray();
+    if (t.length != 3)
+      return null;
+    t.sort((a, b) => a.bounds.top - b.bounds.top);
+    return t[NIKKEstorage.get('rookieArenaTarget', 1) - 1];
   }, 30, 1000);
   while (true) {
-    let ocrText = ocrUntilFound(res => {
-      if (res.text.includes('战斗'))
-        return res.text;
-      return null;
+    let hasFree = ocrUntilFound(res => {
+      if (!res.text.includes('战斗'))
+        return null;
+      let t = res.find(e =>
+        e.text.includes('免') && e.bounds != null &&
+        e.bounds.left >= width / 2
+      );
+      return t == null ? 'notFree' : 'free';
     }, 30, 1000);
-    if (ocrText.includes('免') == false)
+    if (hasFree != 'free')
       break;
-    clickRect(firstFight);
+    clickRect(targetFight);
     ocrUntilFound(res =>
       res.text.includes('变更') ||
       !res.text.includes('目录'),

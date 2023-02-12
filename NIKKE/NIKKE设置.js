@@ -67,7 +67,7 @@ ui.layout(
             <checkbox id="爬塔" marginLeft="4" marginRight="6" />
             <vertical padding="18 8" h="auto" w="0" layout_weight="1">
               <text text="爬塔" textColor="#222222" textSize="16sp" />
-              <text text="尝试各个职业塔，失败则跳过" textColor="#999999" textSize="14sp" />
+              <text text="尝试各个企业塔，失败则跳过" textColor="#999999" textSize="14sp" />
             </vertical>
           </horizontal>
         </card>
@@ -254,7 +254,7 @@ ui.rookieArenaTarget.setMin(1);
 ui.rookieArenaTarget.setMax(3);
 ui.rookieArenaTarget.setOnSeekBarChangeListener({
   onProgressChanged: function (seekbar, p, fromUser) {
-      ui.rookieArenaTargetText.setText(`新人竞技场选择第${p}位对手`);
+    ui.rookieArenaTargetText.setText(`新人竞技场选择第${p}位对手`);
   }
 });
 ui.rookieArenaTarget.setProgress(NIKKEstorage.get('rookieArenaTarget', 1));

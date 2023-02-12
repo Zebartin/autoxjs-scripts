@@ -93,8 +93,7 @@ function requestScreenCaptureAuto() {
   if (device.sdkInt > 28) {
     //等待截屏权限申请并同意
     threads.start(function () {
-      packageName('com.android.systemui').text('允许').waitFor();
-      text('允许').click();
+      packageName('com.android.systemui').textMatches(/(允许|立即开始)/).findOne(10000).click();
     });
   }
   // 检查屏幕方向

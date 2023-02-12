@@ -507,7 +507,8 @@ function 咨询() {
 }
 function 单次咨询(advise) {
   const maxRetry = 3;
-  let [adviseBtn, nameArea, hasMax] = ocrUntilFound(res => {
+  let nameRetry = 0;
+  let [adviseBtn, name, hasMax] = ocrUntilFound(res => {
     if (!res.text.includes('查看花'))
       return null;
     let btn = res.find(e =>
@@ -518,7 +519,7 @@ function 单次咨询(advise) {
     let lower = res.find(e => e.text.includes('下') && e.bounds != null);
     if (!btn || !upper || !lower)
       return null;
-    let name = res.find(e =>
+    let nameArea = res.find(e =>
       e.bounds != null && e.bounds.top > upper.bounds.top &&
       e.bounds.bottom < lower.bounds.top && e.bounds.right < upper.bounds.left
     );
@@ -526,11 +527,23 @@ function 单次咨询(advise) {
       e.bounds != null && e.bounds.top > upper.bounds.top &&
       e.bounds.bottom < lower.bounds.top && e.bounds.right > upper.bounds.left
     );
-    if (!name || !value)
+    if (!nameArea || !value)
       return null;
-    return [btn, name, value.text.includes('MAX')];
+    let nameResult = mostSimilar(nameArea.text, Object.keys(advise));
+    if (nameResult.similarity < 0.5) {
+      log(`妮姬名OCR结果：${nameArea.text}，匹配：${nameResult.result}，相似度${nameResult.similarity.toFixed(2)}`);
+      nameRetry++;
+      if (nameRetry >= maxRetry) {
+        log(`已达最大尝试次数${maxRetry}`);
+        log('可能原因：暂不支持新版本妮姬的咨询');
+        toastLog('妮姬名字识别失败，直接退出，不重启游戏');
+        exit();
+      } else
+        log(`妮姬名字识别相似度过低，重试(${nameRetry}/${maxRetry})`);
+      return null;
+    }
+    return [btn, nameResult.result, value.text.includes('MAX')];
   }, 30, 2000);
-  let name = mostSimilar(nameArea.text, Object.keys(advise)).result;
   log(`咨询对象：${name}`);
   if (hasMax) {
     log('已达好感度上限');

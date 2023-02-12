@@ -415,35 +415,40 @@ function 竞技场() {
   ocrUntilFound(res => res.text.includes('战斗'), 30, 1000);
   // 如果识别出了百分号，直接点百分号
   // 没有就点上方中央“特殊竞技场”下方位置，可能能点到
-  ocrUntilFound(res => {
+  let specialRewardBtn = ocrUntilFound(res => {
     let atk = res.find(e => e.text.includes('ATK'));
     if (!atk)
       return null;
-    let percentSign = res.find(e =>
+    let ret = res.find(e =>
       e.text.includes('%') && e.bounds != null &&
       e.bounds.bottom < atk.bounds.top &&
       e.bounds.left > atk.bounds.right
     );
-    if (percentSign != null) {
-      if (percentSign.text != '0%') {
-        clickRect(percentSign);
-        toastLog('领取竞技场奖励');
-        clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 30, 1000));
-      }
-    }
-    else {
-      let title = res.find(e =>
+    if (ret == null) {
+      ret = res.find(e =>
         e.text.startsWith('特殊') && e.bounds != null &&
+        e.bounds.bottom < atk.bounds.top &&
         e.bounds.left > atk.bounds.right
       );
-      if (title == null)
-        return null;
-      click(title.bounds.centerX(), title.bounds.bottom + 10);
-      toastLog('领取竞技场奖励');
-      clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 30, 1000));
+      if (ret != null) {
+        // 下移识别框
+        let retHeight = ret.height();
+        ret.bounds.top = ret.bounds.bottom;
+        ret.bounds.bottom = ret.bounds.bottom + retHeight;
+      }
     }
-    return true;
+    return ret;
   }, 30, 1000);
+  if (specialRewardBtn != null && specialRewardBtn.text != '0%') {
+    clickRect(specialRewardBtn);
+    toastLog('领取竞技场奖励');
+    let clickReward = ocrUntilFound(res => res.find(e =>
+      e.text.includes('点击') && e.bounds != null &&
+      e.bounds.top > specialRewardBtn.bounds.bottom
+    ), 30, 1000);
+    if (clickReward != null)
+      clickRect(clickReward);
+  }
   返回首页();
 }
 function 咨询() {

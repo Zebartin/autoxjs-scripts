@@ -1,0 +1,29 @@
+---
+name: "NIKKE-scripts-release"
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  compress-release:
+    name: "NIKKE Scripts Release"
+    runs-on: "ubuntu-latest"
+    steps:
+
+      - uses: actions/checkout@v3
+      
+      - name: Compress
+        run: 7z a -t7z NIKKE-scripts-${{ github.ref_name }}.7z * ../utils.js -x!README.md -x!*活动.js
+        working-directory: ./NIKKE
+
+      - uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          token: "${{ secrets.GITHUB_TOKEN }}"
+          name: NIKKE-scripts-${{ github.ref_name }}
+          body_path: ./NIKKE/CHANGELOG.md
+          files: |
+            ./NIKKE/NIKKE-scripts-${{ github.ref_name }}.7z
+            ./NIKKE/NIKKE设置.js

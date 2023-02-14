@@ -522,13 +522,13 @@ function 单次咨询(advise) {
   const maxRetry = 3;
   let nameRetry = 0;
   let [adviseBtn, name, hasMax] = ocrUntilFound(res => {
-    if (!res.text.includes('查看花'))
+    if (!res.text.includes('看花'))
       return null;
     let btn = res.find(e =>
       e.text.includes('咨询') && e.bounds != null &&
       e.bounds.top > height / 2 && e.bounds.left > width / 2
     );
-    let upper = res.find(e => e.text.includes('查看花') && e.bounds != null);
+    let upper = res.find(e => e.text.includes('看花') && e.bounds != null);
     let lower = res.find(e => e.text.includes('下') && e.bounds != null);
     if (!btn || !upper || !lower)
       return null;
@@ -576,7 +576,7 @@ function 单次咨询(advise) {
       e => e.text.includes('确认')
     ), 30, 1000));
     let pageStat = ocrUntilFound(res => {
-      if (res.text.match(/(查看花|RANK|次数|确认|取消)/) != null)
+      if (res.text.match(/(看花|RANK|次数|确认|取消)/) != null)
         return 'outside';
       if (res.text.match(/(AUTO|LOG|CANCEL)/) != null)
         return 'inside';
@@ -638,7 +638,7 @@ function 单次咨询(advise) {
       clickRect(ocrUntilFound(res => res.find(e =>
         e.text.match(/[UTOG]/) == null && e.text.includes('NCE')
       ), 30, 1000));
-      ocrUntilFound(res => res.text.includes('查看花'), 20, 2000);
+      ocrUntilFound(res => res.text.includes('看花'), 20, 2000);
       continue;
     }
     if (i == maxRetry)

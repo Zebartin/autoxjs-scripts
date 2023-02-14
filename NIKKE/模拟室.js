@@ -77,7 +77,7 @@ function 模拟室(fromIndex) {
     bestBuffToKeep: null,  // 最后保留的buff，必须正确初始化
     newBuffs: {},          // 主要作用是防止选到重复buff，导致需要进行更换
     earlyStop: false,
-    skipMode: false
+    mode: '刷buff'
   };
   for (let pass = 0; pass < maxPass; ++pass) {
     status.earlyStop = false;
@@ -86,18 +86,18 @@ function 模拟室(fromIndex) {
       level: null
     };
     status.newBuffs = {};
-    status.skipMode = false;
+    status.mode = '刷buff';
     log('已有BUFF：', Object.keys(status.loaded));
     if (Object.keys(status.loaded).length >= maxSsrNumber) {
       for (let buff of Object.values(status.loaded))
         if (buff.level != 'SSR') {
-          status.skipMode = true;
+          status.mode = '刷SSR';
           break;
         }
-      if (!status.skipMode)
+      if (status.mode == '刷buff')
         break;
     }
-    toastLog(`第${pass + 1}轮模拟室：skipMode = ${status.skipMode}`);
+    toastLog(`第${pass + 1}轮模拟室：mode = ${status.mode}`);
     clickRect(ocrUntilFound(res => res.find(e => e.text.startsWith('开始')), 10, 300));
     clickRect(ocrUntilFound(res => res.find(e => e.text == '3'), 20, 300));
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('开始')), 10, 300));
@@ -240,7 +240,7 @@ function selectOption(status) {
   let optionNumber = status.layer == 6 ? 1 : 2;
   const options = getOptions(optionNumber);
   let bestOption = null;
-  if (status.skipMode) {
+  if (status.mode == '刷SSR') {
     // 强化 > 归队 > NORMAL > HARD > 指挥能力测试
     let optionTypePriority = {
       specUp: 0,
@@ -301,7 +301,7 @@ function selectOption(status) {
 }
 
 function doWithOption(option, status) {
-  if (option.type == 'specUp' && !status.skipMode && !status.bestBuffToKeep.name) {
+  if (option.type == 'specUp' && status.mode == '刷buff' && !status.bestBuffToKeep.name) {
     status.earlyStop = true;
     for (let buff of Object.values(status.loaded))
       if (buff.level != 'SSR') {
@@ -374,7 +374,7 @@ function doWithOption(option, status) {
       }
     } else {
       // 没有刷到SSR提升选项，提前结束
-      if (status.skipMode || !status.bestBuffToKeep.name)
+      if (status.mode == '刷SSR' || !status.bestBuffToKeep.name)
         status.earlyStop = true;
       clickRect(cancelBtn);
       clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('确认')), 10, 500));
@@ -403,7 +403,7 @@ function doWithOption(option, status) {
 
 function selectBuff(buffType, status) {
   let bestBuff = null;
-  if (!status.skipMode) {
+  if (status.mode == '刷buff') {
     const allBuff = getAllBuff();
     let buffOptions = getBuffs(3);
     log(`备选${buffType}型增益：`, buffOptions);

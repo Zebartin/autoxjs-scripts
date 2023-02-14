@@ -664,6 +664,7 @@ function 单次咨询(advise) {
     }, 30, 1000);
     break;
   }
+  ocrUntilFound(res => res.text.includes('咨询'), 20, 3000);
   sleep(1000);
   back();
   if (ocrUntilFound(res => {
@@ -671,7 +672,7 @@ function 单次咨询(advise) {
       return true;
     back();
     return false;
-  }, 5, 3000) == false) {
+  }, 10, 3000) == null) {
     ocrUntilFound(res => {
       if (res.text.includes('大厅'))
         return true;

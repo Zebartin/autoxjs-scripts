@@ -107,37 +107,20 @@ function 等待NIKKE加载() {
     throw new Error('没有出现游戏公告');
   sleep(1000);
   back();
+  toastLog('关闭公告');
   // 检查是否有每天签到
   let today = new Date().toLocaleDateString();
   let lastChecked = NIKKEstorage.get('dailyLogin', null);
   if (today == lastChecked) {
-    log('今日已登录，不检查登录奖励');
+    log('今日已登录，不检查签到奖励');
     return;
   }
   NIKKEstorage.put('dailyLogin', today);
   if (ocrUntilFound(res => res.text.match(/\d+(小时|天|分钟)/), 4, 5000) == null)
-    log('没有出现登录奖励');
+    log('没有出现签到奖励');
   else {
-    sleep(1000);
-    let dailyLogin = ocrUntilFound(res => res.filter(e =>
-      e.text.match(/[领領]取/) != null
-    ).toArray(), 1, 500);
-    if (dailyLogin.length == 0)
-      toastLog('没有登录奖励');
-    else {
-      dailyLogin = dailyLogin.reduce((prev, curr) =>
-        prev.bounds.top > curr.bounds.top ? prev : curr
-      );
-      if (dailyLogin.text.match(/[已巳己]/) == null) {
-        toastLog('领取登录奖励');
-        clickRect(dailyLogin);
-        clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 20, 1000));
-        sleep(1000);
-      } else {
-        toastLog('登录奖励已被领取');
-      }
-      back();
-    }
+    back();   // 每次的登录奖励ui都不一样，不处理直接返回
+    toastLog('关闭签到奖励');
   }
 }
 
@@ -166,10 +149,10 @@ function 返回首页() {
   }
   homeImage.recycle();
   sleep(1000);
-  while (true) {
+  for (let i = 0; i < 10; ++i) {
     click(result.x, result.y);
     sleep(4000);
-    if (ocrUntilFound(res => res.text.match(/(大厅|基地|物品|方舟)/), 5, 400) != null)
+    if (ocrUntilFound(res => res.text.match(/(大厅|基地|物品|方舟)/), 3, 400) != null)
       break;
   }
   log('返回首页');

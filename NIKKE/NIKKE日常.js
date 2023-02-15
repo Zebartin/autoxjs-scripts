@@ -264,16 +264,37 @@ function 好友() {
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('好友')), 30, 1000));
   toastLog('点击好友');
   // 等待列表加载
-  ocrUntilFound(res =>
-    res.text.match(/(分钟|小时|天)/) != null ||
-    res.find(e => e.text.endsWith('登入')) != null, 30, 1000);
-  let target = ocrUntilFound(res => res.find(e => e.text.endsWith('赠送')), 30, 1000);
-  if (colors.red(captureScreen().pixel(target.bounds.left, target.bounds.top)) < 100) {
-    clickRect(target);
+  // 一个好友都没有的话会出问题
+  let [sendBtn, someFriend] = ocrUntilFound(res => {
+    let send = res.find(e => e.text.endsWith('赠送'));
+    let upper = res.find(e => e.text.includes('可以'));
+    if (!send || !upper)
+      return null;
+    let f = res.find(e =>
+      e.text.match(/(分钟|小时|天|登入$)/) != null &&
+      e.bounds != null && e.bounds.top > upper.bounds.bottom &&
+      e.bounds.bottom < send.bounds.top
+    );
+    if (!f)
+      return null;
+    return [send, f];
+  }, 30, 1000);
+  clickRect(someFriend);
+  ocrUntilFound(res => {
+    if (res.text.match(/(ID|日期|代表|进度)/) != null)
+      return true;
+    clickRect(someFriend);
+    return false;
+  }, 30, 500);
+  back();
+  ocrUntilFound(res => res.text.match(/(可以|目录|搜寻|赠送)/) != null, 20, 1500);
+  if (colors.red(captureScreen().pixel(sendBtn.bounds.left, sendBtn.bounds.top)) < 100) {
+    clickRect(sendBtn);
     toastLog('点击赠送');
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('确认')), 30, 1000));
     sleep(1000);
-  }
+  } else
+    toastLog('赠送按钮不可点击');
   back();
 }
 function 爬塔() {

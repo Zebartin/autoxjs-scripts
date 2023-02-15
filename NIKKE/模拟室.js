@@ -98,69 +98,73 @@ function 模拟室(fromIndex) {
         break;
     }
     toastLog(`第${pass + 1}轮模拟室：mode = ${status.mode}`);
-    clickRect(ocrUntilFound(res => res.find(e => e.text.startsWith('开始')), 10, 300));
-    clickRect(ocrUntilFound(res => res.find(e => e.text == '3'), 20, 300));
-    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('开始')), 10, 300));
-    for (status.layer = 0; status.layer < 7; ++status.layer) {
-      selectOption(status);
-      if (status.earlyStop)
-        break;
-    }
-    // 一轮模拟结束
-    if (status.earlyStop) {
-      clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('结束')), 20, 300));
-      clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('确认')), 10, 300));
-    } else {
-      log(`bestBuffToKeep = ${status.bestBuffToKeep.name}(${status.bestBuffToKeep.level})`);
-      clickRect(ocrUntilFound(res => res.find(e =>
-        e.text.endsWith('结束') &&
-        e.bounds != null &&
-        e.bounds.bottom > height / 2
-      ), 20, 300));
-      sleep(600);
-      clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('确认')), 10, 300));
-      ocrUntilFound(res => res.text.includes('选择'), 10, 1000);
-      sleep(600);
-      let buff = null;
-      if (!status.bestBuffToKeep.name) {
-        buff = getBuffs(1);
-        buff = buff.length > 0 ? buff[0] : null;
-      }
-      else
-        buff = scanBuffs(status.bestBuffToKeep.name);
-      let [chosenTarget, confirmBtn] = ocrUntilFound(res => {
-        let t1 = buff;
-        if (t1 == null)
-          t1 = res.find(e => e.text.includes('不选择'));
-        let t2 = res.find(e => e.text.includes('确认'));
-        if (!t1 || !t2)
-          return null;
-        return [t1, t2];
-      }, 10, 300);
-      clickRect(chosenTarget);
-      sleep(600);
-      clickRect(confirmBtn);
-      // 表示选择了某个增益
-      if ('name' in chosenTarget) {
-        log('保留增益：', chosenTarget);
-        // 替换buff
-        if (chosenTarget.name in status.loaded) {
-          sleep(600);
-          clickRect(getBuffs(2)[1]);
-          sleep(600);
-          clickRect(ocrUntilFound(res => res.find(e => e.text.includes('确认')), 10, 300));
-        }
-        status.loaded[chosenTarget.name] = chosenTarget;
-      } else {
-        // 按照目前策略不可能什么增益都没有就打BOSS战结束模拟，仅作为保险
-        clickRect(ocrUntilFound(res => res.find(e => e.text.includes('确认')), 10, 300));
-      }
-    }
-    ocrUntilFound(res => res.text.includes('开始'), 30, 1000);
+    oneSimulation(status);
   }
   toastLog('完成模拟室任务');
   if (fromIndex)
     返回首页();
+}
+
+function oneSimulation(status) {
+  clickRect(ocrUntilFound(res => res.find(e => e.text.startsWith('开始')), 10, 300));
+  clickRect(ocrUntilFound(res => res.find(e => e.text == '3'), 20, 300));
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('开始')), 10, 300));
+  for (status.layer = 0; status.layer < 7; ++status.layer) {
+    selectOption(status);
+    if (status.earlyStop)
+      break;
+  }
+  // 一轮模拟结束
+  if (status.earlyStop) {
+    clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('结束')), 20, 300));
+    clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('确认')), 10, 300));
+  } else {
+    log(`bestBuffToKeep = ${status.bestBuffToKeep.name}(${status.bestBuffToKeep.level})`);
+    clickRect(ocrUntilFound(res => res.find(e =>
+      e.text.endsWith('结束') &&
+      e.bounds != null &&
+      e.bounds.bottom > height / 2
+    ), 20, 300));
+    sleep(600);
+    clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('确认')), 10, 300));
+    ocrUntilFound(res => res.text.includes('选择'), 10, 1000);
+    sleep(600);
+    let buff = null;
+    if (!status.bestBuffToKeep.name) {
+      buff = getBuffs(1);
+      buff = buff.length > 0 ? buff[0] : null;
+    }
+    else
+      buff = scanBuffs(status.bestBuffToKeep.name);
+    let [chosenTarget, confirmBtn] = ocrUntilFound(res => {
+      let t1 = buff;
+      if (t1 == null)
+        t1 = res.find(e => e.text.includes('不选择'));
+      let t2 = res.find(e => e.text.includes('确认'));
+      if (!t1 || !t2)
+        return null;
+      return [t1, t2];
+    }, 10, 300);
+    clickRect(chosenTarget);
+    sleep(600);
+    clickRect(confirmBtn);
+    // 表示选择了某个增益
+    if ('name' in chosenTarget) {
+      log('保留增益：', chosenTarget);
+      // 替换buff
+      if (chosenTarget.name in status.loaded) {
+        sleep(600);
+        clickRect(getBuffs(2)[1]);
+        sleep(600);
+        clickRect(ocrUntilFound(res => res.find(e => e.text.includes('确认')), 10, 300));
+      }
+      status.loaded[chosenTarget.name] = chosenTarget;
+    } else {
+      // 按照目前策略不可能什么增益都没有就打BOSS战结束模拟，仅作为保险
+      clickRect(ocrUntilFound(res => res.find(e => e.text.includes('确认')), 10, 300));
+    }
+  }
+  ocrUntilFound(res => res.text.includes('开始'), 30, 1000);
 }
 
 function quitPrevSim() {
@@ -183,7 +187,7 @@ function quitPrevSim() {
       'ICU', 'combat', 'selectOption'
     ];
     for (let i = 0; i < keywords.length; ++i)
-      if (res.text.includes(keywords[i])){
+      if (res.text.includes(keywords[i])) {
         ret = results[i];
         break;
       }

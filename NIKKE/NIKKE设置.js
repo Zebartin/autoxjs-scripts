@@ -187,6 +187,10 @@ ui.layout(
           <checkbox id="mute" w="0" layout_weight="2" />
         </horizontal>
         <horizontal margin="10 2" gravity="center_vertical" weightSum="10" h="0" layout_weight="1">
+          <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">游戏中会出现限时礼包</text>
+          <checkbox id="checkSale" w="0" layout_weight="2" />
+        </horizontal>
+        <horizontal margin="10 2" gravity="center_vertical" weightSum="10" h="0" layout_weight="1">
           <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">运行结束后退出游戏</text>
           <checkbox id="exitGame" w="0" layout_weight="2" />
         </horizontal>
@@ -303,7 +307,7 @@ ui.tryDiffArea.setOnSeekBarChangeListener({
     else {
       let diff = Math.floor(p / 3) + 3;
       let area = String.fromCharCode('A'.charCodeAt(0) + p % 3);
-      ui.tryDiffAreaText.setText(`刷完buff后尝试一次${diff}${area}`);
+      ui.tryDiffAreaText.setText(`刷完buff后尝试${diff}${area}`);
     }
   }
 });
@@ -357,7 +361,7 @@ ui.save.on("click", function () {
       simulationRoom.preferredBuff.push(buffName);
   NIKKEstorage.put('simulationRoom', JSON.stringify(simulationRoom));
 
-  for (let generalOption of ['mute', 'exitGame', 'alreadyInGame', 'v2rayNG'])
+  for (let generalOption of ['mute', 'checkSale', 'exitGame', 'alreadyInGame', 'v2rayNG'])
     NIKKEstorage.put(generalOption, ui.findView(generalOption).isChecked());
   NIKKEstorage.put('maxRetry', ui.maxRetry.getProgress());
 

@@ -1,6 +1,6 @@
 var {
   启动NIKKE, 等待NIKKE加载,
-  退出NIKKE, 返回首页
+  退出NIKKE, 返回首页, 关闭限时礼包
 } = require('./NIKKEutils.js');
 var { 模拟室 } = require('./模拟室.js');
 var {
@@ -256,6 +256,7 @@ function 基地收菜() {
   if (target != null) {
     clickRect(target);
     toastLog('升级了');
+    关闭限时礼包();
   }
   sleep(1000);
   返回首页();
@@ -357,22 +358,8 @@ function 爬塔() {
     sleep(5000);
     ocrUntilFound(res => res.text.includes('之塔'), 20, 3000);
     // 等待可能出现的限时礼包
-    if (successFlag) {
-      toastLog('等待限时礼包出现…');
-      let closeSale = ocrUntilFound(res => {
-        if (res.text.match(/(小时|分钟|免|点击)/) == null)
-          return null;
-        return res.find(e => e.text.includes('点击'));
-      }, 5, 1000);
-      if (closeSale == null)
-        toastLog('没有出现限时礼包');
-      else {
-        toastLog('关闭礼包页面');
-        clickRect(closeSale);
-        clickRect(ocrUntilFound(res => res.find(e => e.text.includes('确认')), 20, 1000));
-        ocrUntilFound(res => !res.text.includes('点击'), 20, 1500);
-      }
-    }
+    if (successFlag) 
+      关闭限时礼包();
   }
   返回首页();
 }

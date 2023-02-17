@@ -113,15 +113,16 @@ function 等待NIKKE加载() {
   let lastChecked = NIKKEstorage.get('dailyLogin', null);
   if (today == lastChecked) {
     log('今日已登录，不检查签到奖励');
-    return;
+  } else {
+    NIKKEstorage.put('dailyLogin', today);
+    if (ocrUntilFound(res => res.text.match(/\d+(小时|天|分钟)/), 4, 5000) == null)
+      log('没有出现签到奖励');
+    else {
+      back();   // 每次的登录奖励ui都不一样，不处理直接返回
+      toastLog('关闭签到奖励');
+    }
   }
-  NIKKEstorage.put('dailyLogin', today);
-  if (ocrUntilFound(res => res.text.match(/\d+(小时|天|分钟)/), 4, 5000) == null)
-    log('没有出现签到奖励');
-  else {
-    back();   // 每次的登录奖励ui都不一样，不处理直接返回
-    toastLog('关闭签到奖励');
-  }
+  关闭限时礼包();
 }
 
 function 退出NIKKE() {
@@ -156,6 +157,26 @@ function 返回首页() {
       break;
   }
   log('返回首页');
+}
+
+function 关闭限时礼包() {
+  if (storages.create("NIKKEconfig").get('checkSale', false) == false)
+    return;
+  toastLog('等待限时礼包出现…');
+  sleep(2000);
+  let closeSale = ocrUntilFound(res => {
+    if (res.text.match(/(小时|分钟|免|点击)/) == null)
+      return null;
+    return res.find(e => e.text.includes('点击'));
+  }, 3, 2000);
+  if (closeSale == null)
+    toastLog('没有出现限时礼包');
+  else {
+    toastLog('关闭礼包页面');
+    clickRect(closeSale);
+    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('确认')), 20, 1000));
+    ocrUntilFound(res => !res.text.includes('点击'), 20, 1500);
+  }
 }
 
 function 刷刷刷() {

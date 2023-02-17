@@ -50,7 +50,7 @@ ui.layout(
             <checkbox id="竞技场" marginLeft="4" marginRight="6" />
             <vertical padding="18 8" h="auto" w="0" layout_weight="1">
               <text text="竞技场" textColor="#222222" textSize="16sp" />
-              <text text="刷完新人竞技场免费次数" textColor="#999999" textSize="14sp" />
+              <text text="刷完新人竞技场免费次数，领取特殊竞技场奖励" textColor="#999999" textSize="14sp" />
             </vertical>
           </horizontal>
         </card>

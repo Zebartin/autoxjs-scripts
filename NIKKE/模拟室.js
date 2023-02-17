@@ -8,6 +8,7 @@ var {
   退出NIKKE, 返回首页
 } = require('./NIKKEutils.js');
 let width, height;
+let curPass = 0;
 if (typeof module === 'undefined') {
   let {
     unlockIfNeed,
@@ -79,7 +80,7 @@ function 模拟室(fromIndex) {
     earlyStop: false,
     mode: '刷buff'
   };
-  for (let pass = 0; pass < maxPass; ++pass) {
+  for (; curPass < maxPass; ++curPass) {
     status.earlyStop = false;
     status.bestBuffToKeep = {
       name: null,
@@ -97,7 +98,7 @@ function 模拟室(fromIndex) {
       if (status.mode == '刷buff')
         break;
     }
-    toastLog(`第${pass + 1}轮模拟室：${status.mode}模式`);
+    toastLog(`第${curPass + 1}轮模拟室：${status.mode}模式`);
     oneSimulation(status);
   }
   let tryDiffArea = simulationRoom.tryDiffArea || 0;

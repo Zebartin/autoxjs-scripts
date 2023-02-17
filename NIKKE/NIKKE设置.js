@@ -20,7 +20,7 @@ ui.layout(
         <vertical id="shopping" visibility="gone">
           <text textSize="16sp" margin="8">商店设置</text>
           <horizontal margin="10 2">
-            <text id="buyCodeManualText" textSize="14sp" w="0" layout_weight="4" >不购买代码手册：</text>
+            <text id="buyCodeManualText" textSize="14sp" w="0" layout_weight="4" >不购买代码手册</text>
             <seekbar id="buyCodeManual" w="0" layout_weight="6" />
           </horizontal>
         </vertical>
@@ -87,21 +87,25 @@ ui.layout(
             <checkbox id="模拟室" marginLeft="4" marginRight="6" />
             <vertical padding="18 8" h="auto" w="0" layout_weight="1">
               <text text="模拟室" textColor="#222222" textSize="16sp" />
-              <text text="刷取模拟室增益效果" textColor="#999999" textSize="14sp" />
+              <text text="刷取buff，然后尝试一次高难，不支持处理“未知奖励”" textColor="#999999" textSize="14sp" />
             </vertical>
           </horizontal>
         </card>
         <vertical id='simulationRoom' visibility='gone'>
           <text textSize="16sp" margin="8">模拟室设置</text>
           <horizontal margin="10 2">
-            <text id="maxPassText" textSize="14sp" w="0" layout_weight="4">重复1轮后停止：</text>
+            <text id="maxPassText" textSize="14sp" w="0" layout_weight="4">不刷buff</text>
             <seekbar id="maxPass" w="0" layout_weight="6" />
           </horizontal>
           <horizontal margin="10 2">
-            <text id="maxSsrText" textSize="14sp" w="0" layout_weight="4">刷到1个SSR后停止：</text>
+            <text id="maxSsrText" textSize="14sp" w="0" layout_weight="4">不刷buff</text>
             <seekbar id="maxSsrNumber" w="0" layout_weight="6" />
           </horizontal>
-          <text margin="10 2" textSize="14sp">只考虑以下增益效果：</text>
+          <horizontal margin="10 2">
+            <text id="tryDiffAreaText" textSize="14sp" w="0" layout_weight="4">刷完buff后不尝试更高难度</text>
+            <seekbar id="tryDiffArea" w="0" layout_weight="6" />
+          </horizontal>
+          <text margin="10 2" textSize="14sp">刷buff时只考虑以下增益效果：</text>
           <vertical>
             <card w="*" h="auto" margin="10 2" cardCornerRadius="2dp"
               cardElevation="1dp">
@@ -213,6 +217,7 @@ const todoTaskDefault = [
 const simulationRoomDefault = {
   maxPass: 20,
   maxSsrNumber: 4,
+  tryDiffArea: 0,
   preferredBuff: [
     "引流转换器", "高品质粉末",
     "冲击引流器", "控制引导器"
@@ -259,24 +264,53 @@ ui.rookieArenaTarget.setOnSeekBarChangeListener({
 });
 ui.rookieArenaTarget.setProgress(NIKKEstorage.get('rookieArenaTarget', 1));
 
-ui.maxPass.setMin(1);
+ui.maxPass.setMin(0);
 ui.maxPass.setMax(50);
 ui.maxPass.setOnSeekBarChangeListener({
   onProgressChanged: function (seekbar, p, fromUser) {
-    ui.maxPassText.setText(`重复${p}轮后停止：`);
+    if (p == 0) {
+      ui.maxPassText.setText('不刷buff');
+      ui.maxSsrNumber.setProgress(0);
+    } else {
+      ui.maxPassText.setText(`重复${p}轮后停止`);
+      if (ui.maxSsrNumber.getProgress() == 0)
+        ui.maxSsrNumber.setProgress(1);
+    }
   }
 });
 
-ui.maxSsrNumber.setMin(1);
+ui.maxSsrNumber.setMin(0);
 ui.maxSsrNumber.setMax(7);
 ui.maxSsrNumber.setOnSeekBarChangeListener({
   onProgressChanged: function (seekbar, p, fromUser) {
-    ui.maxSsrText.setText(`刷到${p}个SSR后停止：`);
+    if (p == 0) {
+      ui.maxSsrText.setText('不刷buff');
+      ui.maxPass.setProgress(0);
+    } else {
+      ui.maxSsrText.setText(`刷到${p}个SSR后停止`);
+      if (ui.maxPass.getProgress() == 0)
+        ui.maxPass.setProgress(1);
+    }
+  }
+});
+
+ui.tryDiffArea.setMin(0);
+ui.tryDiffArea.setMax(8);
+ui.tryDiffArea.setOnSeekBarChangeListener({
+  onProgressChanged: function (seekbar, p, fromUser) {
+    if (p == 0)
+      ui.tryDiffAreaText.setText('刷完buff后不尝试更高难度');
+    else {
+      let diff = Math.floor(p / 3) + 3;
+      let area = String.fromCharCode('A'.charCodeAt(0) + p % 3);
+      ui.tryDiffAreaText.setText(`刷完buff后尝试一次${diff}${area}`);
+    }
   }
 });
 
 ui.maxPass.setProgress(simulationRoom.maxPass);
 ui.maxSsrNumber.setProgress(simulationRoom.maxSsrNumber);
+ui.tryDiffArea.setProgress(simulationRoom.tryDiffArea || 0);
 for (let task of todoTask)
   ui.findView(task).setChecked(true);
 for (let buffName of simulationRoom.preferredBuff)
@@ -313,6 +347,7 @@ ui.save.on("click", function () {
   simulationRoom = {};
   simulationRoom.maxPass = ui.maxPass.getProgress();
   simulationRoom.maxSsrNumber = ui.maxSsrNumber.getProgress();
+  simulationRoom.tryDiffArea = ui.tryDiffArea.getProgress();
   simulationRoom.preferredBuff = [];
   for (let buffName of [
     "引流转换器", "高品质粉末", "冲击引流器",

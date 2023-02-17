@@ -97,8 +97,32 @@ function 模拟室(fromIndex) {
       if (status.mode == '刷buff')
         break;
     }
-    toastLog(`第${pass + 1}轮模拟室：mode = ${status.mode}`);
+    toastLog(`第${pass + 1}轮模拟室：${status.mode}模式`);
     oneSimulation(status);
+  }
+  let tryDiffArea = simulationRoom.tryDiffArea || 0;
+  if (tryDiffArea != 0) {
+    status.tryDiff = (Math.floor(tryDiffArea / 3) + 3).toString();
+    status.tryArea = tryDiffArea % 3;
+    let diffAreaName = `${status.tryDiff}${String.fromCharCode('A'.charCodeAt(0) + status.tryArea)}`;
+    for (let i = 0; i < 5; ++i) {
+      status.earlyStop = false;
+      status.bestBuffToKeep = {
+        name: null,
+        level: null
+      };
+      status.newBuffs = {};
+      status.mode = '尽力而为';
+      toastLog(`尝试${diffAreaName}`);
+      oneSimulation(status);
+      if (status.mode == '尽力而为') {
+        if (status.earlyStop)
+          toastLog(`尝试${diffAreaName}失败，放弃`);
+        else
+          toastLog(`尝试${diffAreaName}成功`);
+        break;
+      }
+    }
   }
   toastLog('完成模拟室任务');
   if (fromIndex)
@@ -107,7 +131,26 @@ function 模拟室(fromIndex) {
 
 function oneSimulation(status) {
   clickRect(ocrUntilFound(res => res.find(e => e.text.startsWith('开始')), 10, 300));
-  clickRect(ocrUntilFound(res => res.find(e => e.text == '3'), 20, 300));
+  if ('tryDiff' in status) {
+    clickRect(ocrUntilFound(res => res.find(e => e.text == status.tryDiff), 20, 300));
+    let areaChoice = ocrUntilFound(res => {
+      let area = res.find(e => e.text == '地区');
+      let start = res.find(e => e.text.includes('开始'));
+      if (!area || !start)
+        return null;
+      let numbers = res.filter(e =>
+        e.bounds != null && e.bounds.top > area.bounds.bottom &&
+        e.bounds.bottom < start.bounds.top && e.bounds.right < start.bounds.left &&
+        e.text.match(/[\d\s+,]{4,10}/) != null && e.level == 3
+      ).toArray();
+      if (numbers.length != 3)
+        return null;
+      numbers.sort((a, b) => a.bounds.top - b.bounds.top);
+      return numbers[status.tryArea];
+    }, 20, 500);
+    clickRect(areaChoice);
+  } else
+    clickRect(ocrUntilFound(res => res.find(e => e.text == '3'), 20, 300));
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('开始')), 10, 300));
   for (status.layer = 0; status.layer < 7; ++status.layer) {
     selectOption(status);
@@ -131,8 +174,10 @@ function oneSimulation(status) {
     sleep(600);
     let buff = null;
     if (!status.bestBuffToKeep.name) {
-      buff = getBuffs(1);
-      buff = buff.length > 0 ? buff[0] : null;
+      if (status.mode != '尽力而为') {
+        buff = getBuffs(1);
+        buff = buff.length > 0 ? buff[0] : null;
+      }
     }
     else
       buff = scanBuffs(status.bestBuffToKeep.name);
@@ -242,11 +287,14 @@ function getBuffLoaded() {
 
 function selectOption(status) {
   let optionNumber = status.layer == 6 ? 1 : 2;
+  if ('tryDiff' in status && status.tryDiff != '3')
+    optionNumber = Math.min(3, 7 - status.layer);
   const options = getOptions(optionNumber);
   let bestOption = null;
+  let optionTypePriority = {};
   if (status.mode == '刷SSR') {
     // 强化 > 归队 > NORMAL > HARD > 指挥能力测试
-    let optionTypePriority = {
+    optionTypePriority = {
       specUp: 0,
       ICU: 1,
       normal: 2,
@@ -257,23 +305,38 @@ function selectOption(status) {
       return optionTypePriority[prev.type] < optionTypePriority[curr.type] ? prev : curr;
     });
   } else {
-    // NORMAL > 强化 > 归队 > HARD > 指挥能力测试
-    let optionTypePriority = {
-      normal: 0,
-      specUp: 1,
-      ICU: 2,
-      hard: 3,
-      abilitiesTest: 4
-    };
+    if (status.mode == '刷buff')
+      // NORMAL > 强化 > 归队 > HARD > 指挥能力测试
+      optionTypePriority = {
+        normal: 0,
+        specUp: 1,
+        ICU: 2,
+        hard: 3,
+        abilitiesTest: 4
+      };
+    else
+      optionTypePriority = {
+        ICU: 0,
+        specUp: 1,
+        normal: 2,
+        hard: 3,
+        abilitiesTest: 4
+      };
     let buffPriority = {};
     let buffScore = 1;
     for (let [buffName, buff] of Object.entries(getAllBuff())) {
-      // 没必要考虑优先级低于bestBuffToKeep的buff类型
-      // 比如已经刷到高品质粉末，就可以无视操作型增益了
-      if (status.bestBuffToKeep.name == buffName)
-        break;
-      if (
-        status.preferredBuff.includes(buffName) && !status.loaded[buffName] &&
+      if (status.mode == '刷buff') {
+        // 没必要考虑优先级低于bestBuffToKeep的buff类型
+        // 比如已经刷到高品质粉末，就可以无视操作型增益了
+        if (status.bestBuffToKeep.name == buffName)
+          break;
+        if (
+          status.preferredBuff.includes(buffName) && !status.loaded[buffName] &&
+          !status.newBuffs[buffName] && !buffPriority[buff.buffType]
+        )
+          buffPriority[buff.buffType] = buffScore++;
+      } else if (
+        !status.loaded[buffName] &&
         !status.newBuffs[buffName] && !buffPriority[buff.buffType]
       )
         buffPriority[buff.buffType] = buffScore++;
@@ -298,10 +361,13 @@ function selectOption(status) {
   }
   log('备选选项：', options);
   log('选择：', bestOption);
-  if (bestOption.type == 'abilitiesTest')
-    return null;
+  if (bestOption.type == 'abilitiesTest') {
+    status.mode = '怎么全是指挥能力测试';
+    status.earlyStop = true;
+    return;
+  }
   doWithOption(bestOption, status);
-  return bestOption;
+  return;
 }
 
 function doWithOption(option, status) {
@@ -392,14 +458,38 @@ function doWithOption(option, status) {
     clickRect(option);
     return null;
   }, 3, 2000);
+  let quickFight = null;
   if (option.type == 'normal') {
-    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('快速')), 10, 300));
-  } else if (option.type == 'hard') {
+    quickFight = ocrUntilFound(res => res.find(e => e.text.match(/快[連德逮遠速]/) != null), 10, 300);
+    if (colors.red(images.pixel(captureScreen(), quickFight.bounds.left, quickFight.bounds.top)) < 200)
+      quickFight = null;
+  }
+  if (quickFight != null) {
+    clickRect(quickFight);
+  } else {
     clickRect(ocrUntilFound(res => res.find(e => e.text.startsWith('进入')), 10, 300));
     sleep(20 * 1000);
-    ocrUntilFound(res => res.text.includes('点击'), 60, 1500);
-    sleep(1000);
-    click(width / 2, height / 2);
+    let result = ocrUntilFound(res => {
+      if (!res.text.includes('STATUS'))
+        return null;
+      if (res.text.includes('点击'))
+        return 'success';
+      if (res.text.includes('FAIL'))
+        return 'fail';
+      return null;
+    }, 60, 2000);
+    if (result == 'success') {
+      sleep(1000);
+      click(width / 2, height / 2);
+    }
+    else {
+      clickRect(ocrUntilFound(res => res.find(e => e.text.includes('返回')), 20, 500));
+      ocrUntilFound(res => res.text.includes('入战'), 30, 1000);
+      sleep(500);
+      click(width / 2, height / 2);
+      status.earlyStop = true;
+      return;
+    }
   }
   ocrUntilFound(res => res.text.includes('选择'), 30, 1000);
   selectBuff(option.buffType, status);
@@ -407,18 +497,22 @@ function doWithOption(option, status) {
 
 function selectBuff(buffType, status) {
   let bestBuff = null;
-  if (status.mode == '刷buff') {
+  if (status.mode != '刷SSR') {
     const allBuff = getAllBuff();
     let buffOptions = getBuffs(3);
     log(`备选${buffType}型增益：`, buffOptions);
     // 过滤掉allBuff中不包括的buff
     // 过滤掉已有buff，包括本轮开始之前已有的和本轮开始后新增的
     buffOptions = buffOptions.filter(x =>
-      status.preferredBuff.includes(x.name) &&
+      x.name in allBuff &&
       x.forSomebody == allBuff[x.name].forSomebody &&
       !(x.name in status.loaded) &&
       !(x.name in status.newBuffs)
     );
+    if (status.mode == '刷buff')
+      buffOptions = buffOptions.filter(x =>
+        status.preferredBuff.includes(x.name)
+      );
     if (buffOptions.length != 0) {
       let buffPriority = {};
       let buffScore = 1;
@@ -451,14 +545,15 @@ function selectBuff(buffType, status) {
     clickRect(bestBuff);
     sleep(600);
     clickRect(confirmBtn);
-    status.bestBuffToKeep = {
-      name: bestBuff.name,
-      level: bestBuff.level
-    };
     status.newBuffs[bestBuff.name] = {
       name: bestBuff.name,
       level: bestBuff.level
     };
+    if (status.mode == '刷buff')
+      status.bestBuffToKeep = {
+        name: bestBuff.name,
+        level: bestBuff.level
+      };
   }
   sleep(1000);
 }

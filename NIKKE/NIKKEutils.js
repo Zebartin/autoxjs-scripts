@@ -17,7 +17,8 @@ else {
     启动NIKKE: 启动NIKKE,
     等待NIKKE加载: 等待NIKKE加载,
     退出NIKKE: 退出NIKKE,
-    返回首页: 返回首页
+    返回首页: 返回首页,
+    关闭限时礼包: 关闭限时礼包
   };
 }
 function 启动NIKKE() {

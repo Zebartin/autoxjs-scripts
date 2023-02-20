@@ -3,9 +3,11 @@ var {
   unlockIfNeed,
   requestScreenCaptureAuto,
   ocrUntilFound,
-  clickRect
+  clickRect,
+  getDisplaySize
 } = require('./utils.js');
-var { width, height } = device;
+let [width, height] = getDisplaySize();
+
 // 解锁、申请权限
 unlockIfNeed();
 sleep(1000);
@@ -16,17 +18,30 @@ requestScreenCaptureAuto();
 app.launchApp('哔哩哔哩漫画');
 
 // 找到“我的”按钮
-var myBtn = ocrUntilFound(res => res.find(e =>
-  e.text == '我的' && e.bounds.top > height * 0.8
-), 20, 3000);
+let myBtn = ocrUntilFound(res => {
+  let t = res.filter(e => e.text == '我的').toArray();
+  if (t.length == 0)
+    return null;
+  if (t.length == 1)
+    return t[0];
+  t.sort((a, b) => a.bounds.top - b.bounds.top);
+  return t[t.length - 1];
+}, 20, 3000);
 sleep(2000);
 back();
-// if (ocrUntilFound(res => res.text.match(/(立即..|点击..|我知道了)/), 4, 300) != null)
-//   back();
 clickRect(myBtn);
 // 点击“福利中心”
-ocrUntilFound(res => res.text.includes('活动中心'), 20, 1000);
-clickRect(ocrUntilFound(res => res.find(e => e.text.includes('福利')), 20, 1000));
+let giftCenter = ocrUntilFound(res => {
+  if (!res.text.includes('活动中心'))
+    return null;
+  return res.find(e => e.text.includes('福利'));
+}, 20, 1000);
+// 先进一次消除签到板
+clickRect(giftCenter);
+sleep(2000);
+back();
+sleep(1000);
+clickRect(giftCenter);
 // 等待加载，随机找一个漫画
 text('阅读漫画赚赛季积分').waitFor(); // 可能会弹出签到板
 className("android.view.View").depth(12)
@@ -34,14 +49,14 @@ className("android.view.View").depth(12)
   .click();
 // 等待加载，点击屏幕中央消去头尾的导航栏
 ocrUntilFound(res => {
-  if (res.text.match(/弹(慕|幕)/) != null) {
+  if (res.text.match(/弹[慕幕]见/) != null) {
     click(width / 2, height / 2);
     sleep(1000);
     return true;
   } else if (res.text.includes("重试")) {
     clickRect(res.find(e => e.text == '重试'));
-  } else if (res.text.match(/该话.有.容/) != null) {
-    clickRect(res.find(e => e.text == '返回'));
+  } else if (res.text.match(/(该话.有.容|不支持|视频)/) != null) {
+    back();
     className("android.view.View").depth(12)
       .indexInParent(random(14, 16))
       .click();
@@ -67,8 +82,8 @@ var threadRead = threads.start(() => {
       break;
   }
   back();
-  sleep(500);
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('福利')), 20, 1000));
+  sleep(1000);
+  clickRect(giftCenter);
   text('阅读漫画赚赛季积分').waitFor();
   sleep(5000);
   for (let i = 0; i < 3; ++i) {

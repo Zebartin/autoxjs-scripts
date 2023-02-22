@@ -115,6 +115,7 @@ function 模拟室(fromIndex) {
       status.newBuffs = {};
       status.mode = '尽力而为';
       toastLog(`尝试${diffAreaName}`);
+      log('已有BUFF：', Object.keys(status.loaded));
       oneSimulation(status);
       if (status.mode == '尽力而为') {
         if (status.earlyStop)
@@ -141,12 +142,12 @@ function oneSimulation(status) {
         return null;
       let numbers = res.filter(e =>
         e.bounds != null && e.bounds.top > area.bounds.bottom &&
-        e.bounds.bottom < start.bounds.top && e.bounds.right < start.bounds.left &&
+        e.bounds.bottom < start.bounds.top &&
         e.text.match(/[\d\s+,]{4,10}/) != null && e.level == 3
       ).toArray();
       if (numbers.length != 3)
         return null;
-      numbers.sort((a, b) => a.bounds.top - b.bounds.top);
+      numbers.sort((a, b) => a.bounds.left - b.bounds.left);
       return numbers[status.tryArea];
     }, 20, 500);
     clickRect(areaChoice);
@@ -168,7 +169,7 @@ function oneSimulation(status) {
       e.text.endsWith('结束') &&
       e.bounds != null &&
       e.bounds.bottom > height / 2
-    ), 20, 300));
+    ), 20, 1000));
     sleep(600);
     clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('确认')), 10, 300));
     ocrUntilFound(res => res.text.includes('选择'), 10, 1000);
@@ -256,11 +257,14 @@ function quitPrevSim() {
     if (!pageState.startsWith('selectBuff'))
       clickRect(ocrUntilFound(res => res.find(e => e.text.match(/(確認|确认)/) != null), 10, 1000));
   }
-  clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('结束')), 20, 1000));
+  let quitBtn = ocrUntilFound(res => res.find(e => e.text.match(/结.$/) != null), 20, 1000);
+  clickRect(quitBtn);
   let [keepBuff, confirmBtn] = ocrUntilFound(res => {
     let btn = res.find(e => e.text.endsWith('确认'));
-    if (!btn)
+    if (!btn) {
+      clickRect(quitBtn);
       return null;
+    }
     if (res.text.match(/(成功|可保)/) != null)
       return [true, btn];
     if (res.text.match(/(失败|无法)/) != null)
@@ -280,7 +284,6 @@ function getBuffLoaded() {
   let ret = {};
   clickRect(ocrUntilFound(res => res.find(e => e.text.startsWith('BUFF')), 10, 1000));
   sleep(1000);
-  swipe(width / 2, height / 2, width / 2, height * 0.8, 200);
   ret = scanBuffs(null);
   back();
   return ret;
@@ -385,7 +388,7 @@ function doWithOption(option, status) {
   clickRect(option);
   sleep(1000);
   if (option.type == 'ICU') {
-    sleep(1000);
+    sleep(2000);
     let [firstOption, confirmBtn] = ocrUntilFound(res => {
       let t1 = res.find(e => e.text.includes('所有'));
       let t2 = res.find(e => e.text.includes('确认'));
@@ -401,6 +404,7 @@ function doWithOption(option, status) {
     return;
   }
   if (option.type == 'specUp') {
+    sleep(2000);
     const [cancelBtn, confirmBtn, ssrOption] = ocrUntilFound(res => {
       if (!res.text.includes('机会'))
         return null;
@@ -418,6 +422,8 @@ function doWithOption(option, status) {
           e.bounds.bottom > firstOption.bounds.bottom &&
           e.bounds.bottom < t1.bounds.top
         );
+        if (!t3 || t3.text.match(/[增益效果级型强化]+/) == null)
+          return null;
       }
       return [t1, t2, t3];
     }, 20, 1000);
@@ -432,7 +438,11 @@ function doWithOption(option, status) {
       clickRect(confirmBtn);
       sleep(600);
       if (ssrOption.text.includes('所有'))
-        clickRect(ocrUntilFound(res => res.find(e => e.text.match(/(確認|确认)/) != null), 10, 1000));
+        clickRect(ocrUntilFound(res => {
+          if (res.text.match(/[已巳己]提升/) == null)
+            return null;
+          return res.find(e => e.text.match(/(確認|确认)/) != null);
+        }, 10, 1000));
       else {
         // 等一下
         ocrUntilFound(res => res.text.includes('览'), 30, 1000);
@@ -448,8 +458,16 @@ function doWithOption(option, status) {
       if (status.mode == '刷SSR' || !status.bestBuffToKeep.name)
         status.earlyStop = true;
       clickRect(cancelBtn);
-      clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('确认')), 10, 500));
-      clickRect(ocrUntilFound(res => res.find(e => e.text.match(/(確認|确认)/) != null), 10, 1000));
+      clickRect(ocrUntilFound(res => {
+        if (res.text.match(/[什么取消发生]+/) == null)
+          return null;
+        return res.find(e => e.text.endsWith('确认'));
+      }, 20, 500));
+      clickRect(ocrUntilFound(res => {
+        if (res.text.match(/[什么也没发生]+/) == null)
+          return null;
+        return res.find(e => e.text.match(/(確認|确认)/) != null);
+      }, 20, 500));
     }
     return;
   }
@@ -492,6 +510,8 @@ function doWithOption(option, status) {
       return;
     }
   }
+  if (option.effect.match(/[模拟通关]+/) != null)
+    return;
   ocrUntilFound(res => res.text.includes('选择'), 30, 1000);
   selectBuff(option.buffType, status);
 }
@@ -564,7 +584,8 @@ function scanBuffs(wantedBuffName) {
   while (wantedBuff == null) {
     let allBuff = {};
     // 滑到最顶
-    swipe(width / 2, height / 2, width / 2, height * 0.8, 200);
+    swipe(width / 2, height / 2, width / 2, height * 0.9, 800);
+    swipe(width / 2, height / 2, width / 2, height * 0.9, 800);
     while (true) {
       sleep(1000);
       let buffs = getBuffs(0);
@@ -626,7 +647,7 @@ function getOptions(expectedOptionNumber) {
           e.bounds.top > t[i].bounds.bottom &&
           e.bounds.left >= verticalSplits[i] &&
           e.bounds.right <= verticalSplits[i + 1] &&
-          e.text.match(/[获得型增益效果]/) != null
+          e.text.match(/[获得型增益效果模拟通关]/) != null
         );
         if (effect == null)
           return null;
@@ -654,20 +675,27 @@ function getOptions(expectedOptionNumber) {
 function getBuffs(expectedCount) {
   return ocrUntilFound(res => {
     const r = res.filter(e => e.text.match(/^([5S]{0,2}R|EP..)$/i) != null && e.level == 3).toArray();
-    const l = res.filter(e => e.text.match(/[連達连][結绪结]等[級级]/) != null && e.level == 3).toArray();
+    const l = res.filter(e => e.text.match(/[連達连][結练绪结]等[級级]/) != null && e.level == 3).toArray();
     r.sort((a, b) => a.bounds.top - b.bounds.top);
     l.sort((a, b) => a.bounds.top - b.bounds.top);
     if (r.length < expectedCount || l.length < expectedCount)
       return null;
-    const count = Math.min(r.length, l.length);
+    const horizontalSplits = r.map(x => x.bounds.bottom).concat([height]);
     let ret = [];
-    for (let i = 0; i < count; ++i) {
+    for (let i = 0; i < r.length; ++i) {
+      let level = l.find(e =>
+        e.bounds != null &&
+        e.bounds.top >= horizontalSplits[i] &&
+        e.bounds.bottom <= horizontalSplits[i + 1]
+      );
+      if (!level)
+        continue;
       let nameText = res.filter(e =>
         e.bounds != null && e.level == 3 &&
         e.bounds.left > r[i].bounds.right &&
         e.bounds.bottom > r[i].bounds.bottom &&
-        e.bounds.left < l[i].bounds.right &&
-        e.bounds.top < l[i].bounds.top
+        e.bounds.left < level.bounds.right &&
+        e.bounds.top < level.bounds.top
       );
       if (nameText.length < 2)
         return null;
@@ -679,7 +707,7 @@ function getBuffs(expectedCount) {
       );
       let newBounds = nameText[0].bounds;
       newBounds.top = r[i].bounds.top;
-      newBounds.bottom = l[i].bounds.bottom;
+      newBounds.bottom = level.bounds.bottom;
       ret.push({
         level: r[i].text.replace(/[5s]/, 'S'),
         name: correctBuffName(nameText[0].text),
@@ -704,12 +732,12 @@ function getAllBuff() {
     引流转换器: {
       forSomebody: false,
       buffType: '生存',
-      reg: /引流转[換换]+器/
+      reg: /引流转[換换]+器?/
     },
     高品质粉末: {
       forSomebody: false,
       buffType: '攻击',
-      reg: /高品质粉[末未]+/
+      reg: /高[品串][康质]粉[末未]*/
     },
     冲击引流器: {
       forSomebody: false,
@@ -719,12 +747,12 @@ function getAllBuff() {
     控制引导器: {
       forSomebody: false,
       buffType: '攻击',
-      reg: /控制引导器/
+      reg: /控制引导器?/
     },
     聚焦瞄准镜: {
       forSomebody: true,
       buffType: '攻击',
-      reg: /聚焦[喵瞄]+准[鏡镜]*/
+      reg: /聚焦[喵啦脂瞄]+准[鏡镜]*/
     },
     隐形粉: {
       forSomebody: true,
@@ -734,7 +762,7 @@ function getAllBuff() {
     快速充电器: {
       forSomebody: true,
       buffType: '操作',
-      reg: /快[連德逮遠速]+充电器/
+      reg: /快[連適德逮遠速]+充电器?/
     }
   };
 }

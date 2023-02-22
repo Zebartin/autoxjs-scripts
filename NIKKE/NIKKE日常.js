@@ -287,6 +287,7 @@ function 好友() {
     clickRect(someFriend);
     return false;
   }, 30, 500);
+  sleep(500);
   back();
   ocrUntilFound(res => res.text.match(/(可以|目录|搜寻|赠送)/) != null, 20, 1500);
   if (colors.red(captureScreen().pixel(sendBtn.bounds.left, sendBtn.bounds.top)) < 100) {

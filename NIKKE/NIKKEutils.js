@@ -215,6 +215,11 @@ function 刷刷刷() {
     }
     log('门票用完了');
     click(width / 2, height / 2);
+    skipBtn = ocrUntilFound(res => res.find(e =>
+      e.text.match(/[LAUTOG]/) == null && e.text.match(/SK.P/) != null
+    ), 3, 1000);
+    if (skipBtn != null)
+      clickRect(skipBtn);
   }
 }
 

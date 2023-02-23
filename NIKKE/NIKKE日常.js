@@ -434,6 +434,11 @@ function 竞技场() {
       e.bounds.left > atk.bounds.right
     );
     if (ret == null) {
+      let touch = res.find(e =>
+        e.text == 'TOUCH' && e.bounds != null &&
+        e.bounds.bottom < atk.bounds.top &&
+        e.bounds.left > atk.bounds.right
+      );
       ret = res.find(e =>
         e.text.startsWith('特殊') && e.bounds != null &&
         e.bounds.bottom < atk.bounds.top &&
@@ -441,9 +446,8 @@ function 竞技场() {
       );
       if (ret != null) {
         // 下移识别框
-        let retHeight = ret.height();
-        ret.bounds.top = ret.bounds.bottom;
-        ret.bounds.bottom = ret.bounds.bottom + retHeight;
+        ret.bounds.top = touch.bounds.top;
+        ret.bounds.bottom = touch.bounds.bottom;
       }
     }
     return ret;

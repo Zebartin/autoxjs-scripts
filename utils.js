@@ -15,7 +15,7 @@ else {
 
 function getOcrRes() {
   requestScreenCaptureAuto();
-  sleep(5000);
+  sleep(3000);
   ocrUntilFound(res => {
     for (let i of res.children) {
       log(i.text);

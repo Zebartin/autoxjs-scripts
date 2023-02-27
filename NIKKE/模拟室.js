@@ -106,25 +106,20 @@ function 模拟室(fromIndex) {
     status.tryDiff = (Math.floor(tryDiffArea / 3) + 3).toString();
     status.tryArea = tryDiffArea % 3;
     let diffAreaName = `${status.tryDiff}${String.fromCharCode('A'.charCodeAt(0) + status.tryArea)}`;
-    for (let i = 0; i < 5; ++i) {
-      status.earlyStop = false;
-      status.bestBuffToKeep = {
-        name: null,
-        level: null
-      };
-      status.newBuffs = {};
-      status.mode = '尽力而为';
-      toastLog(`尝试${diffAreaName}`);
-      log('已有BUFF：', Object.keys(status.loaded));
-      oneSimulation(status);
-      if (status.mode == '尽力而为') {
-        if (status.earlyStop)
-          toastLog(`尝试${diffAreaName}失败，放弃`);
-        else
-          toastLog(`尝试${diffAreaName}成功`);
-        break;
-      }
-    }
+    status.earlyStop = false;
+    status.bestBuffToKeep = {
+      name: null,
+      level: null
+    };
+    status.newBuffs = {};
+    status.mode = '尽力而为';
+    toastLog(`尝试${diffAreaName}`);
+    log('已有BUFF：', Object.keys(status.loaded));
+    oneSimulation(status);
+    if (status.earlyStop)
+      toastLog(`尝试${diffAreaName}失败，放弃`);
+    else
+      toastLog(`尝试${diffAreaName}成功`);
   }
   toastLog('完成模拟室任务');
   if (fromIndex)
@@ -323,8 +318,8 @@ function selectOption(status) {
         ICU: 0,
         specUp: 1,
         normal: 2,
-        hard: 3,
-        abilitiesTest: 4
+        abilitiesTest: 3,
+        hard: 4
       };
     let buffPriority = {};
     let buffScore = 1;
@@ -365,11 +360,6 @@ function selectOption(status) {
   }
   log('备选选项：', options);
   log('选择：', bestOption);
-  if (bestOption.type == 'abilitiesTest') {
-    status.mode = '怎么全是指挥能力测试';
-    status.earlyStop = true;
-    return;
-  }
   doWithOption(bestOption, status);
   return;
 }
@@ -387,6 +377,57 @@ function doWithOption(option, status) {
   }
   clickRect(option);
   sleep(1000);
+  if (option.type == 'abilitiesTest') {
+    let keywords = [
+      /不选/,
+      /体力/,
+      /第[一二三]个/
+    ];
+    let [choice, keywordType] = ocrUntilFound(res => {
+      if (!res.text.includes('确认'))
+        return null;
+      let img = images.copy(captureScreen());
+      for (let i = 0; i < keywords.length; ++i)
+        if (keywords[i].test(res.text)) {
+          let t = res.filter(e => keywords[i].test(e.text));
+          if (i == 0)
+            return [t[0], i];   
+          for (let j of t) {
+            // 检查选项是否可选
+            let c = images.pixel(img, j.bounds.left, j.bounds.top);
+            if (colors.isSimilar(c, colors.WHITE, 20))
+              return [j, i];
+          }
+        }
+      img.recycle();
+      return null;
+    }, 30, 500);
+    clickRect(choice);
+    clickRect(ocrUntilFound(res => {
+      if (keywordType == 0 && res.text.match(/[什么都没有发生3分之2]{3}/) == null) {
+        clickRect(choice);
+        return null;
+      }
+      return res.find(e => e.text.includes('确认'));
+    }, 30, 1000));
+    let roomCnt = 0;
+    ocrUntilFound(res => {
+      if (keywordType == 0 && res.text.includes('不选'))
+        return null;
+      if (res.text.match(/ON[\s\S]*ROOM[\s\S]*RESET/) != null)
+        return roomCnt++ >= 3;
+      if (res.text.includes('不选')) {
+        let t = res.find(e => e.text.match(/不选.$/) != null);
+        if (t != null)
+          clickRect(t);
+      }
+      if (res.text.includes('确认'))
+        clickRect(res.find(e => e.text.includes('确认')));
+      sleep(1000);
+      return false;
+    }, 30, 500);
+    return;
+  }
   if (option.type == 'ICU') {
     sleep(2000);
     let [firstOption, confirmBtn] = ocrUntilFound(res => {
@@ -479,7 +520,7 @@ function doWithOption(option, status) {
   }, 3, 2000);
   let quickFight = null;
   if (option.type == 'normal') {
-    quickFight = ocrUntilFound(res => res.find(e => e.text.match(/快[連德逮遠速]/) != null), 10, 300);
+    quickFight = ocrUntilFound(res => res.find(e => e.text.match(/快[連德逮遠速]/) != null), 30, 500);
     if (colors.red(images.pixel(captureScreen(), quickFight.bounds.left, quickFight.bounds.top)) < 200)
       quickFight = null;
   }

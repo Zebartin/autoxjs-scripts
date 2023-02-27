@@ -339,7 +339,7 @@ function 爬塔() {
       sleep(1000);
       let endCombat = ocrUntilFound(res => res.find(
         e => e.text.match(/(下[^步方法]{2}|返回)/) != null
-      ), 100, 100);
+      ), 30, 500);
       if (endCombat.text.includes('返回')) {
         clickRect(endCombat);
         toastLog('作战失败');
@@ -421,7 +421,6 @@ function 竞技场() {
   back();
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('SPECIAL')), 30, 1000));
   toastLog('进入特殊竞技场');
-  ocrUntilFound(res => res.text.includes('战斗'), 30, 1000);
   // 如果识别出了百分号，直接点百分号
   // 没有就点上方中央“特殊竞技场”下方位置，可能能点到
   let specialRewardBtn = ocrUntilFound(res => {
@@ -434,6 +433,11 @@ function 竞技场() {
       e.bounds.left > atk.bounds.right
     );
     if (ret == null) {
+      let touch = res.find(e =>
+        e.text == 'TOUCH' && e.bounds != null &&
+        e.bounds.bottom < atk.bounds.top &&
+        e.bounds.left > atk.bounds.right
+      );
       ret = res.find(e =>
         e.text.startsWith('特殊') && e.bounds != null &&
         e.bounds.bottom < atk.bounds.top &&
@@ -441,13 +445,12 @@ function 竞技场() {
       );
       if (ret != null) {
         // 下移识别框
-        let retHeight = ret.height();
-        ret.bounds.top = ret.bounds.bottom;
-        ret.bounds.bottom = ret.bounds.bottom + retHeight;
+        ret.bounds.top = touch.bounds.top;
+        ret.bounds.bottom = touch.bounds.bottom;
       }
     }
     return ret;
-  }, 30, 1000);
+  }, 50, 1000);
   if (specialRewardBtn != null && specialRewardBtn.text != '0%') {
     clickRect(specialRewardBtn);
     toastLog('领取竞技场奖励');

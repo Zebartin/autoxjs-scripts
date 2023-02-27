@@ -202,9 +202,9 @@ function 刷刷刷() {
       }
       ocrUntilFound(res => res.text.includes('REWARD'), 30, 6000);
       let target = ocrUntilFound(res => {
-        let restart = res.find(e => e.text.endsWith('重新开始'));
+        let restart = res.find(e => e.text.includes('重新开始'));
         let nextCombat = res.find(e => e.text.match(/下[^步方法]{2}/) != null);
-        if (restart != null && restart.bounds.left >= width / 2)
+        if (nextCombat == null && restart != null && restart.bounds.left >= width / 2)
           return restart;
         return nextCombat;
       }, 20, 1000);

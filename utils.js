@@ -15,7 +15,7 @@ else {
 
 function getOcrRes() {
   requestScreenCaptureAuto();
-  sleep(5000);
+  sleep(3000);
   ocrUntilFound(res => {
     for (let i of res.children) {
       log(i.text);
@@ -44,6 +44,8 @@ function ocrUntilFound(found, retry, interval) {
 }
 function clickRect(rect) {
   sleep(1000);
+  if (rect.text)
+    log(`点击"${rect.text}"`);
   click(rect.bounds.centerX(), rect.bounds.centerY());
 }
 /**

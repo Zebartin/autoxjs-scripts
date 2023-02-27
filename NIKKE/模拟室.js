@@ -379,28 +379,35 @@ function doWithOption(option, status) {
   sleep(1000);
   if (option.type == 'abilitiesTest') {
     let keywords = [
-      '不选',
-      '体力',
-      '第一个'
+      /不选/,
+      /体力/,
+      /第[一二三]个/
     ];
     let [choice, keywordType] = ocrUntilFound(res => {
       if (!res.text.includes('确认'))
         return null;
-      let i;
-      for (i = 0; i < keywords.length; ++i)
-        if (res.text.includes(keywords[i]))
-          break;
-      if (i == keywords.length)
-        return null;
-      let ret = res.find(e => e.text.includes(keywords[i]));
-      if (!ret)
-        return null;
-      return [ret, i];
+      let img = images.copy(captureScreen());
+      for (let i = 0; i < keywords.length; ++i)
+        if (keywords[i].test(res.text)) {
+          let t = res.filter(e => keywords[i].test(e.text));
+          if (i == 0)
+            return [t[0], i];   
+          for (let j of t) {
+            // 检查选项是否可选
+            let c = images.pixel(img, j.bounds.left, j.bounds.top);
+            if (colors.isSimilar(c, colors.WHITE, 20))
+              return [j, i];
+          }
+        }
+      img.recycle();
+      return null;
     }, 30, 500);
     clickRect(choice);
     clickRect(ocrUntilFound(res => {
-      if (keywordType == 0 && res.text.match(/[什么都没有发生3分之2]{3}/) == null)
+      if (keywordType == 0 && res.text.match(/[什么都没有发生3分之2]{3}/) == null) {
+        clickRect(choice);
         return null;
+      }
       return res.find(e => e.text.includes('确认'));
     }, 30, 1000));
     let roomCnt = 0;

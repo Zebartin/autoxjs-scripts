@@ -272,7 +272,7 @@ function 好友() {
   // 等待列表加载
   // 一个好友都没有的话会出问题
   let [sendBtn, someFriend] = ocrUntilFound(res => {
-    let send = res.find(e => e.text.endsWith('赠送'));
+    let send = res.find(e => e.text.endsWith('赠送') && e.text.match(/[每日发上限]/) == null);
     let upper = res.find(e => e.text.includes('可以'));
     if (!send || !upper)
       return null;
@@ -295,7 +295,8 @@ function 好友() {
   sleep(500);
   back();
   ocrUntilFound(res => res.text.match(/(可以|目录|搜寻|赠送)/) != null, 20, 1500);
-  if (colors.red(captureScreen().pixel(sendBtn.bounds.left, sendBtn.bounds.top)) < 100) {
+  let btnColor = colors.toString(images.pixel(captureScreen(), sendBtn.bounds.left, sendBtn.bounds.top));
+  if (colors.isSimilar('#1aaff7', btnColor, 10)) {
     clickRect(sendBtn);
     toastLog('点击赠送');
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('确认')), 30, 1000));

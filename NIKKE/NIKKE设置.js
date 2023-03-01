@@ -1,7 +1,7 @@
 "ui";
 ui.layout(
   <ScrollView>
-    <vertical>
+    <vertical focusableInTouchMode="true">
       <appbar>
         <toolbar title="选项配置" />
       </appbar>
@@ -87,12 +87,19 @@ ui.layout(
             <checkbox id="模拟室" marginLeft="4" marginRight="6" />
             <vertical padding="18 8" h="auto" w="0" layout_weight="1">
               <text text="模拟室" textColor="#222222" textSize="16sp" />
-              <text text="刷取buff，然后尝试一次高难，不支持处理“未知奖励”" textColor="#999999" textSize="14sp" />
+              <text text="刷取buff，然后尝试高难直到成功通关" textColor="#999999" textSize="14sp" />
             </vertical>
           </horizontal>
         </card>
         <vertical id='simulationRoom' visibility='gone'>
           <text textSize="16sp" margin="8">模拟室设置</text>
+          <vertical margin="10 2">
+            <text textSize="14sp">出战队伍</text>
+            <text textSize="12sp">格式：一，二，三，四，五（按照顺序）</text>
+            <text textSize="12sp">须确保队伍练度足够通关</text>
+            <text textSize="12sp">留空表示不自动编队，此时只会尝试一次高难</text>
+            <input textSize="14sp" id="simTeam" />
+          </vertical>
           <horizontal margin="10 2">
             <text id="maxPassText" textSize="14sp" w="0" layout_weight="4">不刷buff</text>
             <seekbar id="maxPass" w="0" layout_weight="6" />
@@ -312,6 +319,10 @@ ui.tryDiffArea.setOnSeekBarChangeListener({
   }
 });
 
+ui.simTeam.setText((() => {
+  let team = simulationRoom.team || ['长发公主', '桑迪', '神罚', '红莲', '丽塔'];
+  return team.join('，');
+})());
 ui.maxPass.setProgress(simulationRoom.maxPass);
 ui.maxSsrNumber.setProgress(simulationRoom.maxSsrNumber);
 ui.tryDiffArea.setProgress(simulationRoom.tryDiffArea || 0);
@@ -336,7 +347,12 @@ ui.maxRetry.setMax(5);
 ui.maxRetry.setProgress(NIKKEstorage.get('maxRetry', 1));
 
 ui.save.on("click", function () {
-  todoTask = [];
+  let team = ui.simTeam.text().split(/[,\s，]/g).filter(x => x.length > 0);
+  if (team.length != 0 && team.length != 5) {
+    toast('模拟室编队格式有误，无法保存');
+    return;
+  }
+  let todoTask = [];
   for (let task of [
     "商店", "基地收菜", "好友", "竞技场",
     "爬塔", "咨询", "模拟室"
@@ -348,7 +364,8 @@ ui.save.on("click", function () {
   NIKKEstorage.put('buyCodeManual', ui.buyCodeManual.getProgress());
   NIKKEstorage.put('rookieArenaTarget', ui.rookieArenaTarget.getProgress());
 
-  simulationRoom = {};
+  let simulationRoom = {};
+  simulationRoom.team = team;
   simulationRoom.maxPass = ui.maxPass.getProgress();
   simulationRoom.maxSsrNumber = ui.maxSsrNumber.getProgress();
   simulationRoom.tryDiffArea = ui.tryDiffArea.getProgress();

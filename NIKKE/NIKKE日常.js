@@ -1,5 +1,5 @@
 var {
-  启动NIKKE, 等待NIKKE加载, 退出NIKKE, 
+  启动NIKKE, 等待NIKKE加载, 退出NIKKE,
   mostSimilar, 返回首页, 关闭限时礼包
 } = require('./NIKKEutils.js');
 var { 模拟室 } = require('./模拟室.js');
@@ -113,12 +113,17 @@ function 商店() {
   }
   const buyCodeManual = NIKKEstorage.get('buyCodeManual', 3);
   if (buyCodeManual != 0) {
-    let arenaShop = ocrUntilFound(res => res.find(e => e.text == 'R'), 30, 1000);
-    clickRect(arenaShop);
+    const arenaShopImage = images.read("./images/arenaShop.jpg");
+    let arenaShop = images.findImage(captureScreen(), arenaShopImage, {
+      threshold: 0.7,
+      region: [0, height * 0.3, width / 2, height * 0.6]
+    });
+    arenaShopImage.recycle();
+    click(arenaShop.x, arenaShop.y);
     ocrUntilFound(res => {
       if (res.text.match(/[竟竞]技场/) != null)
         return true;
-      clickRect(arenaShop);
+      click(arenaShop.x, arenaShop.y);
       return false;
     }, 10, 1000);
     let [manual, manualSelection, soldOut] = ocrUntilFound(res => {
@@ -359,7 +364,7 @@ function 爬塔() {
     sleep(5000);
     ocrUntilFound(res => res.text.includes('之塔'), 20, 3000);
     // 等待可能出现的限时礼包
-    if (successFlag) 
+    if (successFlag)
       关闭限时礼包();
   }
   返回首页();
@@ -531,7 +536,7 @@ function 咨询() {
   返回首页();
 }
 function 单次咨询(advise) {
-  let failFunc = ()=>{
+  let failFunc = () => {
     back();
     ocrUntilFound(res => res.text.includes('可以'), 30, 3000);
     return false;

@@ -189,25 +189,38 @@ function 刷刷刷() {
   sleep(2000);
   if (ocrUntilFound(res => res.text.includes('AUT'), 20, 1000) != null) {
     while (true) {
-      sleep(5000);
-      for (let i = 0; i < 2; ++i) {
-        skipBtn = ocrUntilFound(res => res.find(e =>
+      ocrUntilFound(res => {
+        if (!res.text.includes('AUT')) {
+          sleep(1000);
+          return null;
+        }
+        let autoBtn = res.find(e => e.text.includes('AUT'));
+        if (autoBtn.bounds.right < width / 2)
+          return true;
+        let skipBtn = res.find(e =>
           e.text.match(/[LAUTOG]/) == null && e.text.match(/SK.P/) != null
-        ), 3, 1000);
+        );
         if (skipBtn != null) {
           clickRect(skipBtn);
           sleep(1000);
-        } else
-          break;
-      }
-      ocrUntilFound(res => res.text.includes('REWARD'), 30, 6000);
+        }
+        else
+          click(width / 2, height / 2);
+        return null;
+      }, 50, 1000);
+      let combatOver = false;
       let target = ocrUntilFound(res => {
+        if (!combatOver && !res.text.includes('REWARD')) {
+          sleep(5000);
+          return null;
+        }
+        combatOver = true;
         let restart = res.find(e => e.text.includes('重新开始'));
         let nextCombat = res.find(e => e.text.match(/下[^步方法]{2}/) != null);
         if (nextCombat == null && restart != null && restart.bounds.left >= width / 2)
           return restart;
         return nextCombat;
-      }, 20, 1000);
+      }, 30, 1000);
       sleep(1000);
       if (colors.blue(captureScreen().pixel(target.bounds.left, target.bounds.top)) < 200)
         break;
@@ -215,11 +228,19 @@ function 刷刷刷() {
     }
     log('门票用完了');
     click(width / 2, height / 2);
-    skipBtn = ocrUntilFound(res => res.find(e =>
-      e.text.match(/[LAUTOG]/) == null && e.text.match(/SK.P/) != null
-    ), 3, 1000);
-    if (skipBtn != null)
-      clickRect(skipBtn);
+    ocrUntilFound(res => {
+      if (res.text.includes('返回'))
+        return true;
+      let skipBtn = res.find(e =>
+        e.text.match(/[LAUTOG]/) == null && e.text.match(/SK.P/) != null
+      );
+      if (skipBtn != null) {
+        clickRect(skipBtn);
+        sleep(2000);
+      } else
+        click(width / 2, height / 2);
+      return null;
+    }, 30, 1000);
   }
 }
 

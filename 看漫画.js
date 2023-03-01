@@ -55,7 +55,7 @@ ocrUntilFound(res => {
     return true;
   } else if (res.text.includes("重试")) {
     clickRect(res.find(e => e.text == '重试'));
-  } else if (res.text.match(/(该话.有.容|不支持|视频)/) != null) {
+  } else if (res.text.match(/(该话.有.容|不支持|视频|免费)/) != null) {
     back();
     className("android.view.View").depth(12)
       .indexInParent(random(14, 16))

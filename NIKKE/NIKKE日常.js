@@ -1,6 +1,6 @@
 var {
-  启动NIKKE, 等待NIKKE加载,
-  退出NIKKE, 返回首页, 关闭限时礼包
+  启动NIKKE, 等待NIKKE加载, 退出NIKKE, 
+  mostSimilar, 返回首页, 关闭限时礼包
 } = require('./NIKKEutils.js');
 var { 模拟室 } = require('./模拟室.js');
 var {
@@ -531,6 +531,11 @@ function 咨询() {
   返回首页();
 }
 function 单次咨询(advise) {
+  let failFunc = ()=>{
+    back();
+    ocrUntilFound(res => res.text.includes('可以'), 30, 3000);
+    return false;
+  };
   const maxRetry = 3;
   let nameRetry = 0;
   let [adviseBtn, name, hasMax] = ocrUntilFound(res => {
@@ -559,28 +564,26 @@ function 单次咨询(advise) {
       log(`妮姬名OCR结果：${nameArea.text}，匹配：${nameResult.result}，相似度${nameResult.similarity.toFixed(2)}`);
       nameRetry++;
       if (nameRetry >= maxRetry) {
-        log(`已达最大尝试次数${maxRetry}`);
-        log('可能原因：暂不支持新版本妮姬的咨询');
-        toastLog('妮姬名字识别失败，直接退出，不重启游戏');
-        exit();
+        return [btn, '', false];
       } else
         log(`妮姬名字识别相似度过低，重试(${nameRetry}/${maxRetry})`);
       return null;
     }
     return [btn, nameResult.result, value.text.includes('MAX')];
   }, 30, 2000);
+  if (nameRetry == maxRetry) {
+    log(`已达最大尝试次数${maxRetry}。可能原因：暂不支持新版本妮姬的咨询`);
+    toast('妮姬名字识别失败');
+    return failFunc();
+  }
   log(`咨询对象：${name}`);
   if (hasMax) {
     log('已达好感度上限');
-    back();
-    ocrUntilFound(res => res.text.includes('可以'), 30, 3000);
-    return false;
+    return failFunc();
   }
   if (colors.blue(captureScreen().pixel(adviseBtn.bounds.right, adviseBtn.bounds.top)) < 200) {
     log('咨询按钮不可点击');
-    back();
-    ocrUntilFound(res => res.text.includes('可以'), 30, 3000);
-    return false;
+    return failFunc();
   }
   for (let i = 1; i <= maxRetry; ++i) {
     clickRect(adviseBtn);
@@ -598,9 +601,7 @@ function 单次咨询(advise) {
       log('已达好感度上限');
       back();
       sleep(1000);
-      back();
-      ocrUntilFound(res => res.text.includes('可以'), 10, 3000);
-      return false;
+      return failFunc();
     }
     // 连点直到出现选项
     let adviseImage = images.read('./images/counsel.jpg');
@@ -697,45 +698,4 @@ function 单次咨询(advise) {
   }
   toast('回到咨询首页');
   return true;
-}
-function mostSimilar(target, candidates) {
-  let res = null, maxSim = -1;
-  for (let candidate of candidates) {
-    if (target == candidate) {
-      res = candidate;
-      maxSim = 1;
-      break;
-    }
-    let s = similarity(target, candidate);
-    if (s > maxSim) {
-      maxSim = s;
-      res = candidate;
-    }
-  }
-  return {
-    result: res,
-    similarity: maxSim
-  };
-}
-// 编辑距离
-function similarity(s1, s2) {
-  let n = s1.length, m = s2.length;
-  if (n * m == 0)
-    return n == m ? 1 : 0;
-  let dp = [];
-  for (let i = 0; i <= n; ++i)
-    dp.push([i]);
-  for (let j = 1; j <= m; ++j)
-    dp[0].push(j);
-  for (let i = 1; i <= n; ++i) {
-    for (let j = 1; j <= m; ++j) {
-      let left = dp[i - 1][j] + 1;
-      let down = dp[i][j - 1] + 1;
-      let leftDown = dp[i - 1][j - 1];
-      if (s1[i - 1] != s2[j - 1])
-        leftDown += 1;
-      dp[i][j] = Math.min(left, down, leftDown);
-    }
-  }
-  return 1.0 - dp[n][m] / Math.max(m, n);
 }

@@ -401,7 +401,7 @@ function 竞技场() {
   }, 30, 1000);
   while (true) {
     let hasFree = ocrUntilFound(res => {
-      if (!res.text.includes('战斗'))
+      if (!res.text.includes('ROOKIE'))
         return null;
       let t = res.find(e =>
         e.text.includes('免') && e.bounds != null &&

@@ -114,10 +114,16 @@ function 商店() {
   const buyCodeManual = NIKKEstorage.get('buyCodeManual', 3);
   if (buyCodeManual != 0) {
     const arenaShopImage = images.read("./images/arenaShop.jpg");
-    let arenaShop = images.findImage(captureScreen(), arenaShopImage, {
-      threshold: 0.7,
-      region: [0, height * 0.3, width / 2, height * 0.6]
-    });
+    let arenaShop = null;
+    for (let i = 0; i < 10; ++i) {
+      arenaShop = images.findImage(captureScreen(), arenaShopImage, {
+        threshold: 0.7,
+        region: [0, height * 0.3, width / 2, height * 0.6]
+      });
+      if (arenaShop != null)
+        break;
+      sleep(300);
+    }
     arenaShopImage.recycle();
     click(arenaShop.x, arenaShop.y);
     ocrUntilFound(res => {

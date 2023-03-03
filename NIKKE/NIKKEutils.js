@@ -221,22 +221,31 @@ function 刷刷刷() {
           click(width / 2, height / 2);
         return null;
       }, 50, 1000);
-      let combatOver = false;
-      let target = ocrUntilFound(res => {
-        if (!combatOver && !res.text.includes('REWARD')) {
+      let clickNext = ocrUntilFound(res => {
+        if (!res.text.includes('REWARD')) {
           sleep(5000);
           return null;
         }
-        combatOver = true;
-        let restart = res.find(e => e.text.includes('重新开始'));
-        let nextCombat = res.find(e => e.text.match(/下[^步方法]{2}/) != null);
-        if (nextCombat == null && restart != null && restart.bounds.left >= width / 2)
-          return restart;
-        return nextCombat;
+        return res.find(e => e.text.includes('点击'));
       }, 30, 1000);
-      sleep(1000);
-      if (colors.blue(captureScreen().pixel(target.bounds.left, target.bounds.top)) < 200)
+      let hasBlue = images.findColor(captureScreen(), '#00a1ff', {
+        region: [
+          0, clickNext.bounds.bottom, 
+          clickNext.bounds.right, height - clickNext.bounds.bottom
+        ],
+        threshold: 20
+      });
+      if (hasBlue == null)
         break;
+      let target = ocrUntilFound(res => {
+        let nextCombat = res.find(e => e.text.match(/下[^步方法]{2}/) != null);
+        if (nextCombat != null)
+          return nextCombat;
+        let restart = res.find(e => e.text.includes('重新开始'));
+        if (restart != null && restart.bounds.left >= width / 2)
+          return restart;
+        return null;
+      }, 30, 500);
       clickRect(target);
     }
     log('门票用完了');

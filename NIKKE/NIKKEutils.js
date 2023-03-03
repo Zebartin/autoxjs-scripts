@@ -25,6 +25,16 @@ else {
 function 启动NIKKE() {
   unlockIfNeed();
   home();
+  // 保证错误截图不要过多
+  let maxErr = 20;
+  let errorPath = files.path('./images/nikkerror/');
+  files.ensureDir(errorPath);
+  let errorImages = files.listDir(errorPath);
+  if (errorImages.length >= maxErr) {
+    errorImages.sort((a, b) => parseInt(b.split('.')[0]) - parseInt(a.split('.')[0]));
+    for (let f of errorImages.slice(maxErr))
+      files.remove(files.join(errorPath, f));
+  }
   let NIKKEstorage = storages.create("NIKKEconfig");
   if (NIKKEstorage.get('mute', false)) {
     try {

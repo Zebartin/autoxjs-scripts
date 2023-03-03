@@ -52,6 +52,10 @@ function 日常() {
           toast(error.message);
           console.error(error.message);
           console.error(error.stack);
+          // 保存出错截图
+          let filename = files.path(`./images/nikkerror/${Date.now()}.jpg`);
+          images.save(captureScreen(), filename);
+          log(`出错截图已保存到${filename}`);
           if (alreadyRetry != maxRetry) {
             toastLog(`脚本出错，即将重试(${alreadyRetry + 1}/${maxRetry})`);
             sleep(3000);

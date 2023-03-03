@@ -1,6 +1,7 @@
 var {
   ocrUntilFound,
   clickRect,
+  imgToBounds,
   getDisplaySize
 } = require('./utils.js');
 var {
@@ -383,7 +384,7 @@ function doWithOption(option, status) {
     if (status.earlyStop)
       return;
   }
-  clickRect(option);
+  clickRect(option, 0.1);
   sleep(1000);
   if (option.type == 'abilitiesTest') {
     let keywords = [
@@ -827,6 +828,7 @@ function teamUp(status) {
     threshold: 0.7,
     region: [0, height * 0.6]
   });
+  teamEmpty = imgToBounds(emptyImage, teamEmpty);
   emptyImage.recycle();
   if (teamEmpty == null) {
     log('模拟室队伍没有空位，不需要编队');
@@ -834,7 +836,7 @@ function teamUp(status) {
     return;
   }
   log(`开始模拟室编队：${status.team}`);
-  click(teamEmpty.x, teamEmpty.y);
+  clickRect(teamEmpty);
   let [upperBound, lowerBound, allBtn, saveBtn] = ocrUntilFound(res => {
     let upper = res.find(e => e.text.match(/[可以变更编队]{3}/) != null);
     let lower = res.find(e => e.text.includes('返回'));
@@ -851,11 +853,12 @@ function teamUp(status) {
     threshold: 0.7,
     region: [0, height * 0.6]
   });
+  refreshBtn = imgToBounds(refreshImage, refreshBtn);
   refreshImage.recycle();
   sleep(1000);
   let teamClone = status.team.slice();
   // 1. 刷新清空队伍
-  click(refreshBtn.x, refreshBtn.y);
+  clickRect(refreshBtn);
   // 2. 识别每页妮姬，选中目标
   for (let retry = 0; teamClone.length > 0 && retry < 3; ++retry) {
     for (let i = 0; i < 7; ++i)
@@ -875,7 +878,7 @@ function teamUp(status) {
         let t = mostSimilar(n.name, teamClone);
         console.info(t);
         if (t.similarity >= 0.5) {
-          clickRect(n);
+          clickRect(n, 0.01);
           teamClone.splice(teamClone.findIndex(x => x == t.result), 1);
         }
         if (teamClone.length == 0)
@@ -902,14 +905,14 @@ function teamUp(status) {
     swipe(width / 2, (upperBound + lowerBound) / 2, width / 2, lowerBound, 300);
   sleep(1000);
   // 5. 刷新清空选择
-  click(refreshBtn.x, refreshBtn.y);
+  clickRect(refreshBtn);
   // 6. 按队伍顺序逐一选择
   let img = images.clip(captureScreen(), 0, upperBound, width, lowerBound - upperBound);
   let nikkes = detectNikkes(img, 0, upperBound);
   img.recycle();
   for (let i of status.team) {
     let t = mostSimilar(i, nikkes.map(x => x.name));
-    clickRect(nikkes.find(x => x.name == t.result));
+    clickRect(nikkes.find(x => x.name == t.result), 0.01);
   }
   clickRect(saveBtn);
   status.team = [];

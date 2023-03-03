@@ -1,6 +1,7 @@
 var {
   ocrUntilFound,
   clickRect,
+  imgToBounds,
   unlockIfNeed,
   requestScreenCaptureAuto,
   getDisplaySize
@@ -160,10 +161,11 @@ function 返回首页() {
       break;
     sleep(300);
   }
+  result = imgToBounds(homeImage, result);
   homeImage.recycle();
   sleep(1000);
   for (let i = 0; i < 10; ++i) {
-    click(result.x, result.y);
+    clickRect(result);
     sleep(4000);
     if (ocrUntilFound(res => res.text.match(/(大厅|基地|物品|方舟)/), 3, 400) != null)
       break;

@@ -6,6 +6,7 @@ var { 模拟室 } = require('./模拟室.js');
 var {
   ocrUntilFound,
   clickRect,
+  imgToBounds,
   requestScreenCaptureAuto,
   getDisplaySize
 } = require('./utils.js');
@@ -128,12 +129,13 @@ function 商店() {
         break;
       sleep(300);
     }
+    arenaShop = imgToBounds(arenaShopImage, arenaShop);
     arenaShopImage.recycle();
-    click(arenaShop.x, arenaShop.y);
+    clickRect(arenaShop);
     ocrUntilFound(res => {
       if (res.text.match(/[竟竞]技场/) != null)
         return true;
-      click(arenaShop.x, arenaShop.y);
+      clickRect(arenaShop);
       return false;
     }, 10, 1000);
     let [manual, manualSelection, soldOut] = ocrUntilFound(res => {
@@ -207,7 +209,7 @@ function 基地收菜() {
     ret.bounds.top = headquarter.bounds.bottom;
     return ret;
   }, 30, 1000);
-  clickRect(target);
+  clickRect(target, 0.3);
   toastLog('进入公告栏');
   // 等待派遣内容加载
   target = ocrUntilFound(res => res.text.match(/(时间|完成|目前)/), 20, 500);
@@ -277,7 +279,7 @@ function 基地收菜() {
   返回首页();
 }
 function 好友() {
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('好友')), 30, 1000));
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('好友')), 30, 1000), 0.5);
   toastLog('点击好友');
   // 等待列表加载
   // 一个好友都没有的话会出问题

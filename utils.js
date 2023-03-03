@@ -1,3 +1,4 @@
+const 手机锁屏密码 = '手机锁屏密码';
 if (typeof module === 'undefined') {
   getOcrRes();
   toast('识别完成，可以退出查看日志');
@@ -82,7 +83,7 @@ function unlockIfNeed() {
     log("没有锁屏无需解锁");
     return;
   }
-  enterPwd('手机锁屏密码');
+  enterPwd(手机锁屏密码);
 
   log("解锁完毕");
 }

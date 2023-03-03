@@ -64,15 +64,26 @@ function 模拟室(fromIndex) {
     exit();
   }
   [width, height] = getDisplaySize();
-  let { maxPass, maxSsrNumber, preferredBuff, team } = simulationRoom;
+  let { maxPass, maxSsrNumber, preferredBuff, tryDiffArea, team } = simulationRoom;
+  tryDiffArea = tryDiffArea || 0;
   team = team || [];
   maxSsrNumber = Math.min(maxSsrNumber, preferredBuff.length, Object.keys(getAllBuff()).length);
+  let tryDiff = (Math.floor(tryDiffArea / 3) + 3).toString();
+  let tryArea = tryDiffArea % 3;
   if (fromIndex) {
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('方舟')), 30, 1000));
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('模拟室')), 30, 1000));
     sleep(2000);
   }
   quitPrevSim();
+  // 检查今日模拟室是否已完成
+  if (clickIntoDiffArea(tryDiff, tryArea, true)) {
+    back();
+    toastLog('完成模拟室任务');
+    if (fromIndex)
+      返回首页();
+    return;
+  }
   let status = {
     loaded: getBuffLoaded(),
     preferredBuff: preferredBuff,
@@ -104,10 +115,9 @@ function 模拟室(fromIndex) {
     toastLog(`第${curPass + 1}轮模拟室：${status.mode}模式`);
     oneSimulation(status);
   }
-  let tryDiffArea = simulationRoom.tryDiffArea || 0;
   if (tryDiffArea != 0) {
-    status.tryDiff = (Math.floor(tryDiffArea / 3) + 3).toString();
-    status.tryArea = tryDiffArea % 3;
+    status.tryDiff = tryDiff;
+    status.tryArea = tryArea;
     let diffAreaName = `${status.tryDiff}${String.fromCharCode('A'.charCodeAt(0) + status.tryArea)}`;
     status.bestBuffToKeep = {
       name: null,
@@ -136,27 +146,10 @@ function 模拟室(fromIndex) {
 }
 
 function oneSimulation(status) {
-  clickRect(ocrUntilFound(res => res.find(e => e.text.startsWith('开始')), 10, 300));
-  if ('tryDiff' in status) {
-    clickRect(ocrUntilFound(res => res.find(e => e.text == status.tryDiff), 20, 300));
-    let areaChoice = ocrUntilFound(res => {
-      let area = res.find(e => e.text == '地区');
-      let start = res.find(e => e.text.includes('开始'));
-      if (!area || !start)
-        return null;
-      let numbers = res.filter(e =>
-        e.bounds != null && e.bounds.top > area.bounds.bottom &&
-        e.bounds.bottom < start.bounds.top &&
-        e.text.match(/[\d\s+,]{4,10}/) != null && e.level == 3
-      ).toArray();
-      if (numbers.length != 3)
-        return null;
-      numbers.sort((a, b) => a.bounds.left - b.bounds.left);
-      return numbers[status.tryArea];
-    }, 20, 500);
-    clickRect(areaChoice);
-  } else
-    clickRect(ocrUntilFound(res => res.find(e => e.text == '3'), 20, 300));
+  if ('tryDiff' in status)
+    clickIntoDiffArea(status.tryDiff, status.tryArea, false);
+  else
+    clickIntoDiffArea('3', null, false);
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('开始')), 10, 300));
   for (status.layer = 0; status.layer < 7; ++status.layer) {
     selectOption(status);
@@ -291,6 +284,38 @@ function getBuffLoaded() {
   ret = scanBuffs(null);
   back();
   return ret;
+}
+
+function clickIntoDiffArea(diff, area, checkFinished) {
+  clickRect(ocrUntilFound(res => res.find(e => e.text.startsWith('开始')), 10, 300));
+  clickRect(ocrUntilFound(res => res.find(e => e.text == diff), 20, 300));
+  if (area == null)
+    return false;
+  let [areaChoice, startBtn] = ocrUntilFound(res => {
+    let upper = res.find(e => e.text == '地区');
+    let start = res.find(e => e.text.includes('开始'));
+    if (!upper || !start)
+      return null;
+    let numbers = res.filter(e =>
+      e.bounds != null && e.bounds.top > upper.bounds.bottom &&
+      e.bounds.bottom < start.bounds.top &&
+      e.text.match(/[\d\s+,]{4,10}/) != null && e.level == 3
+    ).toArray();
+    if (numbers.length != 3)
+      return null;
+    numbers.sort((a, b) => a.bounds.left - b.bounds.left);
+    return [numbers[area], start];
+  }, 20, 500);
+  clickRect(areaChoice);
+  if (checkFinished == true) {
+    let finishedText = ocrUntilFound(res => res.find(e =>
+      e.bounds != null && e.bounds.top >= areaChoice.bounds.bottom &&
+      e.bounds.bottom <= startBtn.bounds.top &&
+      e.text.match(/[该地区已通关。重置后可获得奖励]/) != null
+    ), 3, 300);
+    return finishedText != null;
+  }
+  return false;
 }
 
 function selectOption(status) {

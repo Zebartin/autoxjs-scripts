@@ -91,7 +91,7 @@ function checkConfig() {
 function 商店() {
   let buyGood = (good) => {
     toastLog(`购买${good.text}`);
-    clickRect(good);
+    clickRect(good, 0.5);
     clickRect(ocrUntilFound(res => res.find(e => e.text == '购买'), 30, 1000));
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 20, 1000));
   };
@@ -138,12 +138,12 @@ function 商店() {
       clickRect(arenaShop);
       return false;
     }, 10, 1000);
-    let [manual, manualSelection, soldOut] = ocrUntilFound(res => {
+    let manuals = ocrUntilFound(res => {
       let goods = res.filter(e =>
         e.level == 3 &&
         e.text.includes('代码手册')
       ).toArray();
-      let m = [], ms = null;
+      let ret = [], ms = null;
       for (let g of goods) {
         if (g.text.startsWith('代'))
           ms = g;
@@ -157,42 +157,29 @@ function 商店() {
             newBounds.right = Math.round(newBounds.left + w);
             newBounds.top = g.bounds.top;
             newBounds.bottom = g.bounds.bottom;
-            m.push({
+            ret.push({
               text: t[i] + '代码手册',
               bounds: newBounds
             });
           }
         }
       }
-      if (m.length < 3 || ms == null)
+      if (ms != null)
+        ret.push(ms);
+      if (ret.length < 4)
         return null;
-      let goodsSold = res.filter(e =>
-        e.level == 1 && e.bounds != null &&
-        e.text.match(/s[oq0]l[od0] [oq0]ut/i) != null
-      ).toArray();
-      return [m, ms, goodsSold];
+      return ret;
     }, 30, 1000);
-    // 一一检查每个item是否有sold out标志
-    for (let i = 0; i < Math.min(3, buyCodeManual); ++i) {
-      let thisSold = soldOut.find(e =>
-        e.bounds.bottom < manualSelection.bounds.top &&
-        e.bounds.right > manual[i].bounds.left &&
-        e.bounds.left < manual[i].bounds.right
-      );
-      if (thisSold == null)
-        buyGood(manual[i]);
+    // 一一检查每个货物是否灰暗
+    let screenImg = captureScreen();
+    for (let m of manuals) {
+      let c = screenImg.pixel(m.bounds.centerX(), m.bounds.top);
+      if (!colors.isSimilar(c, colors.DKGRAY, 30))
+        buyGood(m);
       else
-        log(`${manual[i].text}已售`)
+        log(`${m.text}已售`)
     }
-    if (buyCodeManual == 4) {
-      let selectionSold = soldOut.find(e =>
-        e.bounds.bottom > manualSelection.bounds.bottom
-      );
-      if (selectionSold == null)
-        buyGood(manualSelection);
-      else
-        log(`${manualSelection.text}已售`)
-    }
+    screenImg.recycle();
   }
   返回首页();
 }

@@ -209,6 +209,10 @@ ui.layout(
           <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">v2rayNG魔法</text>
           <checkbox id="v2rayNG" w="0" layout_weight="2" />
         </horizontal>
+        <horizontal margin="10 2" gravity="center_vertical" weightSum="10" h="0" layout_weight="1">
+          <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">打开本界面时自动检查更新</text>
+          <checkbox id="checkUpdateAuto" w="0" layout_weight="2" />
+        </horizontal>
         <horizontal margin="10 2" gravity="center_vertical|left" weightSum="10" h="0" layout_weight="1">
           <text id="maxRetryText" textSize="16sp" textColor="#222222" w="0" layout_weight="6">脚本出错时不重试</text>
           <seekbar id="maxRetry" w="0" layout_weight="4" />
@@ -216,9 +220,33 @@ ui.layout(
       </vertical>
       <button id="save" text="保存设置" />
       <button id="update" text="更新脚本（需要能够访问GITHUB）" />
+      <text id="updateText" text="" textColor="#999999" textSize="12sp" gravity="center" visibility="gone"/>
     </vertical>
   </ScrollView>
 );
+
+let globalNewTagName = null;
+let versionChangelog = null;
+function checkUpdate() {
+  if (globalNewTagName != null)
+    return globalNewTagName;
+  try {
+    const releaseAPI = 'https://api.github.com/repos/Zebartin/autoxjs-scripts/releases/latest'
+    let resp = http.get(releaseAPI);
+    if (resp.statusCode != 200) {
+      log("请求Github API失败: " + resp.statusCode + " " + resp.statusMessage);
+      return null;
+    }
+    let respJson = resp.body.json();
+    globalNewTagName = respJson['tag_name'];
+    versionChangelog = respJson['body'];
+    return globalNewTagName;
+  } catch(error) {
+    console.error(error.message);
+    console.error(error.stack);
+    return null;
+  }
+}
 
 const NIKKEstorage = storages.create("NIKKEconfig");
 const todoTaskDefault = [
@@ -331,7 +359,7 @@ for (let task of todoTask)
 for (let buffName of simulationRoom.preferredBuff)
   ui.findView(buffName).setChecked(true);
 
-for (let generalOption of ['mute', 'exitGame', 'alreadyInGame', 'v2rayNG'])
+for (let generalOption of ['mute', 'checkSale', 'exitGame', 'alreadyInGame', 'checkUpdateAuto', 'v2rayNG'])
   ui.findView(generalOption).setChecked(NIKKEstorage.get(generalOption, false));
 ui.maxRetry.setOnSeekBarChangeListener({
   onProgressChanged: function (seekbar, p, fromUser) {
@@ -345,6 +373,30 @@ ui.maxRetry.setOnSeekBarChangeListener({
 ui.maxRetry.setMin(0);
 ui.maxRetry.setMax(5);
 ui.maxRetry.setProgress(NIKKEstorage.get('maxRetry', 1));
+
+// 检查更新
+if (NIKKEstorage.get('checkUpdateAuto', false)) {
+  toastLog('自动检查更新中……');
+  let updateResult = threads.disposable();
+  threads.start(() =>{
+    updateResult.setAndNotify(checkUpdate());
+  });
+
+  const newTagName = updateResult.blockedGet();
+  const curTagName = NIKKEstorage.get('tagName', '无记录');
+  if (newTagName == null) {
+    ui.updateText.setText('自动检查更新失败，请查看日志');
+  }
+  else if (newTagName == curTagName) {
+    ui.updateText.setText(`已是最新版本：${curTagName}`);
+  }
+  else {
+    ui.updateText.setText(`新版本：${newTagName}，当前版本：${curTagName}`);
+    ui.updateText.setTextColor(colors.RED);
+  }
+  ui.updateText.attr('visibility', 'visible');
+  log('自动检查更新完成');
+}
 
 ui.save.on("click", function () {
   let team = ui.simTeam.text().split(/[,\s，]/g).filter(x => x.length > 0);
@@ -378,7 +430,7 @@ ui.save.on("click", function () {
       simulationRoom.preferredBuff.push(buffName);
   NIKKEstorage.put('simulationRoom', JSON.stringify(simulationRoom));
 
-  for (let generalOption of ['mute', 'checkSale', 'exitGame', 'alreadyInGame', 'v2rayNG'])
+  for (let generalOption of ['mute', 'checkSale', 'exitGame', 'alreadyInGame', 'checkUpdateAuto', 'v2rayNG'])
     NIKKEstorage.put(generalOption, ui.findView(generalOption).isChecked());
   NIKKEstorage.put('maxRetry', ui.maxRetry.getProgress());
 
@@ -393,20 +445,17 @@ ui.update.on("click", function () {
       sleep(3000);
       console.hide();
     };
-    const releaseAPI = 'https://api.github.com/repos/Zebartin/autoxjs-scripts/releases/latest'
-    const curTagName = NIKKEstorage.get('tagName', '');
     console.show();
     log('开始更新，请确保Github访问正常');
-    let resp = http.get(releaseAPI);
-    if (resp.statusCode != 200) {
-      log("请求Github API失败: " + resp.statusCode + " " + resp.statusMessage);
+    const curTagName = NIKKEstorage.get('tagName', '');
+    const newTagName = checkUpdate();
+    if (newTagName == null) {
+      log('更新失败，请检查网络');
       beforeReturn();
       return;
     }
-    let respJson = resp.body.json();
-    let newTagName = respJson['tag_name'];
-    if (newTagName == curTagName) {
-      log("已经是最新版本：" + curTagName);
+    else if (newTagName == curTagName) {
+      log("已是最新版本：" + curTagName);
       beforeReturn();
       return;
     }
@@ -446,7 +495,7 @@ ui.update.on("click", function () {
     NIKKEstorage.put('tagName', newTagName);
     toastLog('更新结束');
     log('更新内容：');
-    console.info(respJson.body);
+    console.info(versionChangelog);
     beforeReturn();
     ui.finish();
   });

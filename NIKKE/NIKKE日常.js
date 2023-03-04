@@ -281,7 +281,7 @@ function 基地收菜() {
   返回首页();
 }
 function 好友() {
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('好友')), 30, 1000), 0.5);
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('好友')), 30, 1000), 0.1);
   toastLog('点击好友');
   // 等待列表加载
   // 一个好友都没有的话会出问题

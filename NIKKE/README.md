@@ -76,3 +76,6 @@ AutoX.js在初版Auto.js（现为[Auto.js Pro](https://pro.autojs.org/)）的基
 - 如果已经选定关卡，且画面右下角有“进入战斗”按钮，运行`NIKKEutils.js`将会进行刷关，直到活动代币耗尽为止；
 - 在任意画面运行`utils.js`，等待5秒左右后，会在日志中输出当前画面的OCR结果。可以通过该结果判断当前设备的OCR精度是否符合预期。
 
+## 遇到问题？/需要新功能？
+
+麻烦通过[GitHub Issue](https://github.com/Zebartin/autoxjs-scripts/issues)提出。

@@ -171,11 +171,13 @@ function 商店() {
       return ret;
     }, 30, 1000);
     // 一一检查每个货物是否灰暗
-    let screenImg = captureScreen();
+    let screenImg = images.copy(captureScreen());
     for (let m of manuals) {
       let c = screenImg.pixel(m.bounds.centerX(), m.bounds.top);
-      if (!colors.isSimilar(c, colors.DKGRAY, 30))
+      if (!colors.isSimilar(c, colors.DKGRAY, 30)) {
         buyGood(m);
+        ocrUntilFound(res=>res.text.includes('技场'), 30, 500);
+      }
       else
         log(`${m.text}已售`)
     }
@@ -596,7 +598,7 @@ function 单次咨询(advise) {
       e => e.text.includes('确认')
     ), 30, 1000));
     let pageStat = ocrUntilFound(res => {
-      if (res.text.match(/(看花|RANK|次数|确认|取消)/) != null)
+      if (res.text.match(/(确认|取消)/) != null)
         return 'outside';
       if (res.text.match(/(AUTO|LOG|CANCEL)/) != null)
         return 'inside';
@@ -676,7 +678,7 @@ function 单次咨询(advise) {
       if (skipBtn == null)
         click(width / 2, height / 2);
       else {
-        clickRect(skipBtn);
+        clickRect(skipBtn, 0.1);
         return true;
       }
     }, 30, 1000);

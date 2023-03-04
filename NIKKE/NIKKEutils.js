@@ -214,7 +214,7 @@ function 刷刷刷() {
           e.text.match(/[LAUTOG]/) == null && e.text.match(/SK.P/) != null
         );
         if (skipBtn != null) {
-          clickRect(skipBtn);
+          clickRect(skipBtn, 0.1);
           sleep(1000);
         }
         else
@@ -257,7 +257,7 @@ function 刷刷刷() {
         e.text.match(/[LAUTOG]/) == null && e.text.match(/SK.P/) != null
       );
       if (skipBtn != null) {
-        clickRect(skipBtn);
+        clickRect(skipBtn, 0.1);
         sleep(2000);
       } else
         click(width / 2, height / 2);

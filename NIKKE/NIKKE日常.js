@@ -145,8 +145,12 @@ function 商店() {
       ).toArray();
       let ret = [], ms = null;
       for (let g of goods) {
-        if (g.text.startsWith('代'))
+        if (g.text.startsWith('代')) {
+          // 选择宝箱可能会连着右侧的商品一起识别
+          // 因此直接截断一半宽度
+          g.bounds.right -= g.bounds.width() / 2;
           ms = g;
+        }
         else {
           let t = g.text.split(/代码手册/);
           let cnt = t.length - 1;
@@ -170,7 +174,7 @@ function 商店() {
         return null;
       return ret;
     }, 30, 1000);
-    // 一一检查每个货物是否灰暗
+    // 一一检查每个商品是否灰暗
     let screenImg = images.copy(captureScreen());
     for (let m of manuals) {
       let c = screenImg.pixel(m.bounds.centerX(), m.bounds.top);
@@ -237,9 +241,18 @@ function 基地收菜() {
     }
   }
   back();
-  sleep(3000);      // 返回时可能会卡顿，保险起见等一会儿
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('DEFENSE')), 30, 1000));
-  clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('歼灭')), 30, 1000));
+  let outpostBtn = ocrUntilFound(res => res.find(e =>
+    e.text.match(/(DEFENSE|LV[\.\d]+|\d{1,3}%)/) != null
+  ), 30, 1000);
+  clickRect(outpostBtn);
+  clickRect(ocrUntilFound(res => {
+    let t = res.find(e => e.text.endsWith('灭'));
+    if (t == null) {
+      clickRect(outpostBtn);
+      return null;
+    }
+    return t;
+  }, 30, 1000));
   toastLog('尝试一举歼灭');
   ocrUntilFound(res => res.text.includes('今日'), 30, 1000);
   clickRect(ocrUntilFound(res => res.find(e => e.text.startsWith('进行')), 30, 1000));

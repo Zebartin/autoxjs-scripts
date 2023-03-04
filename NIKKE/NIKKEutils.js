@@ -1,6 +1,7 @@
 var {
   ocrUntilFound,
   clickRect,
+  imgToBounds,
   unlockIfNeed,
   requestScreenCaptureAuto,
   getDisplaySize
@@ -18,12 +19,23 @@ else {
     等待NIKKE加载: 等待NIKKE加载,
     退出NIKKE: 退出NIKKE,
     返回首页: 返回首页,
+    mostSimilar: mostSimilar,
     关闭限时礼包: 关闭限时礼包
   };
 }
 function 启动NIKKE() {
   unlockIfNeed();
   home();
+  // 保证错误截图不要过多
+  let maxErr = 20;
+  let errorPath = files.path('./images/nikkerror/');
+  files.ensureDir(errorPath);
+  let errorImages = files.listDir(errorPath);
+  if (errorImages.length >= maxErr) {
+    errorImages.sort((a, b) => parseInt(b.split('.')[0]) - parseInt(a.split('.')[0]));
+    for (let f of errorImages.slice(maxErr))
+      files.remove(files.join(errorPath, f));
+  }
   let NIKKEstorage = storages.create("NIKKEconfig");
   if (NIKKEstorage.get('mute', false)) {
     try {
@@ -149,10 +161,11 @@ function 返回首页() {
       break;
     sleep(300);
   }
+  result = imgToBounds(homeImage, result);
   homeImage.recycle();
   sleep(1000);
   for (let i = 0; i < 10; ++i) {
-    click(result.x, result.y);
+    clickRect(result);
     sleep(4000);
     if (ocrUntilFound(res => res.text.match(/(大厅|基地|物品|方舟)/), 3, 400) != null)
       break;
@@ -189,37 +202,67 @@ function 刷刷刷() {
   sleep(2000);
   if (ocrUntilFound(res => res.text.includes('AUT'), 20, 1000) != null) {
     while (true) {
-      sleep(5000);
-      for (let i = 0; i < 2; ++i) {
-        skipBtn = ocrUntilFound(res => res.find(e =>
-          e.text.match(/[LAUTOG]/) == null && e.text.match(/SK.P/) != null
-        ), 3, 1000);
-        if (skipBtn != null) {
-          clickRect(skipBtn);
+      ocrUntilFound(res => {
+        if (!res.text.includes('AUT')) {
           sleep(1000);
-        } else
-          break;
-      }
-      ocrUntilFound(res => res.text.includes('REWARD'), 30, 6000);
-      let target = ocrUntilFound(res => {
-        let restart = res.find(e => e.text.includes('重新开始'));
-        let nextCombat = res.find(e => e.text.match(/下[^步方法]{2}/) != null);
-        if (nextCombat == null && restart != null && restart.bounds.left >= width / 2)
-          return restart;
-        return nextCombat;
-      }, 20, 1000);
-      sleep(1000);
-      if (colors.blue(captureScreen().pixel(target.bounds.left, target.bounds.top)) < 200)
+          return null;
+        }
+        let autoBtn = res.find(e => e.text.includes('AUT'));
+        if (autoBtn.bounds.right < width / 2)
+          return true;
+        let skipBtn = res.find(e =>
+          e.text.match(/[LAUTOG]/) == null && e.text.match(/SK.P/) != null
+        );
+        if (skipBtn != null) {
+          clickRect(skipBtn, 0.1);
+          sleep(1000);
+        }
+        else
+          click(width / 2, height / 2);
+        return null;
+      }, 50, 1000);
+      let clickNext = ocrUntilFound(res => {
+        if (!res.text.includes('REWARD')) {
+          sleep(5000);
+          return null;
+        }
+        return res.find(e => e.text.includes('点击'));
+      }, 30, 1000);
+      let hasBlue = images.findColor(captureScreen(), '#00a1ff', {
+        region: [
+          0, clickNext.bounds.bottom, 
+          clickNext.bounds.right, height - clickNext.bounds.bottom
+        ],
+        threshold: 20
+      });
+      if (hasBlue == null)
         break;
+      let target = ocrUntilFound(res => {
+        let nextCombat = res.find(e => e.text.match(/下[^步方法]{2}/) != null);
+        if (nextCombat != null)
+          return nextCombat;
+        let restart = res.find(e => e.text.includes('重新开始'));
+        if (restart != null && restart.bounds.left >= width / 2)
+          return restart;
+        return null;
+      }, 30, 500);
       clickRect(target);
     }
     log('门票用完了');
     click(width / 2, height / 2);
-    skipBtn = ocrUntilFound(res => res.find(e =>
-      e.text.match(/[LAUTOG]/) == null && e.text.match(/SK.P/) != null
-    ), 3, 1000);
-    if (skipBtn != null)
-      clickRect(skipBtn);
+    ocrUntilFound(res => {
+      if (res.text.includes('返回'))
+        return true;
+      let skipBtn = res.find(e =>
+        e.text.match(/[LAUTOG]/) == null && e.text.match(/SK.P/) != null
+      );
+      if (skipBtn != null) {
+        clickRect(skipBtn, 0.1);
+        sleep(2000);
+      } else
+        click(width / 2, height / 2);
+      return null;
+    }, 30, 1000);
   }
 }
 
@@ -249,4 +292,45 @@ function 关闭应用(packageName) {
     log(app.getAppName(name) + "应用不能被正常关闭或不在后台运行");
     back();
   }
+}
+function mostSimilar(target, candidates) {
+  let res = null, maxSim = -1;
+  for (let candidate of candidates) {
+    if (target == candidate) {
+      res = candidate;
+      maxSim = 1;
+      break;
+    }
+    let s = similarity(target, candidate);
+    if (s > maxSim) {
+      maxSim = s;
+      res = candidate;
+    }
+  }
+  return {
+    result: res,
+    similarity: maxSim
+  };
+}
+// 编辑距离
+function similarity(s1, s2) {
+  let n = s1.length, m = s2.length;
+  if (n * m == 0)
+    return n == m ? 1 : 0;
+  let dp = [];
+  for (let i = 0; i <= n; ++i)
+    dp.push([i]);
+  for (let j = 1; j <= m; ++j)
+    dp[0].push(j);
+  for (let i = 1; i <= n; ++i) {
+    for (let j = 1; j <= m; ++j) {
+      let left = dp[i - 1][j] + 1;
+      let down = dp[i][j - 1] + 1;
+      let leftDown = dp[i - 1][j - 1];
+      if (s1[i - 1] != s2[j - 1])
+        leftDown += 1;
+      dp[i][j] = Math.min(left, down, leftDown);
+    }
+  }
+  return 1.0 - dp[n][m] / Math.max(m, n);
 }

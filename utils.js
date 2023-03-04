@@ -1,3 +1,4 @@
+const 手机锁屏密码 = '手机锁屏密码';
 if (typeof module === 'undefined') {
   getOcrRes();
 }
@@ -5,6 +6,7 @@ else {
   module.exports = {
     ocrUntilFound: ocrUntilFound,
     clickRect: clickRect,
+    imgToBounds: imgToBounds,
     unlockIfNeed: unlockIfNeed,
     requestScreenCaptureAuto: requestScreenCaptureAuto,
     getOcrRes: getOcrRes,
@@ -23,6 +25,7 @@ function getOcrRes() {
     }
     return true;
   }, 1, 1);
+  toast('识别完成，可以退出查看日志');
 }
 
 function getDisplaySize() {
@@ -42,12 +45,30 @@ function ocrUntilFound(found, retry, interval) {
   console.trace("OCR失败");
   return null;
 }
-function clickRect(rect) {
+
+function clickRect(rect, scale) {
   sleep(1000);
   if (rect.text)
     log(`点击"${rect.text}"`);
-  click(rect.bounds.centerX(), rect.bounds.centerY());
+  // 按一定比例将范围缩小在中央位置
+  // 0 < scale <= 1, 越小表示越集中于中间
+  scale = scale || 0.8;
+  let x = Math.round((random() - 0.5) * rect.bounds.width() * scale + rect.bounds.centerX());
+  let y = Math.round((random() - 0.5) * rect.bounds.height() * scale + rect.bounds.centerY());
+  click(x, y);
 }
+
+function imgToBounds(img, point) {
+  if (!img || !point)
+    return null;
+  let ret = new android.graphics.Rect();
+  ret.left = point.x;
+  ret.top = point.y;
+  ret.right = point.x + img.getWidth();
+  ret.bottom = point.y + img.getHeight();
+  return { bounds: ret };
+}
+
 /**
  * 解锁屏幕
  */
@@ -62,7 +83,7 @@ function unlockIfNeed() {
     log("没有锁屏无需解锁");
     return;
   }
-  enterPwd('手机锁屏密码');
+  enterPwd(手机锁屏密码);
 
   log("解锁完毕");
 }
@@ -95,7 +116,11 @@ function requestScreenCaptureAuto() {
   if (device.sdkInt > 28) {
     //等待截屏权限申请并同意
     threads.start(function () {
-      packageName('com.android.systemui').textMatches(/(允许|立即开始)/).findOne(10000).click();
+      let t = packageName('com.android.systemui').textMatches(/(允许|立即开始)/).findOne(10000);
+      if (t != null)
+        t.click();
+      else
+        log('没有“允许”或“立即开始”按钮出现');
     });
   }
   // 检查屏幕方向

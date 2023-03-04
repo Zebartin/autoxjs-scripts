@@ -1,0 +1,25 @@
+name: 新功能提议
+description: 提议新功能
+labels: ['feature request']
+body:
+  - type: textarea
+    id: describe
+    attributes:
+      label: 新功能描述
+      description: 清晰地、简要地描述你想到的新功能
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: 解决方案
+      description: 你设想能够如何实现
+    validations:
+      required: false
+  - type: textarea
+    id: others
+    attributes:
+      label: 其他内容
+      description: 其他你认为有价值的信息
+    validations:
+      required: false

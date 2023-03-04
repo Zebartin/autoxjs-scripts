@@ -1,11 +1,12 @@
 var {
-  启动NIKKE, 等待NIKKE加载,
-  退出NIKKE, 返回首页, 关闭限时礼包
+  启动NIKKE, 等待NIKKE加载, 退出NIKKE,
+  mostSimilar, 返回首页, 关闭限时礼包
 } = require('./NIKKEutils.js');
 var { 模拟室 } = require('./模拟室.js');
 var {
   ocrUntilFound,
   clickRect,
+  imgToBounds,
   requestScreenCaptureAuto,
   getDisplaySize
 } = require('./utils.js');
@@ -52,6 +53,10 @@ function 日常() {
           toast(error.message);
           console.error(error.message);
           console.error(error.stack);
+          // 保存出错截图
+          let filename = files.path(`./images/nikkerror/${Date.now()}.jpg`);
+          images.save(captureScreen(), filename);
+          log(`出错截图已保存到${filename}`);
           if (alreadyRetry != maxRetry) {
             toastLog(`脚本出错，即将重试(${alreadyRetry + 1}/${maxRetry})`);
             sleep(3000);
@@ -86,7 +91,7 @@ function checkConfig() {
 function 商店() {
   let buyGood = (good) => {
     toastLog(`购买${good.text}`);
-    clickRect(good);
+    clickRect(good, 0.5);
     clickRect(ocrUntilFound(res => res.find(e => e.text == '购买'), 30, 1000));
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 20, 1000));
   };
@@ -113,7 +118,19 @@ function 商店() {
   }
   const buyCodeManual = NIKKEstorage.get('buyCodeManual', 3);
   if (buyCodeManual != 0) {
-    let arenaShop = ocrUntilFound(res => res.find(e => e.text == 'R'), 30, 1000);
+    const arenaShopImage = images.read("./images/arenaShop.jpg");
+    let arenaShop = null;
+    for (let i = 0; i < 10; ++i) {
+      arenaShop = images.findImage(captureScreen(), arenaShopImage, {
+        threshold: 0.7,
+        region: [0, height * 0.3, width / 2, height * 0.6]
+      });
+      if (arenaShop != null)
+        break;
+      sleep(300);
+    }
+    arenaShop = imgToBounds(arenaShopImage, arenaShop);
+    arenaShopImage.recycle();
     clickRect(arenaShop);
     ocrUntilFound(res => {
       if (res.text.match(/[竟竞]技场/) != null)
@@ -121,15 +138,19 @@ function 商店() {
       clickRect(arenaShop);
       return false;
     }, 10, 1000);
-    let [manual, manualSelection, soldOut] = ocrUntilFound(res => {
+    let manuals = ocrUntilFound(res => {
       let goods = res.filter(e =>
         e.level == 3 &&
         e.text.includes('代码手册')
       ).toArray();
-      let m = [], ms = null;
+      let ret = [], ms = null;
       for (let g of goods) {
-        if (g.text.startsWith('代'))
+        if (g.text.startsWith('代')) {
+          // 选择宝箱可能会连着右侧的商品一起识别
+          // 因此直接截断一半宽度
+          g.bounds.right -= g.bounds.width() / 2;
           ms = g;
+        }
         else {
           let t = g.text.split(/代码手册/);
           let cnt = t.length - 1;
@@ -140,42 +161,31 @@ function 商店() {
             newBounds.right = Math.round(newBounds.left + w);
             newBounds.top = g.bounds.top;
             newBounds.bottom = g.bounds.bottom;
-            m.push({
+            ret.push({
               text: t[i] + '代码手册',
               bounds: newBounds
             });
           }
         }
       }
-      if (m.length < 3 || ms == null)
+      if (ms != null)
+        ret.push(ms);
+      if (ret.length < 4)
         return null;
-      let goodsSold = res.filter(e =>
-        e.level == 1 && e.bounds != null &&
-        e.text.match(/s[oq0]l[od0] [oq0]ut/i) != null
-      ).toArray();
-      return [m, ms, goodsSold];
+      return ret;
     }, 30, 1000);
-    // 一一检查每个item是否有sold out标志
-    for (let i = 0; i < Math.min(3, buyCodeManual); ++i) {
-      let thisSold = soldOut.find(e =>
-        e.bounds.bottom < manualSelection.bounds.top &&
-        e.bounds.right > manual[i].bounds.left &&
-        e.bounds.left < manual[i].bounds.right
-      );
-      if (thisSold == null)
-        buyGood(manual[i]);
+    // 一一检查每个商品是否灰暗
+    let screenImg = images.copy(captureScreen());
+    for (let m of manuals) {
+      let c = screenImg.pixel(m.bounds.centerX(), m.bounds.top);
+      if (!colors.isSimilar(c, colors.DKGRAY, 30)) {
+        buyGood(m);
+        ocrUntilFound(res => res.text.includes('技场'), 30, 500);
+      }
       else
-        log(`${manual[i].text}已售`)
+        log(`${m.text}已售`)
     }
-    if (buyCodeManual == 4) {
-      let selectionSold = soldOut.find(e =>
-        e.bounds.bottom > manualSelection.bounds.bottom
-      );
-      if (selectionSold == null)
-        buyGood(manualSelection);
-      else
-        log(`${manualSelection.text}已售`)
-    }
+    screenImg.recycle();
   }
   返回首页();
 }
@@ -192,7 +202,7 @@ function 基地收菜() {
     ret.bounds.top = headquarter.bounds.bottom;
     return ret;
   }, 30, 1000);
-  clickRect(target);
+  clickRect(target, 0.3);
   toastLog('进入公告栏');
   // 等待派遣内容加载
   target = ocrUntilFound(res => res.text.match(/(时间|完成|目前)/), 20, 500);
@@ -231,9 +241,18 @@ function 基地收菜() {
     }
   }
   back();
-  sleep(3000);      // 返回时可能会卡顿，保险起见等一会儿
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('DEFENSE')), 30, 1000));
-  clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('歼灭')), 30, 1000));
+  let outpostBtn = ocrUntilFound(res => res.find(e =>
+    e.text.match(/(DEFENSE|LV[\.\d]+|\d{1,3}%)/) != null
+  ), 30, 1000);
+  clickRect(outpostBtn);
+  clickRect(ocrUntilFound(res => {
+    let t = res.find(e => e.text.endsWith('灭'));
+    if (t == null) {
+      clickRect(outpostBtn);
+      return null;
+    }
+    return t;
+  }, 30, 1000));
   toastLog('尝试一举歼灭');
   ocrUntilFound(res => res.text.includes('今日'), 30, 1000);
   clickRect(ocrUntilFound(res => res.find(e => e.text.startsWith('进行')), 30, 1000));
@@ -262,12 +281,12 @@ function 基地收菜() {
   返回首页();
 }
 function 好友() {
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('好友')), 30, 1000));
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('好友')), 30, 1000), 0.1);
   toastLog('点击好友');
   // 等待列表加载
   // 一个好友都没有的话会出问题
   let [sendBtn, someFriend] = ocrUntilFound(res => {
-    let send = res.find(e => e.text.endsWith('赠送'));
+    let send = res.find(e => e.text.endsWith('赠送') && e.text.match(/[每日发上限]/) == null);
     let upper = res.find(e => e.text.includes('可以'));
     if (!send || !upper)
       return null;
@@ -290,7 +309,8 @@ function 好友() {
   sleep(500);
   back();
   ocrUntilFound(res => res.text.match(/(可以|目录|搜寻|赠送)/) != null, 20, 1500);
-  if (colors.red(captureScreen().pixel(sendBtn.bounds.left, sendBtn.bounds.top)) < 100) {
+  let btnColor = colors.toString(images.pixel(captureScreen(), sendBtn.bounds.left, sendBtn.bounds.top));
+  if (colors.isSimilar('#1aaff7', btnColor, 10)) {
     clickRect(sendBtn);
     toastLog('点击赠送');
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('确认')), 30, 1000));
@@ -359,7 +379,7 @@ function 爬塔() {
     sleep(5000);
     ocrUntilFound(res => res.text.includes('之塔'), 20, 3000);
     // 等待可能出现的限时礼包
-    if (successFlag) 
+    if (successFlag)
       关闭限时礼包();
   }
   返回首页();
@@ -395,7 +415,7 @@ function 竞技场() {
   }, 30, 1000);
   while (true) {
     let hasFree = ocrUntilFound(res => {
-      if (!res.text.includes('战斗'))
+      if (!res.text.includes('ROOKIE'))
         return null;
       let t = res.find(e =>
         e.text.includes('免') && e.bounds != null &&
@@ -511,26 +531,36 @@ function 咨询() {
       }
       if (adviseTarget == null) {
         toastLog('整页都咨询过了');
+        let lastAttr = attrs[attrs.length - 1].bounds.top;
         swipe(
           width / 2, cases[cases.length - 1].bounds.top,
-          width / 2, attrs[0].bounds.bottom, 777 * cases.length
+          width / 2, attrs[0].bounds.bottom, 1000
         );
+        swipe(100, lastAttr, width / 2, lastAttr, 500);
         sleep(1000);
       }
     }
     clickRect(attrs[adviseTarget]);
     if (单次咨询(advise))
       cnt++;
-    else
+    else {
+      let lastAttr = attrs[attrs.length - 1].bounds.top;
       swipe(
         width / 2, attrs[adviseTarget + 1].bounds.top,
-        width / 2, attrs[0].bounds.top, 5000 * adviseTarget + 5000
+        width / 2, attrs[0].bounds.top, 1000
       );
+      swipe(100, lastAttr, width / 2, lastAttr, 500);
+    }
   }
   toastLog('完成咨询');
   返回首页();
 }
 function 单次咨询(advise) {
+  let failFunc = () => {
+    back();
+    ocrUntilFound(res => res.text.includes('可以'), 30, 3000);
+    return false;
+  };
   const maxRetry = 3;
   let nameRetry = 0;
   let [adviseBtn, name, hasMax] = ocrUntilFound(res => {
@@ -559,28 +589,26 @@ function 单次咨询(advise) {
       log(`妮姬名OCR结果：${nameArea.text}，匹配：${nameResult.result}，相似度${nameResult.similarity.toFixed(2)}`);
       nameRetry++;
       if (nameRetry >= maxRetry) {
-        log(`已达最大尝试次数${maxRetry}`);
-        log('可能原因：暂不支持新版本妮姬的咨询');
-        toastLog('妮姬名字识别失败，直接退出，不重启游戏');
-        exit();
+        return [btn, '', false];
       } else
         log(`妮姬名字识别相似度过低，重试(${nameRetry}/${maxRetry})`);
       return null;
     }
     return [btn, nameResult.result, value.text.includes('MAX')];
   }, 30, 2000);
+  if (nameRetry == maxRetry) {
+    log(`已达最大尝试次数${maxRetry}。可能原因：暂不支持新版本妮姬的咨询`);
+    toast('妮姬名字识别失败');
+    return failFunc();
+  }
   log(`咨询对象：${name}`);
   if (hasMax) {
     log('已达好感度上限');
-    back();
-    ocrUntilFound(res => res.text.includes('可以'), 30, 3000);
-    return false;
+    return failFunc();
   }
   if (colors.blue(captureScreen().pixel(adviseBtn.bounds.right, adviseBtn.bounds.top)) < 200) {
     log('咨询按钮不可点击');
-    back();
-    ocrUntilFound(res => res.text.includes('可以'), 30, 3000);
-    return false;
+    return failFunc();
   }
   for (let i = 1; i <= maxRetry; ++i) {
     clickRect(adviseBtn);
@@ -588,7 +616,7 @@ function 单次咨询(advise) {
       e => e.text.includes('确认')
     ), 30, 1000));
     let pageStat = ocrUntilFound(res => {
-      if (res.text.match(/(看花|RANK|次数|确认|取消)/) != null)
+      if (res.text.match(/(确认|取消)/) != null)
         return 'outside';
       if (res.text.match(/(AUTO|LOG|CANCEL)/) != null)
         return 'inside';
@@ -598,9 +626,7 @@ function 单次咨询(advise) {
       log('已达好感度上限');
       back();
       sleep(1000);
-      back();
-      ocrUntilFound(res => res.text.includes('可以'), 10, 3000);
-      return false;
+      return failFunc();
     }
     // 连点直到出现选项
     let adviseImage = images.read('./images/counsel.jpg');
@@ -670,7 +696,7 @@ function 单次咨询(advise) {
       if (skipBtn == null)
         click(width / 2, height / 2);
       else {
-        clickRect(skipBtn);
+        clickRect(skipBtn, 0.1);
         return true;
       }
     }, 30, 1000);
@@ -697,45 +723,4 @@ function 单次咨询(advise) {
   }
   toast('回到咨询首页');
   return true;
-}
-function mostSimilar(target, candidates) {
-  let res = null, maxSim = -1;
-  for (let candidate of candidates) {
-    if (target == candidate) {
-      res = candidate;
-      maxSim = 1;
-      break;
-    }
-    let s = similarity(target, candidate);
-    if (s > maxSim) {
-      maxSim = s;
-      res = candidate;
-    }
-  }
-  return {
-    result: res,
-    similarity: maxSim
-  };
-}
-// 编辑距离
-function similarity(s1, s2) {
-  let n = s1.length, m = s2.length;
-  if (n * m == 0)
-    return n == m ? 1 : 0;
-  let dp = [];
-  for (let i = 0; i <= n; ++i)
-    dp.push([i]);
-  for (let j = 1; j <= m; ++j)
-    dp[0].push(j);
-  for (let i = 1; i <= n; ++i) {
-    for (let j = 1; j <= m; ++j) {
-      let left = dp[i - 1][j] + 1;
-      let down = dp[i][j - 1] + 1;
-      let leftDown = dp[i - 1][j - 1];
-      if (s1[i - 1] != s2[j - 1])
-        leftDown += 1;
-      dp[i][j] = Math.min(left, down, leftDown);
-    }
-  }
-  return 1.0 - dp[n][m] / Math.max(m, n);
 }

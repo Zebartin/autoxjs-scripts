@@ -1,11 +1,12 @@
 var {
   ocrUntilFound,
   clickRect,
+  imgToBounds,
   getDisplaySize
 } = require('./utils.js');
 var {
   启动NIKKE, 等待NIKKE加载,
-  退出NIKKE, 返回首页
+  退出NIKKE, 返回首页, mostSimilar
 } = require('./NIKKEutils.js');
 let width, height;
 let curPass = 0;
@@ -63,17 +64,29 @@ function 模拟室(fromIndex) {
     exit();
   }
   [width, height] = getDisplaySize();
-  let { maxPass, maxSsrNumber, preferredBuff } = simulationRoom;
+  let { maxPass, maxSsrNumber, preferredBuff, tryDiffArea, team } = simulationRoom;
+  tryDiffArea = tryDiffArea || 0;
+  team = team || [];
   maxSsrNumber = Math.min(maxSsrNumber, preferredBuff.length, Object.keys(getAllBuff()).length);
+  let tryDiff = (Math.floor(tryDiffArea / 3) + 3).toString();
+  let tryArea = tryDiffArea % 3;
   if (fromIndex) {
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('方舟')), 30, 1000));
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('模拟室')), 30, 1000));
     sleep(2000);
   }
   quitPrevSim();
+  // 检查今日模拟室是否已完成
+  if (clickIntoDiffArea(tryDiff, tryArea, true)) {
+    toastLog('完成模拟室任务');
+    if (fromIndex)
+      返回首页();
+    return;
+  }
   let status = {
     loaded: getBuffLoaded(),
     preferredBuff: preferredBuff,
+    team: team,
     layer: 0,
     bestBuffToKeep: null,  // 最后保留的buff，必须正确初始化
     newBuffs: {},          // 主要作用是防止选到重复buff，导致需要进行更换
@@ -101,12 +114,10 @@ function 模拟室(fromIndex) {
     toastLog(`第${curPass + 1}轮模拟室：${status.mode}模式`);
     oneSimulation(status);
   }
-  let tryDiffArea = simulationRoom.tryDiffArea || 0;
   if (tryDiffArea != 0) {
-    status.tryDiff = (Math.floor(tryDiffArea / 3) + 3).toString();
-    status.tryArea = tryDiffArea % 3;
+    status.tryDiff = tryDiff;
+    status.tryArea = tryArea;
     let diffAreaName = `${status.tryDiff}${String.fromCharCode('A'.charCodeAt(0) + status.tryArea)}`;
-    status.earlyStop = false;
     status.bestBuffToKeep = {
       name: null,
       level: null
@@ -115,11 +126,18 @@ function 模拟室(fromIndex) {
     status.mode = '尽力而为';
     toastLog(`尝试${diffAreaName}`);
     log('已有BUFF：', Object.keys(status.loaded));
-    oneSimulation(status);
-    if (status.earlyStop)
-      toastLog(`尝试${diffAreaName}失败，放弃`);
-    else
-      toastLog(`尝试${diffAreaName}成功`);
+    let maxRetry = team.length > 0 ? 15 : 1;
+    for (let retry = 0; retry < maxRetry; ++retry) {
+      status.earlyStop = false;
+      status.team = team;
+      oneSimulation(status);
+      if (status.earlyStop)
+        log(`尝试${diffAreaName}失败(${retry + 1}/${maxRetry})`);
+      else {
+        log(`尝试${diffAreaName}成功(${retry + 1}/${maxRetry})`);
+        break;
+      }
+    }
   }
   toastLog('完成模拟室任务');
   if (fromIndex)
@@ -127,27 +145,10 @@ function 模拟室(fromIndex) {
 }
 
 function oneSimulation(status) {
-  clickRect(ocrUntilFound(res => res.find(e => e.text.startsWith('开始')), 10, 300));
-  if ('tryDiff' in status) {
-    clickRect(ocrUntilFound(res => res.find(e => e.text == status.tryDiff), 20, 300));
-    let areaChoice = ocrUntilFound(res => {
-      let area = res.find(e => e.text == '地区');
-      let start = res.find(e => e.text.includes('开始'));
-      if (!area || !start)
-        return null;
-      let numbers = res.filter(e =>
-        e.bounds != null && e.bounds.top > area.bounds.bottom &&
-        e.bounds.bottom < start.bounds.top &&
-        e.text.match(/[\d\s+,]{4,10}/) != null && e.level == 3
-      ).toArray();
-      if (numbers.length != 3)
-        return null;
-      numbers.sort((a, b) => a.bounds.left - b.bounds.left);
-      return numbers[status.tryArea];
-    }, 20, 500);
-    clickRect(areaChoice);
-  } else
-    clickRect(ocrUntilFound(res => res.find(e => e.text == '3'), 20, 300));
+  if ('tryDiff' in status)
+    clickIntoDiffArea(status.tryDiff, status.tryArea, false);
+  else
+    clickIntoDiffArea('3', null, false);
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('开始')), 10, 300));
   for (status.layer = 0; status.layer < 7; ++status.layer) {
     selectOption(status);
@@ -284,6 +285,40 @@ function getBuffLoaded() {
   return ret;
 }
 
+function clickIntoDiffArea(diff, area, checkFinished) {
+  clickRect(ocrUntilFound(res => res.find(e => e.text.startsWith('开始')), 10, 300));
+  clickRect(ocrUntilFound(res => res.find(e => e.text == diff), 20, 300));
+  if (area == null)
+    return false;
+  let [areaChoice, startBtn] = ocrUntilFound(res => {
+    let upper = res.find(e => e.text == '地区');
+    let start = res.find(e => e.text.includes('开始'));
+    if (!upper || !start)
+      return null;
+    let numbers = res.filter(e =>
+      e.bounds != null && e.bounds.top > upper.bounds.bottom &&
+      e.bounds.bottom < start.bounds.top &&
+      e.text.match(/[\d\s+,]{4,10}/) != null && e.level == 3
+    ).toArray();
+    if (numbers.length != 3)
+      return null;
+    numbers.sort((a, b) => a.bounds.left - b.bounds.left);
+    return [numbers[area], start];
+  }, 20, 500);
+  clickRect(areaChoice);
+  if (checkFinished == true) {
+    let finishedText = ocrUntilFound(res => res.find(e =>
+      e.bounds != null && e.bounds.top >= areaChoice.bounds.bottom &&
+      e.bounds.bottom <= startBtn.bounds.top &&
+      e.text.match(/[该地区已通关。重置后可获得奖励]/) != null
+    ), 3, 300);
+    back();
+    ocrUntilFound(res => res.text.includes('开始'), 30, 1000);
+    return finishedText != null;
+  }
+  return false;
+}
+
 function selectOption(status) {
   let optionNumber = status.layer == 6 ? 1 : 2;
   if ('tryDiff' in status && status.tryDiff != '3')
@@ -375,7 +410,7 @@ function doWithOption(option, status) {
     if (status.earlyStop)
       return;
   }
-  clickRect(option);
+  clickRect(option, 0.1);
   sleep(1000);
   if (option.type == 'abilitiesTest') {
     let keywords = [
@@ -383,15 +418,18 @@ function doWithOption(option, status) {
       /体力/,
       /第[一二三]个/
     ];
+    let optionLoadedCnt = 0;
     let [choice, keywordType] = ocrUntilFound(res => {
-      if (!res.text.includes('确认'))
+      if (res.text.includes('确认'))
+        optionLoadedCnt++;
+      if (optionLoadedCnt < 2)
         return null;
       let img = images.copy(captureScreen());
       for (let i = 0; i < keywords.length; ++i)
         if (keywords[i].test(res.text)) {
           let t = res.filter(e => keywords[i].test(e.text));
           if (i == 0)
-            return [t[0], i];   
+            return [t[0], i];
           for (let j of t) {
             // 检查选项是否可选
             let c = images.pixel(img, j.bounds.left, j.bounds.top);
@@ -518,6 +556,7 @@ function doWithOption(option, status) {
     clickRect(option);
     return null;
   }, 3, 2000);
+  teamUp(status);
   let quickFight = null;
   if (option.type == 'normal') {
     quickFight = ocrUntilFound(res => res.find(e => e.text.match(/快[連德逮遠速]/) != null), 30, 500);
@@ -750,7 +789,7 @@ function getBuffs(expectedCount) {
       newBounds.top = r[i].bounds.top;
       newBounds.bottom = level.bounds.bottom;
       ret.push({
-        level: r[i].text.replace(/[5s]/, 'S'),
+        level: r[i].text.replace(/[5s]/g, 'S'),
         name: correctBuffName(nameText[0].text),
         forSomebody: forSomebody != null,
         bounds: newBounds
@@ -806,4 +845,188 @@ function getAllBuff() {
       reg: /快[連適德逮遠速]+充电器?/
     }
   };
+}
+
+// 编队相关函数
+function teamUp(status) {
+  if (status.team.length == 0)
+    return;
+  // 找空位
+  const emptyImage = images.read("./images/simEmpty.jpg");
+  let teamEmpty = images.findImage(captureScreen(), emptyImage, {
+    threshold: 0.7,
+    region: [0, height * 0.6]
+  });
+  teamEmpty = imgToBounds(emptyImage, teamEmpty);
+  emptyImage.recycle();
+  if (teamEmpty == null) {
+    log('模拟室队伍没有空位，不需要编队');
+    status.team = [];
+    return;
+  }
+  log(`开始模拟室编队：${status.team}`);
+  clickRect(teamEmpty);
+  let [upperBound, lowerBound, allBtn, saveBtn] = ocrUntilFound(res => {
+    let upper = res.find(e => e.text.match(/[可以变更编队]{3}/) != null);
+    let lower = res.find(e => e.text.includes('返回'));
+    let allBtn = res.find(e => e.text == 'ALL');
+    let save = res.find(e => e.text.includes('储存'));
+    if (!upper || !lower || !allBtn || !save) {
+      sleep(500);
+      return null;
+    }
+    return [upper.bounds.bottom, lower.bounds.top, allBtn, save];
+  }, 30, 600);
+  const refreshImage = images.read("./images/simRefresh.jpg");
+  let refreshBtn = images.findImage(captureScreen(), refreshImage, {
+    threshold: 0.7,
+    region: [0, height * 0.6]
+  });
+  refreshBtn = imgToBounds(refreshImage, refreshBtn);
+  refreshImage.recycle();
+  sleep(1000);
+  let teamClone = status.team.slice();
+  // 1. 刷新清空队伍
+  clickRect(refreshBtn);
+  // 2. 识别每页妮姬，选中目标
+  for (let retry = 0; teamClone.length > 0 && retry < 3; ++retry) {
+    for (let i = 0; i < 7; ++i)
+      swipe(width / 2, (upperBound + lowerBound) / 2, width / 2, lowerBound, 300);
+    sleep(1000);
+    let lastNikke = null;
+    for (let page = 0; page < 10; ++page) {
+      let img = images.clip(captureScreen(), 0, upperBound, width, lowerBound - upperBound);
+      let bottomY = 0;
+      let lastPage = false;
+      let nikkes = detectNikkes(img, 0, upperBound);
+      console.info(nikkes);
+      for (let n of nikkes) {
+        if (n.name == lastNikke)
+          lastPage = true;
+        bottomY = Math.max(bottomY, n.bounds.bottom);
+        let t = mostSimilar(n.name, teamClone);
+        console.info(t);
+        if (t.similarity >= 0.5) {
+          clickRect(n, 0.01);
+          teamClone.splice(teamClone.findIndex(x => x == t.result), 1);
+        }
+        if (teamClone.length == 0)
+          break;
+      }
+      img.recycle();
+      if (teamClone.length == 0 || lastPage)
+        break;
+      lastNikke = nikkes[nikkes.length - 1].name;
+      swipe(width / 2, bottomY, width / 2, upperBound, 1000);
+      swipe(100, bottomY, width / 2, bottomY, 500);
+      sleep(500);
+    }
+  }
+  if (teamClone.length > 0) {
+    log(`没有找到以下妮姬：${teamClone}，放弃组队`);
+    throw new Error('模拟室自动编队失败');
+  }
+  // 3. 点击ALL，刷新顺序，使选中对象排到最上
+  clickRect(allBtn);
+  sleep(1000);
+  // 4. 拉到最上
+  for (let i = 0; i < 7; ++i)
+    swipe(width / 2, (upperBound + lowerBound) / 2, width / 2, lowerBound, 300);
+  sleep(1000);
+  // 5. 刷新清空选择
+  clickRect(refreshBtn);
+  // 6. 按队伍顺序逐一选择
+  let img = images.clip(captureScreen(), 0, upperBound, width, lowerBound - upperBound);
+  let nikkes = detectNikkes(img, 0, upperBound);
+  img.recycle();
+  for (let i of status.team) {
+    let t = mostSimilar(i, nikkes.map(x => x.name));
+    clickRect(nikkes.find(x => x.name == t.result), 0.01);
+  }
+  clickRect(saveBtn);
+  status.team = [];
+  ocrUntilFound(res => res.text.includes('入战'), 30, 1000);
+}
+function detectNikkes(originalImg, baseX, baseY) {
+  let splitX = [];
+  let splitY = [];
+  let gbImg = images.gaussianBlur(originalImg, [3, 3], 0, 0);
+  let grayImg = images.cvtColor(gbImg, "BGR2GRAY");
+  gbImg.recycle();
+  with (JavaImporter(com.stardust.autojs.core.opencv.Mat, org.opencv.imgproc)) {
+    let edges = new Mat();
+    let cannyColor = new Mat();
+    let lines = new Mat();
+    const lowThresh = 45;
+    Imgproc.Canny(grayImg.getMat(), edges, lowThresh, lowThresh * 3, 3);
+    Imgproc.cvtColor(edges, cannyColor, Imgproc.COLOR_GRAY2BGR);
+    Imgproc.HoughLines(edges, lines, 1, Math.PI / 2, 400);
+    grayImg.recycle();
+    cannyColor.release();
+    edges.release();
+    for (let i = 0; i < lines.rows(); ++i) {
+      let [rho, theta] = lines.get(i, 0);
+      let a = Math.cos(theta);
+      let b = Math.sin(theta);
+      let x0 = Math.round(a * rho);
+      let y0 = Math.round(b * rho);
+      if (Math.round(a) == 0) {
+        let j = splitY.findIndex(y => Math.abs(y - y0) < 100);
+        if (j != -1)
+          splitY[j] = Math.max(splitY[j], y0);
+        else
+          splitY.push(y0);
+      }
+      else if (Math.round(b) == 0) {
+        let j = splitX.findIndex(x => Math.abs(x - x0) < 100)
+        if (j != -1)
+          splitX[j] = Math.max(splitX[j], x0);
+        else
+          splitX.push(x0);
+      }
+    }
+    lines.release();
+    splitX.push(0);
+    splitX.push(originalImg.getWidth());
+    splitY.push(0);
+    splitY.push(originalImg.getHeight());
+    splitX.sort((a, b) => a - b);
+    splitY.sort((a, b) => a - b);
+  }
+  let nikkes = [];
+  for (let j = 0; j < splitY.length - 1; ++j)
+    for (let i = 0; i < splitX.length - 1; ++i) {
+      let w = Math.floor((splitX[i + 1] - splitX[i]) / 4);
+      let h = Math.floor((splitY[j + 1] - splitY[j]) / 4);
+      if (w < 30 || h < 80)
+        continue;
+      let clipimg = images.clip(originalImg, splitX[i] + w, splitY[j] + h * 3, w * 3, h);
+      for (let k = 3; k <= 16; ++k) {
+        let ocr;
+        if (k == 3)
+          ocr = gmlkit.ocr(clipimg, 'zh');
+        else {
+          let scaleimg = images.scale(clipimg, k, k, 'CUBIC');
+          ocr = gmlkit.ocr(scaleimg, 'zh');
+          scaleimg.recycle();
+        }
+        let name = ocr.text.replace(/[一\s\-·,]/g, '');
+        if (name.length < 2)
+          continue;
+        let bounds = new android.graphics.Rect();
+        bounds.left = splitX[i] + w + baseX;
+        bounds.right = splitX[i + 1] + baseX;
+        bounds.top = splitY[j] + h * 3 + baseY;
+        bounds.bottom = splitY[j + 1] + baseY;
+        nikkes.push({
+          name: name,
+          bounds: bounds,
+          scale: k == 3 ? 1 : k,
+          confidence: ocr.filter(e => e.text.match(new RegExp(`[${name}]{2}`)) != null && e.confidence != -1).toArray().map(x => x.confidence)[0]
+        })
+        break;
+      }
+      clipimg.recycle();
+    }
+  return nikkes;
 }

@@ -313,7 +313,7 @@ function clickIntoDiffArea(diff, area, checkFinished) {
       e.text.match(/[该地区已通关。重置后可获得奖励]/) != null
     ), 3, 300);
     back();
-    ocrUntilFound(res=>res.text.includes('开始'));
+    ocrUntilFound(res => res.text.includes('开始'), 30, 1000);
     return finishedText != null;
   }
   return false;
@@ -418,8 +418,11 @@ function doWithOption(option, status) {
       /体力/,
       /第[一二三]个/
     ];
+    let optionLoadedCnt = 0;
     let [choice, keywordType] = ocrUntilFound(res => {
-      if (!res.text.includes('确认'))
+      if (res.text.includes('确认'))
+        optionLoadedCnt++;
+      if (optionLoadedCnt < 2)
         return null;
       let img = images.copy(captureScreen());
       for (let i = 0; i < keywords.length; ++i)

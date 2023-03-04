@@ -176,7 +176,7 @@ function 商店() {
       let c = screenImg.pixel(m.bounds.centerX(), m.bounds.top);
       if (!colors.isSimilar(c, colors.DKGRAY, 30)) {
         buyGood(m);
-        ocrUntilFound(res=>res.text.includes('技场'), 30, 500);
+        ocrUntilFound(res => res.text.includes('技场'), 30, 500);
       }
       else
         log(`${m.text}已售`)
@@ -518,21 +518,26 @@ function 咨询() {
       }
       if (adviseTarget == null) {
         toastLog('整页都咨询过了');
+        let lastAttr = attrs[attrs.length - 1].bounds.top;
         swipe(
           width / 2, cases[cases.length - 1].bounds.top,
-          width / 2, attrs[0].bounds.bottom, 777 * cases.length
+          width / 2, attrs[0].bounds.bottom, 1000
         );
+        swipe(100, lastAttr, width / 2, lastAttr, 500);
         sleep(1000);
       }
     }
     clickRect(attrs[adviseTarget]);
     if (单次咨询(advise))
       cnt++;
-    else
+    else {
+      let lastAttr = attrs[attrs.length - 1].bounds.top;
       swipe(
         width / 2, attrs[adviseTarget + 1].bounds.top,
-        width / 2, attrs[0].bounds.top, 5000 * adviseTarget + 5000
+        width / 2, attrs[0].bounds.top, 1000
       );
+      swipe(100, lastAttr, width / 2, lastAttr, 500);
+    }
   }
   toastLog('完成咨询');
   返回首页();

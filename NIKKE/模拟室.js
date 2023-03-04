@@ -78,7 +78,6 @@ function 模拟室(fromIndex) {
   quitPrevSim();
   // 检查今日模拟室是否已完成
   if (clickIntoDiffArea(tryDiff, tryArea, true)) {
-    back();
     toastLog('完成模拟室任务');
     if (fromIndex)
       返回首页();
@@ -313,6 +312,8 @@ function clickIntoDiffArea(diff, area, checkFinished) {
       e.bounds.bottom <= startBtn.bounds.top &&
       e.text.match(/[该地区已通关。重置后可获得奖励]/) != null
     ), 3, 300);
+    back();
+    ocrUntilFound(res=>res.text.includes('开始'));
     return finishedText != null;
   }
   return false;

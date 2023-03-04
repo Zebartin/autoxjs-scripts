@@ -116,7 +116,11 @@ function requestScreenCaptureAuto() {
   if (device.sdkInt > 28) {
     //等待截屏权限申请并同意
     threads.start(function () {
-      packageName('com.android.systemui').textMatches(/(允许|立即开始)/).findOne(10000).click();
+      let t = packageName('com.android.systemui').textMatches(/(允许|立即开始)/).findOne(10000);
+      if (t != null)
+        t.click();
+      else
+        log('没有“允许”或“立即开始”按钮出现');
     });
   }
   // 检查屏幕方向

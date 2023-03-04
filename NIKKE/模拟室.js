@@ -789,7 +789,7 @@ function getBuffs(expectedCount) {
       newBounds.top = r[i].bounds.top;
       newBounds.bottom = level.bounds.bottom;
       ret.push({
-        level: r[i].text.replace(/[5s]/, 'S'),
+        level: r[i].text.replace(/[5s]/g, 'S'),
         name: correctBuffName(nameText[0].text),
         forSomebody: forSomebody != null,
         bounds: newBounds

@@ -995,6 +995,7 @@ function detectNikkes(originalImg, baseX, baseY) {
     splitY.sort((a, b) => a - b);
   }
   let nikkes = [];
+  let specialNameReg = /[森杨]/;
   for (let j = 0; j < splitY.length - 1; ++j)
     for (let i = 0; i < splitX.length - 1; ++i) {
       let w = Math.floor((splitX[i + 1] - splitX[i]) / 4);
@@ -1012,7 +1013,7 @@ function detectNikkes(originalImg, baseX, baseY) {
           scaleimg.recycle();
         }
         let name = ocr.text.replace(/[一\s\-·,]/g, '');
-        if (name.length < 2)
+        if (name.length < 2 && !specialNameReg.test(name))
           continue;
         let bounds = new android.graphics.Rect();
         bounds.left = splitX[i] + w + baseX;
@@ -1023,7 +1024,7 @@ function detectNikkes(originalImg, baseX, baseY) {
           name: name,
           bounds: bounds,
           scale: k == 3 ? 1 : k,
-          confidence: ocr.filter(e => e.text.match(new RegExp(`[${name}]{2}`)) != null && e.confidence != -1).toArray().map(x => x.confidence)[0]
+          confidence: ocr.filter(e => e.text.match(new RegExp(`[${name}]{${Math.min(2, name.length)}}`)) != null && e.confidence != -1).toArray().map(x => x.confidence)[0]
         })
         break;
       }

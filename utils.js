@@ -1,4 +1,4 @@
-const 手机锁屏密码 = '手机锁屏密码';
+const 手机锁屏密码 = '';
 if (typeof module === 'undefined') {
   getOcrRes();
 }
@@ -83,7 +83,7 @@ function unlockIfNeed() {
     log("没有锁屏无需解锁");
     return;
   }
-  enterPwd(手机锁屏密码);
+  enterPwd(手机锁屏密码 || storages.create('general').get('lockCode', ''));
 
   log("解锁完毕");
 }

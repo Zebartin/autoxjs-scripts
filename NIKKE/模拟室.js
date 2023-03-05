@@ -937,11 +937,12 @@ function teamUp(status) {
   clickRect(refreshBtn);
   // 6. 按队伍顺序逐一选择
   let img = images.clip(captureScreen(), 0, upperBound, width, lowerBound - upperBound);
-  let nikkes = detectNikkes(img, 0, upperBound);
+  let nikkes = detectNikkes(img, 0, upperBound).slice(0, 5);
   img.recycle();
+  nikkes = Object.fromEntries(nikkes.map(x => [x.name, x]));
   for (let i of status.team) {
-    let t = mostSimilar(i, nikkes.map(x => x.name));
-    clickRect(nikkes.find(x => x.name == t.result), 0.01);
+    let t = mostSimilar(i, Object.keys(nikkes));
+    clickRect(nikkes[t.result], 0.01);
   }
   clickRect(saveBtn);
   status.team = [];

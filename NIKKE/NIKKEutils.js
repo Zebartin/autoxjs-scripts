@@ -128,7 +128,10 @@ function 等待NIKKE加载() {
     log('今日已登录，不检查签到奖励');
   } else {
     NIKKEstorage.put('dailyLogin', today);
-    if (ocrUntilFound(res => res.text.match(/\d+(小时|天|分钟)/), 4, 5000) == null)
+    if (ocrUntilFound(res => {
+      toast('正在等待每日签到出现，请勿操作');
+      return res.text.match(/\d+(小时|天|分钟)/);
+    }, 4, 5000) == null)
       log('没有出现签到奖励');
     else {
       back();   // 每次的登录奖励ui都不一样，不处理直接返回

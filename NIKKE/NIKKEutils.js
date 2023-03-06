@@ -226,11 +226,11 @@ function 刷刷刷() {
       }, 50, 1000);
       let clickNext = ocrUntilFound(res => {
         if (!res.text.includes('REWARD')) {
-          sleep(5000);
+          sleep(2000);
           return null;
         }
         return res.find(e => e.text.includes('点击'));
-      }, 30, 1000);
+      }, 50, 1000);
       let hasBlue = images.findColor(captureScreen(), '#00a1ff', {
         region: [
           0, clickNext.bounds.bottom, 

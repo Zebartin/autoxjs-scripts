@@ -101,8 +101,8 @@ function 商店() {
       freeGood.text = '免费商品';
       buyGood(freeGood);
       return true;
-    } else
-      toastLog('免费商品已售');
+    }
+    toastLog('免费商品已售');
     return false;
   };
   clickRect(ocrUntilFound(res => res.find(e => e.text == '商店'), 30, 1000));
@@ -254,10 +254,13 @@ function 基地收菜() {
     return t;
   }, 30, 1000));
   toastLog('尝试一举歼灭');
-  ocrUntilFound(res => res.text.includes('今日'), 30, 1000);
-  clickRect(ocrUntilFound(res => res.find(e => e.text.startsWith('进行')), 30, 1000));
+  clickRect(ocrUntilFound(res => {
+    if (!res.text.includes('今日'))
+      return null;
+    return res.find(e => e.text.startsWith('进行'));
+  }, 30, 1000));
   ocrUntilFound(res => {
-    if (res.text.match('(优先|珠宝|确认)') != null)
+    if (res.text.match(/(优先|珠宝|确认)/) != null)
       back();
     else if (res.text.includes('点击'))
       clickRect(res.find(e => e.text.includes('点击')));
@@ -339,23 +342,25 @@ function 爬塔() {
     log(`通关次数 ${cnt}/3`);
     if (cnt == 0)
       continue;
-    sleep(5000);
+    sleep(1000);
     click(width / 2, height / 2 - 100);
     toast('点击屏幕中央');
     sleep(1000);
-    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('进入战斗')), 30, 1000));
+    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('入战')), 30, 1000));
     toast('进入战斗');
     for (let j = 0; j < cnt; ++j) {
       sleep(9000);
-      if (ocrUntilFound(res => res.text.includes('AUTO'), 10, 3000) == null)
+      if (ocrUntilFound(res => res.text.includes('AUT'), 10, 3000) == null)
         break;
       sleep(40 * 1000);
       ocrUntilFound(res => {
-        if (res.text.includes('AUTO'))
+        if (res.text.includes('AUT')) {
+          sleep(4000);
           return false;
+        }
         if (res.text.includes('REWARD') || res.text.includes('FAIL'))
           return true;
-      }, 30, 5000);
+      }, 30, 1000);
       sleep(1000);
       let endCombat = ocrUntilFound(res => res.find(
         e => e.text.match(/(下[^步方法]{2}|返回)/) != null
@@ -426,11 +431,11 @@ function 竞技场() {
     if (hasFree != 'free')
       break;
     clickRect(targetFight);
-    ocrUntilFound(res =>
-      res.text.includes('变更') ||
-      !res.text.includes('目录'),
-      30, 1000);
-    clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('战斗')), 30, 1000));
+    clickRect(ocrUntilFound(res => {
+      if (!res.text.includes('变更') || res.text.includes('目录'))
+        return false;
+      return res.find(e => e.text.endsWith('战斗'));
+    }, 30, 1000));
     toastLog('进入战斗');
     sleep(5000);
     ocrUntilFound(res => res.text.includes('RANK'), 20, 3000);
@@ -662,13 +667,13 @@ function 单次咨询(advise) {
       return [t1, t2];
     }, 10, 300);
     let whichOne = null, similarOne = -1;
-    for (let i = 0; i < 2; ++i) {
-      let t = mostSimilar(options[i], advise[name]);
-      log(`选项${i + 1}："${options[i]}"`);
+    for (let k = 0; k < 2; ++k) {
+      let t = mostSimilar(options[k], advise[name]);
+      log(`选项${k + 1}："${options[k]}"`);
       log(`匹配："${t.result}"，相似度${t.similarity.toFixed(2)}`);
       if (t.similarity > similarOne) {
         similarOne = t.similarity;
-        whichOne = i;
+        whichOne = k;
       }
     }
     if (similarOne < 0.75 && i < maxRetry) {

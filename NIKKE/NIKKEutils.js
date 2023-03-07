@@ -80,7 +80,7 @@ function 启动NIKKE() {
 
   app.launchApp("NIKKE");
   log("打开NIKKE");
-  waitForActivity('com.shiftup.nk.MainActivity');
+  // waitForActivity('com.shiftup.nk.MainActivity');
 }
 
 function 等待NIKKE加载() {

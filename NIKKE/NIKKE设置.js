@@ -6,24 +6,6 @@ ui.layout(
         <toolbar title="选项配置" />
       </appbar>
       <text textSize="16sp" margin="8">勾选想要进行的任务</text>
-      <vertical>
-        <card w="*" h="auto" margin="10 5" cardCornerRadius="2dp"
-          cardElevation="1dp">
-          <horizontal gravity="center_vertical">
-            <checkbox id="商店" marginLeft="4" marginRight="6" />
-            <vertical padding="18 8" h="auto" w="0" layout_weight="1">
-              <text text="商店" textColor="#222222" textSize="16sp" />
-              <text text="购买商店免费物品和代码手册" textColor="#999999" textSize="14sp" />
-            </vertical>
-          </horizontal>
-        </card>
-        <vertical id="shopping" visibility="gone">
-          <text textSize="16sp" margin="8">商店设置</text>
-          <horizontal margin="10 2">
-            <text id="buyCodeManualText" textSize="14sp" w="0" layout_weight="4" >不购买代码手册</text>
-            <seekbar id="buyCodeManual" w="0" layout_weight="6" />
-          </horizontal>
-        </vertical>
         <card w="*" h="auto" margin="10 5" cardCornerRadius="2dp"
           cardElevation="1dp">
           <horizontal gravity="center_vertical">
@@ -59,6 +41,24 @@ ui.layout(
           <horizontal margin="10 2">
             <text id="rookieArenaTargetText" textSize="14sp" w="0" layout_weight="4" >新人竞技场选择第1位对手</text>
             <seekbar id="rookieArenaTarget" w="0" layout_weight="6" />
+          </horizontal>
+        </vertical>
+      <vertical>
+        <card w="*" h="auto" margin="10 5" cardCornerRadius="2dp"
+          cardElevation="1dp">
+          <horizontal gravity="center_vertical">
+            <checkbox id="商店" marginLeft="4" marginRight="6" />
+            <vertical padding="18 8" h="auto" w="0" layout_weight="1">
+              <text text="商店" textColor="#222222" textSize="16sp" />
+              <text text="购买商店免费物品和代码手册" textColor="#999999" textSize="14sp" />
+            </vertical>
+          </horizontal>
+        </card>
+        <vertical id="shopping" visibility="gone">
+          <text textSize="16sp" margin="8">商店设置</text>
+          <horizontal margin="10 2">
+            <text id="buyCodeManualText" textSize="14sp" w="0" layout_weight="4" >不购买代码手册</text>
+            <seekbar id="buyCodeManual" w="0" layout_weight="6" />
           </horizontal>
         </vertical>
         <card w="*" h="auto" margin="10 5" cardCornerRadius="2dp"
@@ -220,7 +220,7 @@ ui.layout(
       </vertical>
       <button id="save" text="保存设置" />
       <button id="update" text="更新脚本（需要能够访问GITHUB）" />
-      <text id="updateText" text="" textColor="#999999" textSize="12sp" gravity="center" visibility="gone"/>
+      <text id="updateText" text="" textColor="#999999" textSize="12sp" gravity="center" visibility="gone" />
     </vertical>
   </ScrollView>
 );
@@ -241,7 +241,7 @@ function checkUpdate() {
     globalNewTagName = respJson['tag_name'];
     versionChangelog = respJson['body'];
     return globalNewTagName;
-  } catch(error) {
+  } catch (error) {
     console.error(error.message);
     console.error(error.stack);
     return null;
@@ -378,7 +378,7 @@ ui.maxRetry.setProgress(NIKKEstorage.get('maxRetry', 1));
 if (NIKKEstorage.get('checkUpdateAuto', false)) {
   toastLog('自动检查更新中……');
   let updateResult = threads.disposable();
-  threads.start(() =>{
+  threads.start(() => {
     updateResult.setAndNotify(checkUpdate());
   });
 
@@ -406,8 +406,8 @@ ui.save.on("click", function () {
   }
   let todoTask = [];
   for (let task of [
-    "商店", "基地收菜", "好友", "竞技场",
-    "爬塔", "咨询", "模拟室"
+    "基地收菜", "好友", "竞技场",
+    "商店", "爬塔", "咨询", "模拟室"
   ])
     if (ui.findView(task).isChecked())
       todoTask.push(task);

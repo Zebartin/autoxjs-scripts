@@ -192,20 +192,19 @@ function 商店() {
 function 基地收菜() {
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('基地')), 30, 1000));
   toastLog('进入基地');
-  sleep(2000);
-  let target = ocrUntilFound(res => {
+  let bulletin = ocrUntilFound(res => {
     let headquarter = res.find(e => e.text.endsWith('中心'));
-    let ret = res.find(e => e.text.endsWith('公告栏'));
+    let ret = res.find(e => e.text.match(/^派.*[公告栏]+$/) != null);
     if (!headquarter || !ret)
       return null;
     // 将识别区域扩宽到整个公告栏图标
     ret.bounds.top = headquarter.bounds.bottom;
     return ret;
-  }, 30, 1000);
-  clickRect(target, 0.3);
+  }, 50, 1000);
+  clickRect(bulletin, 0.3);
   toastLog('进入公告栏');
   // 等待派遣内容加载
-  target = ocrUntilFound(res => res.text.match(/(时间|完成|目前)/), 20, 500);
+  let target = ocrUntilFound(res => res.text.match(/(时间|完成|目前)/), 20, 500);
   // 已经没有派遣内容
   if (target[0] == '目前')
     toastLog('今日派遣已完成');
@@ -217,27 +216,42 @@ function 基地收菜() {
         return null;
       return [t1, t2];
     }, 30, 1000);
-    if (colors.red(images.pixel(captureScreen(), send.bounds.right, send.bounds.top)) > 240) {
-      clickRect(send);
-      toastLog('全部派遣');
-      sleep(2000);
-      target = ocrUntilFound(res => {
-        let x = res.filter(e => e.text.match(/派.$/) != null);
-        if (x.length > 3)
-          return x;
-        return null;
-      }, 30, 400);
-      clickRect(target[target.length - 1]);
-      toastLog('点击派遣');
-      ocrUntilFound(res => res.text.includes('全部'), 30, 1000);
-      sleep(600);
-    }
     if (colors.red(images.pixel(captureScreen(), receive.bounds.right, receive.bounds.top)) < 100) {
       toastLog('全部领取');
       clickRect(receive);
       clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 10, 3000));
       ocrUntilFound(res => res.text.includes('全部'), 30, 1000);
       sleep(600);
+      back();
+      ocrUntilFound(res => {
+        if (res.text.match(/(时间|完成|目前)/) != null)
+          return true;
+        if (res.text.includes('中心')) {
+          clickRect(bulletin, 0.3);
+          sleep(500);
+        }
+        return false;
+      }, 30, 500);
+    }
+    // 重新进入公告栏时需要硬等派遣列表的加载
+    for (let i = 0; i < 6; ++i) {
+      if (colors.red(images.pixel(captureScreen(), send.bounds.right, send.bounds.top)) > 240) {
+        clickRect(send);
+        toastLog('全部派遣');
+        sleep(2000);
+        target = ocrUntilFound(res => {
+          let x = res.filter(e => e.text.match(/派.$/) != null);
+          if (x.length > 3)
+            return x;
+          return null;
+        }, 30, 400);
+        clickRect(target[target.length - 1]);
+        toastLog('点击派遣');
+        ocrUntilFound(res => res.text.includes('全部'), 30, 1000);
+        sleep(600);
+        break;
+      }
+      sleep(500);
     }
   }
   back();

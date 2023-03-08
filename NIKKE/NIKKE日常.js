@@ -176,7 +176,8 @@ function 商店() {
     }, 30, 1000);
     // 一一检查每个商品是否灰暗
     let screenImg = images.copy(captureScreen());
-    for (let m of manuals) {
+    for (let i = 0; i < buyCodeManual; ++i) {
+      let m = manuals[i];
       let c = screenImg.pixel(m.bounds.centerX(), m.bounds.top);
       if (!colors.isSimilar(c, colors.DKGRAY, 30)) {
         buyGood(m);

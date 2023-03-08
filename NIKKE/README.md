@@ -80,4 +80,4 @@ AutoX.js在初版Auto.js（现为[Auto.js Pro](https://pro.autojs.org/)）的基
 
 ## 遇到问题？/需要新功能？
 
-麻烦通过[GitHub Issue](https://github.com/Zebartin/autoxjs-scripts/issues)提出。
+尽量通过[GitHub Issue](https://github.com/Zebartin/autoxjs-scripts/issues)提出，也可加QQ群：692236206。

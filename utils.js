@@ -28,9 +28,14 @@ function getOcrRes() {
   toast('识别完成，可以退出查看日志');
 }
 
-function getDisplaySize() {
-  let metrics = context.getResources().getDisplayMetrics();
-  return [metrics.widthPixels, metrics.heightPixels];
+function getDisplaySize(doNotForcePortrait) {
+  let { width, height } = device;
+  if (doNotForcePortrait)
+    return [width, height]
+  return [
+    Math.min(width, height),
+    Math.max(width, height)
+  ];
 }
 
 function ocrUntilFound(found, retry, interval) {

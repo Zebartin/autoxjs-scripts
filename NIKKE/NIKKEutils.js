@@ -227,12 +227,13 @@ function 刷刷刷() {
           sleep(2000);
           return null;
         }
-        return res.find(e => e.text.includes('点击'));
+        return res.find(e => e.text.includes('步'));
       }, 50, 1000);
-      let hasBlue = images.findColor(captureScreen(), '#00a1ff', {
+      let img = captureScreen();
+      let hasBlue = images.findColor(img, '#00a1ff', {
         region: [
           0, clickNext.bounds.bottom, 
-          clickNext.bounds.right, height - clickNext.bounds.bottom
+          clickNext.bounds.right, img.height - clickNext.bounds.bottom
         ],
         threshold: 20
       });

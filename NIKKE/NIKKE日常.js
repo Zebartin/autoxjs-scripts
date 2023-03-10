@@ -63,7 +63,8 @@ function 日常() {
             退出NIKKE();
             启动NIKKE();
           }
-        }
+        } else
+          return;
       }
     }
   };

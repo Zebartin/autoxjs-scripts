@@ -6,43 +6,43 @@ ui.layout(
         <toolbar title="选项配置" />
       </appbar>
       <text textSize="16sp" margin="8">勾选想要进行的任务</text>
-        <card w="*" h="auto" margin="10 5" cardCornerRadius="2dp"
-          cardElevation="1dp">
-          <horizontal gravity="center_vertical">
-            <checkbox id="基地收菜" marginLeft="4" marginRight="6" />
-            <vertical padding="18 8" h="auto" w="0" layout_weight="1">
-              <text text="基地收菜" textColor="#222222" textSize="16sp" />
-              <text text="派遣、免费一举歼灭、收取奖励" textColor="#999999" textSize="14sp" />
-            </vertical>
-          </horizontal>
-        </card>
-        <card w="*" h="auto" margin="10 5" cardCornerRadius="2dp"
-          cardElevation="1dp">
-          <horizontal gravity="center_vertical">
-            <checkbox id="好友" marginLeft="4" marginRight="6" />
-            <vertical padding="18 8" h="auto" w="0" layout_weight="1">
-              <text text="好友" textColor="#222222" textSize="16sp" />
-              <text text="收发友情点" textColor="#999999" textSize="14sp" />
-            </vertical>
-          </horizontal>
-        </card>
-        <card w="*" h="auto" margin="10 5" cardCornerRadius="2dp"
-          cardElevation="1dp">
-          <horizontal gravity="center_vertical">
-            <checkbox id="竞技场" marginLeft="4" marginRight="6" />
-            <vertical padding="18 8" h="auto" w="0" layout_weight="1">
-              <text text="竞技场" textColor="#222222" textSize="16sp" />
-              <text text="刷完新人竞技场免费次数，领取特殊竞技场奖励" textColor="#999999" textSize="14sp" />
-            </vertical>
-          </horizontal>
-        </card>
-        <vertical id="arena" aisibility="gone">
-          <text textSize="16sp" margin="8">竞技场设置</text>
-          <horizontal margin="10 2">
-            <text id="rookieArenaTargetText" textSize="14sp" w="0" layout_weight="4" >新人竞技场选择第1位对手</text>
-            <seekbar id="rookieArenaTarget" w="0" layout_weight="6" />
-          </horizontal>
-        </vertical>
+      <card w="*" h="auto" margin="10 5" cardCornerRadius="2dp"
+        cardElevation="1dp">
+        <horizontal gravity="center_vertical">
+          <checkbox id="基地收菜" marginLeft="4" marginRight="6" />
+          <vertical padding="18 8" h="auto" w="0" layout_weight="1">
+            <text text="基地收菜" textColor="#222222" textSize="16sp" />
+            <text text="派遣、免费一举歼灭、收取奖励" textColor="#999999" textSize="14sp" />
+          </vertical>
+        </horizontal>
+      </card>
+      <card w="*" h="auto" margin="10 5" cardCornerRadius="2dp"
+        cardElevation="1dp">
+        <horizontal gravity="center_vertical">
+          <checkbox id="好友" marginLeft="4" marginRight="6" />
+          <vertical padding="18 8" h="auto" w="0" layout_weight="1">
+            <text text="好友" textColor="#222222" textSize="16sp" />
+            <text text="收发友情点" textColor="#999999" textSize="14sp" />
+          </vertical>
+        </horizontal>
+      </card>
+      <card w="*" h="auto" margin="10 5" cardCornerRadius="2dp"
+        cardElevation="1dp">
+        <horizontal gravity="center_vertical">
+          <checkbox id="竞技场" marginLeft="4" marginRight="6" />
+          <vertical padding="18 8" h="auto" w="0" layout_weight="1">
+            <text text="竞技场" textColor="#222222" textSize="16sp" />
+            <text text="刷完新人竞技场免费次数，领取特殊竞技场奖励" textColor="#999999" textSize="14sp" />
+          </vertical>
+        </horizontal>
+      </card>
+      <vertical id="arena" aisibility="gone">
+        <text textSize="16sp" margin="8">竞技场设置</text>
+        <horizontal margin="10 2">
+          <text id="rookieArenaTargetText" textSize="14sp" w="0" layout_weight="4" >新人竞技场选择第1位对手</text>
+          <seekbar id="rookieArenaTarget" w="0" layout_weight="6" />
+        </horizontal>
+      </vertical>
       <vertical>
         <card w="*" h="auto" margin="10 5" cardCornerRadius="2dp"
           cardElevation="1dp">
@@ -456,8 +456,14 @@ ui.update.on("click", function () {
     }
     else if (newTagName == curTagName) {
       log("已是最新版本：" + curTagName);
-      beforeReturn();
-      return;
+      let forceUpdate = confirm(
+        "已是最新版本",
+        "是否强制更新？强制更新将重新下载脚本文件，可用于补充/替换意外删除/修改的内容"
+      );
+      if (forceUpdate == false) {
+        beforeReturn();
+        return;
+      }
     }
     log(`检测到新版本：${newTagName}，下载中……`);
     log("如果耗时过长请关闭本窗口并检查网络");

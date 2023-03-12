@@ -71,7 +71,7 @@ function 模拟室(fromIndex) {
   let tryDiff = (Math.floor(tryDiffArea / 3) + 3).toString();
   let tryArea = tryDiffArea % 3;
   if (fromIndex) {
-    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('方舟')), 30, 1000));
+    clickRect(ocrUntilFound(res => res.find(e => e.text == '方舟'), 30, 1000));
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('模拟室')), 30, 1000));
     sleep(2000);
   }

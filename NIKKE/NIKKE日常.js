@@ -339,7 +339,7 @@ function 好友() {
   back();
 }
 function 爬塔() {
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('方舟')), 30, 1000));
+  clickRect(ocrUntilFound(res => res.find(e => e.text == '方舟'), 30, 1000));
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('无限之塔')), 30, 1000));
   toastLog('进入无限之塔');
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('正常开启')), 30, 1000));
@@ -420,7 +420,7 @@ function getIntoNextTower() {
 }
 
 function 竞技场() {
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('方舟')), 30, 1000));
+  clickRect(ocrUntilFound(res => res.find(e => e.text == '方舟'), 30, 1000));
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('技场')), 30, 1000));
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('新人')), 30, 1000));
   toastLog('进入新人竞技场');

@@ -194,6 +194,14 @@ ui.layout(
           <checkbox id="mute" w="0" layout_weight="2" />
         </horizontal>
         <horizontal margin="10 2" gravity="center_vertical" weightSum="10" h="0" layout_weight="1">
+          <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">已启动游戏且位于首页位置</text>
+          <checkbox id="alreadyInGame" w="0" layout_weight="2" />
+        </horizontal>
+        <horizontal margin="10 2" gravity="center_vertical" weightSum="10" h="0" layout_weight="1">
+          <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">打开本界面时自动检查更新</text>
+          <checkbox id="checkUpdateAuto" w="0" layout_weight="2" />
+        </horizontal>
+        <horizontal margin="10 2" gravity="center_vertical" weightSum="10" h="0" layout_weight="1">
           <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">游戏中会出现限时礼包</text>
           <checkbox id="checkSale" w="0" layout_weight="2" />
         </horizontal>
@@ -202,20 +210,12 @@ ui.layout(
           <checkbox id="exitGame" w="0" layout_weight="2" />
         </horizontal>
         <horizontal margin="10 2" gravity="center_vertical" weightSum="10" h="0" layout_weight="1">
-          <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">已启动游戏且位于首页位置</text>
-          <checkbox id="alreadyInGame" w="0" layout_weight="2" />
+          <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">等待每日签到出现</text>
+          <checkbox id="checkDailyLogin" w="0" layout_weight="2" />
         </horizontal>
         <horizontal margin="10 2" gravity="center_vertical" weightSum="10" h="0" layout_weight="1">
           <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">v2rayNG魔法</text>
           <checkbox id="v2rayNG" w="0" layout_weight="2" />
-        </horizontal>
-        <horizontal margin="10 2" gravity="center_vertical" weightSum="10" h="0" layout_weight="1">
-          <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">打开本界面时自动检查更新</text>
-          <checkbox id="checkUpdateAuto" w="0" layout_weight="2" />
-        </horizontal>
-        <horizontal margin="10 2" gravity="center_vertical" weightSum="10" h="0" layout_weight="1">
-          <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">等待每日签到出现</text>
-          <checkbox id="checkDailyLogin" w="0" layout_weight="2" />
         </horizontal>
         <horizontal margin="10 2" gravity="center_vertical|left" weightSum="10" h="0" layout_weight="1">
           <text id="maxRetryText" textSize="16sp" textColor="#222222" w="0" layout_weight="6">脚本出错时不重试</text>
@@ -367,8 +367,8 @@ for (let buffName of simulationRoom.preferredBuff)
   ui.findView(buffName).setChecked(true);
 
 for (let generalOption of [
-  'mute', 'checkSale', 'exitGame', 'alreadyInGame',
-  'checkDailyLogin', 'checkUpdateAuto', 'v2rayNG'
+  'mute', 'alreadyInGame', 'checkUpdateAuto',
+  'checkSale', 'exitGame', 'checkDailyLogin', 'v2rayNG'
 ])
   ui.findView(generalOption).setChecked(NIKKEstorage.get(generalOption, false));
 ui.maxRetry.setOnSeekBarChangeListener({
@@ -441,8 +441,8 @@ ui.save.on("click", function () {
   NIKKEstorage.put('simulationRoom', JSON.stringify(simulationRoom));
 
   for (let generalOption of [
-    'mute', 'checkSale', 'exitGame', 'alreadyInGame',
-    'checkDailyLogin', 'checkUpdateAuto', 'v2rayNG'
+    'mute', 'alreadyInGame', 'checkUpdateAuto',
+    'checkSale', 'exitGame', 'checkDailyLogin', 'v2rayNG'
   ])
     NIKKEstorage.put(generalOption, ui.findView(generalOption).isChecked());
   NIKKEstorage.put('maxRetry', ui.maxRetry.getProgress());

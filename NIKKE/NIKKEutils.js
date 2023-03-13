@@ -4,7 +4,8 @@ var {
   imgToBounds,
   unlockIfNeed,
   requestScreenCaptureAuto,
-  getDisplaySize
+  getDisplaySize,
+  killApp
 } = require('./utils.js');
 if (typeof module === 'undefined') {
   auto.waitFor();
@@ -141,11 +142,11 @@ function 等待NIKKE加载() {
 
 function 退出NIKKE() {
   home();
-  关闭应用('NIKKE');
+  killApp('NIKKE');
   if (storages.create("NIKKEconfig").get('v2rayNG', false) && app.launchApp("v2rayNG")) {
     if (id('tv_test_state').findOne().text() != '未连接')
       id('fab').click();
-    关闭应用('v2rayNG');
+    killApp('v2rayNG');
   }
 }
 
@@ -268,33 +269,6 @@ function 刷刷刷() {
   }
 }
 
-function 关闭应用(packageName) {
-  var name = getPackageName(packageName);
-  if (!name) {
-    if (getAppName(packageName)) {
-      name = packageName;
-    } else {
-      return false;
-    }
-  }
-  app.openAppSetting(name);
-  while (text(app.getAppName(name)).findOne(2000) == null) {
-    back();
-    app.openAppSetting(name);
-  }
-  let is_sure = textMatches(/[强行停止结束]{2,}/).findOne();
-  if (is_sure.enabled()) {
-    is_sure.click();
-    sleep(1000);
-    textMatches(/(确定|[强行停止结束]{2,})/).click();
-    log(app.getAppName(name) + "应用已被关闭");
-    sleep(1000);
-    back();
-  } else {
-    log(app.getAppName(name) + "应用不能被正常关闭或不在后台运行");
-    back();
-  }
-}
 function mostSimilar(target, candidates) {
   let res = null, maxSim = -1;
   for (let candidate of candidates) {

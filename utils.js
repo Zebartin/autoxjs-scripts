@@ -10,7 +10,8 @@ else {
     unlockIfNeed: unlockIfNeed,
     requestScreenCaptureAuto: requestScreenCaptureAuto,
     getOcrRes: getOcrRes,
-    getDisplaySize: getDisplaySize
+    getDisplaySize: getDisplaySize,
+    killApp: killApp
   };
 }
 
@@ -74,6 +75,33 @@ function imgToBounds(img, point) {
   return { bounds: ret };
 }
 
+function killApp(packageName) {
+  var name = getPackageName(packageName);
+  if (!name) {
+    if (getAppName(packageName)) {
+      name = packageName;
+    } else {
+      return false;
+    }
+  }
+  app.openAppSetting(name);
+  while (text(app.getAppName(name)).findOne(2000) == null) {
+    back();
+    app.openAppSetting(name);
+  }
+  let is_sure = textMatches(/[强行停止结束]{2,}/).findOne();
+  if (is_sure.enabled()) {
+    is_sure.click();
+    sleep(1000);
+    textMatches(/(确定|[强行停止结束]{2,})/).click();
+    log(app.getAppName(name) + "应用已被关闭");
+    sleep(1000);
+    back();
+  } else {
+    log(app.getAppName(name) + "应用不能被正常关闭或不在后台运行");
+    back();
+  }
+}
 /**
  * 解锁屏幕
  */

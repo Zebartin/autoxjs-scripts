@@ -8,6 +8,12 @@ if (typeof module === 'undefined') {
   unlockIfNeed();
   requestScreenCaptureAuto();
   刷刷刷();
+  if (confirm('已完成活动刷关，\n是否继续日常收菜？')) {
+    返回首页();
+    engines.execScriptFile('./NIKKE日常.js', {
+      dalay: 1000
+    });
+  }
   exit();
 }
 else {

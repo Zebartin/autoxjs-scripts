@@ -437,9 +437,9 @@ function getIntoNextTower() {
   return curTowerName;
 }
 
-function 竞技场() {
-  clickRect(ocrUntilFound(res => res.find(e => e.text == '方舟'), 30, 1000));
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('技场')), 30, 1000));
+function 新人竞技场(rookieTarget) {
+  if (rookieTarget == 0)
+    return;
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('新人')), 30, 1000));
   toastLog('进入新人竞技场');
   const targetFight = ocrUntilFound(res => {
@@ -450,7 +450,7 @@ function 竞技场() {
     if (t.length != 3)
       return null;
     t.sort((a, b) => a.bounds.top - b.bounds.top);
-    return t[NIKKEstorage.get('rookieArenaTarget', 1) - 1];
+    return t[rookieTarget - 1];
   }, 30, 1000);
   while (true) {
     let hasFree = ocrUntilFound(res => {
@@ -478,6 +478,13 @@ function 竞技场() {
     click(width / 2, height * 0.2);
   }
   back();
+}
+
+function 竞技场() {
+  clickRect(ocrUntilFound(res => res.find(e => e.text == '方舟'), 30, 1000));
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('技场')), 30, 1000));
+  新人竞技场(NIKKEstorage.get('rookieArenaTarget', 1));
+
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('SPECIAL')), 30, 1000));
   toastLog('进入特殊竞技场');
   // 如果识别出了百分号，直接点百分号

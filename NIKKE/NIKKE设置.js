@@ -39,7 +39,7 @@ ui.layout(
       <vertical id="arena" aisibility="gone">
         <text textSize="16sp" margin="8">竞技场设置</text>
         <horizontal margin="10 2">
-          <text id="rookieArenaTargetText" textSize="14sp" w="0" layout_weight="4" >新人竞技场选择第1位对手</text>
+          <text id="rookieArenaTargetText" textSize="14sp" w="0" layout_weight="4" >不打新人竞技场</text>
           <seekbar id="rookieArenaTarget" w="0" layout_weight="6" />
         </horizontal>
       </vertical>
@@ -294,11 +294,14 @@ ui.buyCodeManual.setOnSeekBarChangeListener({
 });
 ui.buyCodeManual.setProgress(NIKKEstorage.get('buyCodeManual', 3));
 
-ui.rookieArenaTarget.setMin(1);
+ui.rookieArenaTarget.setMin(0);
 ui.rookieArenaTarget.setMax(3);
 ui.rookieArenaTarget.setOnSeekBarChangeListener({
   onProgressChanged: function (seekbar, p, fromUser) {
-    ui.rookieArenaTargetText.setText(`新人竞技场选择第${p}位对手`);
+    if (p == 0)
+      ui.rookieArenaTargetText.setText('不打新人竞技场');
+    else
+      ui.rookieArenaTargetText.setText(`新人竞技场选择第${p}位对手`);
   }
 });
 ui.rookieArenaTarget.setProgress(NIKKEstorage.get('rookieArenaTarget', 1));

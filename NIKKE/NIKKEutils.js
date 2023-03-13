@@ -166,7 +166,7 @@ function 返回首页() {
       break;
     sleep(300);
   }
-  result.text = '首页图标'
+  result.text = '首页图标';
   homeImage.recycle();
   sleep(1000);
   for (let i = 0; i < 10; ++i) {

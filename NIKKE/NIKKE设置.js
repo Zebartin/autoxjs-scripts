@@ -213,6 +213,10 @@ ui.layout(
           <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">打开本界面时自动检查更新</text>
           <checkbox id="checkUpdateAuto" w="0" layout_weight="2" />
         </horizontal>
+        <horizontal margin="10 2" gravity="center_vertical" weightSum="10" h="0" layout_weight="1">
+          <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">等待每日签到出现</text>
+          <checkbox id="checkDailyLogin" w="0" layout_weight="2" />
+        </horizontal>
         <horizontal margin="10 2" gravity="center_vertical|left" weightSum="10" h="0" layout_weight="1">
           <text id="maxRetryText" textSize="16sp" textColor="#222222" w="0" layout_weight="6">脚本出错时不重试</text>
           <seekbar id="maxRetry" w="0" layout_weight="4" />
@@ -362,7 +366,10 @@ for (let task of todoTask)
 for (let buffName of simulationRoom.preferredBuff)
   ui.findView(buffName).setChecked(true);
 
-for (let generalOption of ['mute', 'checkSale', 'exitGame', 'alreadyInGame', 'checkUpdateAuto', 'v2rayNG'])
+for (let generalOption of [
+  'mute', 'checkSale', 'exitGame', 'alreadyInGame',
+  'checkDailyLogin', 'checkUpdateAuto', 'v2rayNG'
+])
   ui.findView(generalOption).setChecked(NIKKEstorage.get(generalOption, false));
 ui.maxRetry.setOnSeekBarChangeListener({
   onProgressChanged: function (seekbar, p, fromUser) {
@@ -433,7 +440,10 @@ ui.save.on("click", function () {
       simulationRoom.preferredBuff.push(buffName);
   NIKKEstorage.put('simulationRoom', JSON.stringify(simulationRoom));
 
-  for (let generalOption of ['mute', 'checkSale', 'exitGame', 'alreadyInGame', 'checkUpdateAuto', 'v2rayNG'])
+  for (let generalOption of [
+    'mute', 'checkSale', 'exitGame', 'alreadyInGame',
+    'checkDailyLogin', 'checkUpdateAuto', 'v2rayNG'
+  ])
     NIKKEstorage.put(generalOption, ui.findView(generalOption).isChecked());
   NIKKEstorage.put('maxRetry', ui.maxRetry.getProgress());
 

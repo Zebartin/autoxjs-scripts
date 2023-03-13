@@ -1,11 +1,7 @@
 var {
-  ocrUntilFound,
-  clickRect,
-  imgToBounds,
-  unlockIfNeed,
-  requestScreenCaptureAuto,
-  getDisplaySize,
-  killApp
+  ocrUntilFound, clickRect, unlockIfNeed,
+  requestScreenCaptureAuto, getDisplaySize,
+  killApp, findImageByFeature
 } = require('./utils.js');
 if (typeof module === 'undefined') {
   auto.waitFor();
@@ -155,15 +151,14 @@ function 返回首页() {
   const homeImage = images.read('./images/home.jpg');
   var result = null;
   for (let i = 0; i < 10; ++i) {
-    result = images.findImage(captureScreen(), homeImage, {
+    result = findImageByFeature(captureScreen(), homeImage, {
       threshold: 0.6,
-      region: [50, height * 0.8]
+      region: [0, height * 0.8]
     });
     if (result != null)
       break;
     sleep(300);
   }
-  result = imgToBounds(homeImage, result);
   homeImage.recycle();
   sleep(1000);
   for (let i = 0; i < 10; ++i) {

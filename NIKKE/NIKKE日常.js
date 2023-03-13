@@ -4,11 +4,9 @@ var {
 } = require('./NIKKEutils.js');
 var { 模拟室 } = require('./模拟室.js');
 var {
-  ocrUntilFound,
-  clickRect,
-  imgToBounds,
-  requestScreenCaptureAuto,
-  getDisplaySize
+  ocrUntilFound, clickRect, findImageByFeature,
+  requestScreenCaptureAuto, getDisplaySize
+  
 } = require('./utils.js');
 let width, height;
 let NIKKEstorage = storages.create("NIKKEconfig");
@@ -122,7 +120,7 @@ function 商店() {
     const arenaShopImage = images.read("./images/arenaShop.jpg");
     let arenaShop = null;
     for (let i = 0; i < 10; ++i) {
-      arenaShop = images.findImage(captureScreen(), arenaShopImage, {
+      arenaShop = findImageByFeature(captureScreen(), arenaShopImage, {
         threshold: 0.7,
         region: [0, height * 0.3, width / 2, height * 0.6]
       });
@@ -130,7 +128,6 @@ function 商店() {
         break;
       sleep(300);
     }
-    arenaShop = imgToBounds(arenaShopImage, arenaShop);
     arenaShopImage.recycle();
     clickRect(arenaShop);
     ocrUntilFound(res => {

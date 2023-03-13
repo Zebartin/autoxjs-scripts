@@ -149,23 +149,32 @@ function 退出NIKKE() {
 
 function 返回首页() {
   const homeImage = images.read('./images/home.jpg');
+  let [width, height] = getDisplaySize();
   var result = null;
   for (let i = 0; i < 10; ++i) {
     result = findImageByFeature(captureScreen(), homeImage, {
       threshold: 0.6,
-      region: [0, height * 0.8]
+      region: [0, height * 0.8, width / 2, height * 0.2]
     });
     if (result != null)
       break;
     sleep(300);
   }
+  result.text = '首页图标'
   homeImage.recycle();
   sleep(1000);
   for (let i = 0; i < 10; ++i) {
     clickRect(result);
     sleep(4000);
-    if (ocrUntilFound(res => res.text.match(/(大厅|基地|物品|方舟)/), 3, 400) != null)
+    let hallBtn = ocrUntilFound(res => {
+      if (res.text.match(/(大厅|基地|物品|方舟)/) == null)
+        return null;
+      return res.find(e => e.text == '大厅');
+    }, 3, 400)
+    if (hallBtn != null) {
+      clickRect(hallBtn);
       break;
+    }
   }
   log('返回首页');
 }
@@ -228,7 +237,7 @@ function 刷刷刷() {
       let img = captureScreen();
       let hasBlue = images.findColor(img, '#00a1ff', {
         region: [
-          0, clickNext.bounds.bottom, 
+          0, clickNext.bounds.bottom,
           clickNext.bounds.right, img.height - clickNext.bounds.bottom
         ],
         threshold: 20

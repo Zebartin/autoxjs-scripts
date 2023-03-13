@@ -128,6 +128,7 @@ function 商店() {
         break;
       sleep(300);
     }
+    arenaShop.text = '竞技场商店图标';
     arenaShopImage.recycle();
     clickRect(arenaShop);
     ocrUntilFound(res => {

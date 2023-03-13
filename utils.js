@@ -53,8 +53,10 @@ function ocrUntilFound(found, retry, interval) {
   return null;
 }
 
-function clickRect(rect, scale) {
-  sleep(1000);
+function clickRect(rect, scale, delay) {
+  if (delay === undefined)
+    delay = 1000;
+  sleep(delay);
   if (rect.text)
     log(`点击"${rect.text}"`);
   // 按一定比例将范围缩小在中央位置

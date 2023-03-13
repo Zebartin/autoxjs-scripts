@@ -6,7 +6,7 @@ var { 模拟室 } = require('./模拟室.js');
 var {
   ocrUntilFound, clickRect, findImageByFeature,
   requestScreenCaptureAuto, getDisplaySize
-  
+
 } = require('./utils.js');
 let width, height;
 let NIKKEstorage = storages.create("NIKKEconfig");
@@ -92,7 +92,26 @@ function 商店() {
     toastLog(`购买${good.text}`);
     clickRect(good, 0.5);
     clickRect(ocrUntilFound(res => res.find(e => e.text == '购买'), 30, 1000));
-    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 20, 1000));
+    let affordable = true;
+    ocrUntilFound(res => {
+      if (res.text.includes('不足')) {
+        affordable = false;
+        return true;
+      }
+      let receiveBtn = res.find(e => e.text.includes('点击'));
+      if (receiveBtn != null) {
+        clickRect(receiveBtn);
+        return true;
+      }
+      let buyBtn = res.find(e => e.text == '购买');
+      if (buyBtn != null)
+        clickRect(buyBtn, 1, 0);
+      return null;
+    }, 20, 1000);
+    if (!affordable) {
+      log('资金不足');
+      back();
+    }
   };
   let buyFree = () => {
     let freeGood = ocrUntilFound(res => res.find(e => e.text.match(/(100%|s[oq0]l[od0] [oq0]ut)/i) != null), 10, 300);

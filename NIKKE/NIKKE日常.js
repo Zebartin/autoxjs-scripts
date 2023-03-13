@@ -326,7 +326,8 @@ function 好友() {
   back();
   ocrUntilFound(res => res.text.match(/(可以|目录|搜寻|赠送)/) != null, 20, 1500);
   let btnColor = colors.toString(images.pixel(captureScreen(), sendBtn.bounds.left, sendBtn.bounds.top));
-  if (colors.isSimilar('#1aaff7', btnColor, 10)) {
+  log(`赠送按钮颜色：${btnColor}`)
+  if (colors.isSimilar('#1aaff7', btnColor, 30)) {
     clickRect(sendBtn);
     toastLog('点击赠送');
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('确认')), 30, 1000));

@@ -141,6 +141,8 @@ function findImageByFeature(trainImg, queryImg, options) {
     let dstPtsList = java.util.ArrayList(MatOfPoint2f().toList());
     for (let m of matches) {
       let t = m.toArray();
+      if (t.length < 2)
+        continue;
       if (t[0].distance < 0.75 * t[1].distance) {
         srcPtsList.add(kp1.toArray()[t[0].queryIdx].pt);
         dstPtsList.add(kp2.toArray()[t[0].trainIdx].pt);

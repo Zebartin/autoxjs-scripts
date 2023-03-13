@@ -147,6 +147,8 @@ function 商店() {
         break;
       sleep(300);
     }
+    // 减少可点击范围，避免点到悬浮窗
+    arenaShop.bounds.left += arenaShop.bounds.width() * 0.7;
     arenaShop.text = '竞技场商店图标';
     arenaShopImage.recycle();
     clickRect(arenaShop);
@@ -523,7 +525,7 @@ function 竞技场() {
     let clickReward = ocrUntilFound(res => res.find(e =>
       e.text.includes('点击') && e.bounds != null &&
       e.bounds.top > specialRewardBtn.bounds.bottom
-    ), 30, 1000);
+    ), 10, 1000);
     if (clickReward != null)
       clickRect(clickReward);
   }
@@ -586,6 +588,8 @@ function 咨询() {
         sleep(1000);
       }
     }
+    // 减少可点击范围，避免点到悬浮窗
+    attrs[adviseTarget].bounds.left += attrs[adviseTarget].bounds.width() * 0.7;
     clickRect(attrs[adviseTarget]);
     if (单次咨询(advise))
       cnt++;

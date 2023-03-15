@@ -666,7 +666,7 @@ function 单次咨询(advise) {
       e => e.text.includes('确认')
     ), 30, 1000));
     let pageStat = ocrUntilFound(res => {
-      if (res.text.match(/(确认|取消)/) != null)
+      if (res.text.includes('取消') && res.text.includes('确认'))
         return 'outside';
       if (res.text.match(/(AUTO|LOG|CANCEL)/) != null)
         return 'inside';
@@ -713,6 +713,7 @@ function 单次咨询(advise) {
     }, 10, 300);
     let whichOne = null, similarOne = -1;
     for (let k = 0; k < 2; ++k) {
+      options[k] = options[k].replace(/[,，\.。…\?\!？！、「」～☆【】♪\s\—]/g, '');
       let t = mostSimilar(options[k], advise[name]);
       log(`选项${k + 1}："${options[k]}"`);
       log(`匹配："${t.result}"，相似度${t.similarity.toFixed(2)}`);
@@ -721,7 +722,8 @@ function 单次咨询(advise) {
         whichOne = k;
       }
     }
-    if (similarOne < 0.75 && i < maxRetry) {
+    let thresh = options[whichOne].length < 3 ? 1 : 0.75;
+    if (similarOne < thresh && i < maxRetry) {
       toastLog(`相似度过低，放弃本次咨询(尝试次数${i}/${maxRetry})`);
       clickRect(ocrUntilFound(res => res.find(e =>
         e.text.match(/[UTOG]/) == null && e.text.includes('NCE')
@@ -729,7 +731,7 @@ function 单次咨询(advise) {
       ocrUntilFound(res => res.text.includes('看花'), 20, 2000);
       continue;
     }
-    if (i == maxRetry)
+    if (similarOne < thresh && i == maxRetry)
       log(`已达最大尝试次数${maxRetry}，无视低相似度`);
     log(`咨询选择："${options[whichOne]}"`);
     if (whichOne == 0)

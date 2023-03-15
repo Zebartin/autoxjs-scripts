@@ -40,12 +40,18 @@ function getDisplaySize(doNotForcePortrait) {
   ];
 }
 
-function ocrUntilFound(found, retry, interval) {
-  var res;
+function ocrUntilFound(found, retry, interval, maxScale) {
+  maxScale = maxScale || 1;
   for (let i = 0; i < retry; ++i) {
     sleep(interval);
-    // log('OCR中');
-    res = found(gmlkit.ocr(captureScreen(), "zh"))
+    let scale = (i % maxScale) + 1;
+    let img = captureScreen();
+    if (scale > 1) {
+      log(`OCR：尝试放大${scale}倍`);
+      img = images.scale(img, scale, scale);
+    }
+    let res = found(gmlkit.ocr(img, "zh"));
+    img && img.recycle();
     if (res || res === 0)
       return res;
   }

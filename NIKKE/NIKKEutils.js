@@ -154,7 +154,7 @@ function 返回首页() {
   homeImage.recycle();
   sleep(1000);
   for (let i = 0; i < 10; ++i) {
-    clickRect(result);
+    clickRect(result, 0.8, 0);
     sleep(4000);
     let hallBtn = ocrUntilFound(res => {
       if (res.text.match(/(大厅|基地|物品|方舟)/) == null)

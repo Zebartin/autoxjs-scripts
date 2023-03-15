@@ -4,11 +4,9 @@ var {
 } = require('./NIKKEutils.js');
 var { 模拟室 } = require('./模拟室.js');
 var {
-  ocrUntilFound,
-  clickRect,
-  imgToBounds,
-  requestScreenCaptureAuto,
-  getDisplaySize
+  ocrUntilFound, clickRect, findImageByFeature,
+  requestScreenCaptureAuto, getDisplaySize
+
 } = require('./utils.js');
 let width, height;
 let NIKKEstorage = storages.create("NIKKEconfig");
@@ -63,7 +61,8 @@ function 日常() {
             退出NIKKE();
             启动NIKKE();
           }
-        }
+        } else
+          return;
       }
     }
   };
@@ -93,7 +92,26 @@ function 商店() {
     toastLog(`购买${good.text}`);
     clickRect(good, 0.5);
     clickRect(ocrUntilFound(res => res.find(e => e.text == '购买'), 30, 1000));
-    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 20, 1000));
+    let affordable = true;
+    ocrUntilFound(res => {
+      if (res.text.includes('不足')) {
+        affordable = false;
+        return true;
+      }
+      let receiveBtn = res.find(e => e.text.includes('点击'));
+      if (receiveBtn != null) {
+        clickRect(receiveBtn);
+        return true;
+      }
+      let buyBtn = res.find(e => e.text == '购买');
+      if (buyBtn != null)
+        clickRect(buyBtn, 1, 0);
+      return null;
+    }, 20, 1000);
+    if (!affordable) {
+      log('资金不足');
+      back();
+    }
   };
   let buyFree = () => {
     let freeGood = ocrUntilFound(res => res.find(e => e.text.match(/(100%|s[oq0]l[od0] [oq0]ut)/i) != null), 10, 300);
@@ -121,7 +139,7 @@ function 商店() {
     const arenaShopImage = images.read("./images/arenaShop.jpg");
     let arenaShop = null;
     for (let i = 0; i < 10; ++i) {
-      arenaShop = images.findImage(captureScreen(), arenaShopImage, {
+      arenaShop = findImageByFeature(captureScreen(), arenaShopImage, {
         threshold: 0.7,
         region: [0, height * 0.3, width / 2, height * 0.6]
       });
@@ -129,7 +147,9 @@ function 商店() {
         break;
       sleep(300);
     }
-    arenaShop = imgToBounds(arenaShopImage, arenaShop);
+    // 减少可点击范围，避免点到悬浮窗
+    arenaShop.bounds.left += arenaShop.bounds.width() * 0.7;
+    arenaShop.text = '竞技场商店图标';
     arenaShopImage.recycle();
     clickRect(arenaShop);
     ocrUntilFound(res => {
@@ -328,7 +348,8 @@ function 好友() {
   back();
   ocrUntilFound(res => res.text.match(/(可以|目录|搜寻|赠送)/) != null, 20, 1500);
   let btnColor = colors.toString(images.pixel(captureScreen(), sendBtn.bounds.left, sendBtn.bounds.top));
-  if (colors.isSimilar('#1aaff7', btnColor, 10)) {
+  log(`赠送按钮颜色：${btnColor}`)
+  if (colors.isSimilar('#1aaff7', btnColor, 30)) {
     clickRect(sendBtn);
     toastLog('点击赠送');
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('确认')), 30, 1000));
@@ -338,7 +359,7 @@ function 好友() {
   back();
 }
 function 爬塔() {
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('方舟')), 30, 1000));
+  clickRect(ocrUntilFound(res => res.find(e => e.text == '方舟'), 30, 1000));
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('无限之塔')), 30, 1000));
   toastLog('进入无限之塔');
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('正常开启')), 30, 1000));
@@ -379,7 +400,7 @@ function 爬塔() {
       sleep(1000);
       let endCombat = ocrUntilFound(res => res.find(
         e => e.text.match(/(下[^步方法]{2}|返回)/) != null
-      ), 30, 500);
+      ), 30, 500, 2);
       if (endCombat.text.includes('返回')) {
         clickRect(endCombat);
         toastLog('作战失败');
@@ -418,9 +439,9 @@ function getIntoNextTower() {
   return curTowerName;
 }
 
-function 竞技场() {
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('方舟')), 30, 1000));
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('技场')), 30, 1000));
+function 新人竞技场(rookieTarget) {
+  if (rookieTarget == 0)
+    return;
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('新人')), 30, 1000));
   toastLog('进入新人竞技场');
   const targetFight = ocrUntilFound(res => {
@@ -431,7 +452,7 @@ function 竞技场() {
     if (t.length != 3)
       return null;
     t.sort((a, b) => a.bounds.top - b.bounds.top);
-    return t[NIKKEstorage.get('rookieArenaTarget', 1) - 1];
+    return t[rookieTarget - 1];
   }, 30, 1000);
   while (true) {
     let hasFree = ocrUntilFound(res => {
@@ -459,6 +480,13 @@ function 竞技场() {
     click(width / 2, height * 0.2);
   }
   back();
+}
+
+function 竞技场() {
+  clickRect(ocrUntilFound(res => res.find(e => e.text == '方舟'), 30, 1000));
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('技场')), 30, 1000));
+  新人竞技场(NIKKEstorage.get('rookieArenaTarget', 1));
+
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('SPECIAL')), 30, 1000));
   toastLog('进入特殊竞技场');
   // 如果识别出了百分号，直接点百分号
@@ -497,7 +525,7 @@ function 竞技场() {
     let clickReward = ocrUntilFound(res => res.find(e =>
       e.text.includes('点击') && e.bounds != null &&
       e.bounds.top > specialRewardBtn.bounds.bottom
-    ), 30, 1000);
+    ), 10, 1000);
     if (clickReward != null)
       clickRect(clickReward);
   }
@@ -560,6 +588,8 @@ function 咨询() {
         sleep(1000);
       }
     }
+    // 减少可点击范围，避免点到悬浮窗
+    attrs[adviseTarget].bounds.left += attrs[adviseTarget].bounds.width() * 0.7;
     clickRect(attrs[adviseTarget]);
     if (单次咨询(advise))
       cnt++;
@@ -636,7 +666,7 @@ function 单次咨询(advise) {
       e => e.text.includes('确认')
     ), 30, 1000));
     let pageStat = ocrUntilFound(res => {
-      if (res.text.match(/(确认|取消)/) != null)
+      if (res.text.includes('取消') && res.text.includes('确认'))
         return 'outside';
       if (res.text.match(/(AUTO|LOG|CANCEL)/) != null)
         return 'inside';
@@ -683,6 +713,7 @@ function 单次咨询(advise) {
     }, 10, 300);
     let whichOne = null, similarOne = -1;
     for (let k = 0; k < 2; ++k) {
+      options[k] = options[k].replace(/[,，\.。…\?\!？！、「」～☆【】♪\s\—]/g, '');
       let t = mostSimilar(options[k], advise[name]);
       log(`选项${k + 1}："${options[k]}"`);
       log(`匹配："${t.result}"，相似度${t.similarity.toFixed(2)}`);
@@ -691,7 +722,8 @@ function 单次咨询(advise) {
         whichOne = k;
       }
     }
-    if (similarOne < 0.75 && i < maxRetry) {
+    let thresh = options[whichOne].length < 3 ? 1 : 0.75;
+    if (similarOne < thresh && i < maxRetry) {
       toastLog(`相似度过低，放弃本次咨询(尝试次数${i}/${maxRetry})`);
       clickRect(ocrUntilFound(res => res.find(e =>
         e.text.match(/[UTOG]/) == null && e.text.includes('NCE')
@@ -699,7 +731,7 @@ function 单次咨询(advise) {
       ocrUntilFound(res => res.text.includes('看花'), 20, 2000);
       continue;
     }
-    if (i == maxRetry)
+    if (similarOne < thresh && i == maxRetry)
       log(`已达最大尝试次数${maxRetry}，无视低相似度`);
     log(`咨询选择："${options[whichOne]}"`);
     if (whichOne == 0)

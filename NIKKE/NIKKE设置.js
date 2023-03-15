@@ -6,43 +6,43 @@ ui.layout(
         <toolbar title="选项配置" />
       </appbar>
       <text textSize="16sp" margin="8">勾选想要进行的任务</text>
-        <card w="*" h="auto" margin="10 5" cardCornerRadius="2dp"
-          cardElevation="1dp">
-          <horizontal gravity="center_vertical">
-            <checkbox id="基地收菜" marginLeft="4" marginRight="6" />
-            <vertical padding="18 8" h="auto" w="0" layout_weight="1">
-              <text text="基地收菜" textColor="#222222" textSize="16sp" />
-              <text text="派遣、免费一举歼灭、收取奖励" textColor="#999999" textSize="14sp" />
-            </vertical>
-          </horizontal>
-        </card>
-        <card w="*" h="auto" margin="10 5" cardCornerRadius="2dp"
-          cardElevation="1dp">
-          <horizontal gravity="center_vertical">
-            <checkbox id="好友" marginLeft="4" marginRight="6" />
-            <vertical padding="18 8" h="auto" w="0" layout_weight="1">
-              <text text="好友" textColor="#222222" textSize="16sp" />
-              <text text="收发友情点" textColor="#999999" textSize="14sp" />
-            </vertical>
-          </horizontal>
-        </card>
-        <card w="*" h="auto" margin="10 5" cardCornerRadius="2dp"
-          cardElevation="1dp">
-          <horizontal gravity="center_vertical">
-            <checkbox id="竞技场" marginLeft="4" marginRight="6" />
-            <vertical padding="18 8" h="auto" w="0" layout_weight="1">
-              <text text="竞技场" textColor="#222222" textSize="16sp" />
-              <text text="刷完新人竞技场免费次数，领取特殊竞技场奖励" textColor="#999999" textSize="14sp" />
-            </vertical>
-          </horizontal>
-        </card>
-        <vertical id="arena" aisibility="gone">
-          <text textSize="16sp" margin="8">竞技场设置</text>
-          <horizontal margin="10 2">
-            <text id="rookieArenaTargetText" textSize="14sp" w="0" layout_weight="4" >新人竞技场选择第1位对手</text>
-            <seekbar id="rookieArenaTarget" w="0" layout_weight="6" />
-          </horizontal>
-        </vertical>
+      <card w="*" h="auto" margin="10 5" cardCornerRadius="2dp"
+        cardElevation="1dp">
+        <horizontal gravity="center_vertical">
+          <checkbox id="基地收菜" marginLeft="4" marginRight="6" />
+          <vertical padding="18 8" h="auto" w="0" layout_weight="1">
+            <text text="基地收菜" textColor="#222222" textSize="16sp" />
+            <text text="派遣、免费一举歼灭、收取奖励" textColor="#999999" textSize="14sp" />
+          </vertical>
+        </horizontal>
+      </card>
+      <card w="*" h="auto" margin="10 5" cardCornerRadius="2dp"
+        cardElevation="1dp">
+        <horizontal gravity="center_vertical">
+          <checkbox id="好友" marginLeft="4" marginRight="6" />
+          <vertical padding="18 8" h="auto" w="0" layout_weight="1">
+            <text text="好友" textColor="#222222" textSize="16sp" />
+            <text text="收发友情点" textColor="#999999" textSize="14sp" />
+          </vertical>
+        </horizontal>
+      </card>
+      <card w="*" h="auto" margin="10 5" cardCornerRadius="2dp"
+        cardElevation="1dp">
+        <horizontal gravity="center_vertical">
+          <checkbox id="竞技场" marginLeft="4" marginRight="6" />
+          <vertical padding="18 8" h="auto" w="0" layout_weight="1">
+            <text text="竞技场" textColor="#222222" textSize="16sp" />
+            <text text="刷完新人竞技场免费次数，领取特殊竞技场奖励" textColor="#999999" textSize="14sp" />
+          </vertical>
+        </horizontal>
+      </card>
+      <vertical id="arena" aisibility="gone">
+        <text textSize="16sp" margin="8">竞技场设置</text>
+        <horizontal margin="10 2">
+          <text id="rookieArenaTargetText" textSize="14sp" w="0" layout_weight="4" >不打新人竞技场</text>
+          <seekbar id="rookieArenaTarget" w="0" layout_weight="6" />
+        </horizontal>
+      </vertical>
       <vertical>
         <card w="*" h="auto" margin="10 5" cardCornerRadius="2dp"
           cardElevation="1dp">
@@ -194,6 +194,14 @@ ui.layout(
           <checkbox id="mute" w="0" layout_weight="2" />
         </horizontal>
         <horizontal margin="10 2" gravity="center_vertical" weightSum="10" h="0" layout_weight="1">
+          <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">已启动游戏且位于首页位置</text>
+          <checkbox id="alreadyInGame" w="0" layout_weight="2" />
+        </horizontal>
+        <horizontal margin="10 2" gravity="center_vertical" weightSum="10" h="0" layout_weight="1">
+          <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">打开本界面时自动检查更新</text>
+          <checkbox id="checkUpdateAuto" w="0" layout_weight="2" />
+        </horizontal>
+        <horizontal margin="10 2" gravity="center_vertical" weightSum="10" h="0" layout_weight="1">
           <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">游戏中会出现限时礼包</text>
           <checkbox id="checkSale" w="0" layout_weight="2" />
         </horizontal>
@@ -202,16 +210,12 @@ ui.layout(
           <checkbox id="exitGame" w="0" layout_weight="2" />
         </horizontal>
         <horizontal margin="10 2" gravity="center_vertical" weightSum="10" h="0" layout_weight="1">
-          <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">已启动游戏且位于首页位置</text>
-          <checkbox id="alreadyInGame" w="0" layout_weight="2" />
+          <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">等待每日签到出现</text>
+          <checkbox id="checkDailyLogin" w="0" layout_weight="2" />
         </horizontal>
         <horizontal margin="10 2" gravity="center_vertical" weightSum="10" h="0" layout_weight="1">
           <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">v2rayNG魔法</text>
           <checkbox id="v2rayNG" w="0" layout_weight="2" />
-        </horizontal>
-        <horizontal margin="10 2" gravity="center_vertical" weightSum="10" h="0" layout_weight="1">
-          <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">打开本界面时自动检查更新</text>
-          <checkbox id="checkUpdateAuto" w="0" layout_weight="2" />
         </horizontal>
         <horizontal margin="10 2" gravity="center_vertical|left" weightSum="10" h="0" layout_weight="1">
           <text id="maxRetryText" textSize="16sp" textColor="#222222" w="0" layout_weight="6">脚本出错时不重试</text>
@@ -294,11 +298,14 @@ ui.buyCodeManual.setOnSeekBarChangeListener({
 });
 ui.buyCodeManual.setProgress(NIKKEstorage.get('buyCodeManual', 3));
 
-ui.rookieArenaTarget.setMin(1);
+ui.rookieArenaTarget.setMin(0);
 ui.rookieArenaTarget.setMax(3);
 ui.rookieArenaTarget.setOnSeekBarChangeListener({
   onProgressChanged: function (seekbar, p, fromUser) {
-    ui.rookieArenaTargetText.setText(`新人竞技场选择第${p}位对手`);
+    if (p == 0)
+      ui.rookieArenaTargetText.setText('不打新人竞技场');
+    else
+      ui.rookieArenaTargetText.setText(`新人竞技场选择第${p}位对手`);
   }
 });
 ui.rookieArenaTarget.setProgress(NIKKEstorage.get('rookieArenaTarget', 1));
@@ -359,7 +366,10 @@ for (let task of todoTask)
 for (let buffName of simulationRoom.preferredBuff)
   ui.findView(buffName).setChecked(true);
 
-for (let generalOption of ['mute', 'checkSale', 'exitGame', 'alreadyInGame', 'checkUpdateAuto', 'v2rayNG'])
+for (let generalOption of [
+  'mute', 'alreadyInGame', 'checkUpdateAuto',
+  'checkSale', 'exitGame', 'checkDailyLogin', 'v2rayNG'
+])
   ui.findView(generalOption).setChecked(NIKKEstorage.get(generalOption, false));
 ui.maxRetry.setOnSeekBarChangeListener({
   onProgressChanged: function (seekbar, p, fromUser) {
@@ -430,7 +440,10 @@ ui.save.on("click", function () {
       simulationRoom.preferredBuff.push(buffName);
   NIKKEstorage.put('simulationRoom', JSON.stringify(simulationRoom));
 
-  for (let generalOption of ['mute', 'checkSale', 'exitGame', 'alreadyInGame', 'checkUpdateAuto', 'v2rayNG'])
+  for (let generalOption of [
+    'mute', 'alreadyInGame', 'checkUpdateAuto',
+    'checkSale', 'exitGame', 'checkDailyLogin', 'v2rayNG'
+  ])
     NIKKEstorage.put(generalOption, ui.findView(generalOption).isChecked());
   NIKKEstorage.put('maxRetry', ui.maxRetry.getProgress());
 
@@ -456,8 +469,14 @@ ui.update.on("click", function () {
     }
     else if (newTagName == curTagName) {
       log("已是最新版本：" + curTagName);
-      beforeReturn();
-      return;
+      let forceUpdate = confirm(
+        "已是最新版本",
+        "是否强制更新？强制更新将重新下载脚本文件，可用于补充/替换意外删除/修改的内容"
+      );
+      if (forceUpdate == false) {
+        beforeReturn();
+        return;
+      }
     }
     log(`检测到新版本：${newTagName}，下载中……`);
     log("如果耗时过长请关闭本窗口并检查网络");

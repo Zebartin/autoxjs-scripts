@@ -1,7 +1,7 @@
 var {
   ocrUntilFound,
   clickRect,
-  imgToBounds,
+  findImageByFeature,
   getDisplaySize
 } = require('./utils.js');
 var {
@@ -71,7 +71,7 @@ function 模拟室(fromIndex) {
   let tryDiff = (Math.floor(tryDiffArea / 3) + 3).toString();
   let tryArea = tryDiffArea % 3;
   if (fromIndex) {
-    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('方舟')), 30, 1000));
+    clickRect(ocrUntilFound(res => res.find(e => e.text == '方舟'), 30, 1000));
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('模拟室')), 30, 1000));
     sleep(2000);
   }
@@ -853,11 +853,10 @@ function teamUp(status) {
     return;
   // 找空位
   const emptyImage = images.read("./images/simEmpty.jpg");
-  let teamEmpty = images.findImage(captureScreen(), emptyImage, {
+  let teamEmpty = findImageByFeature(captureScreen(), emptyImage, {
     threshold: 0.7,
     region: [0, height * 0.6]
   });
-  teamEmpty = imgToBounds(emptyImage, teamEmpty);
   emptyImage.recycle();
   if (teamEmpty == null) {
     log('模拟室队伍没有空位，不需要编队');
@@ -878,11 +877,10 @@ function teamUp(status) {
     return [upper.bounds.bottom, lower.bounds.top, allBtn, save];
   }, 30, 600);
   const refreshImage = images.read("./images/simRefresh.jpg");
-  let refreshBtn = images.findImage(captureScreen(), refreshImage, {
+  let refreshBtn = findImageByFeature(captureScreen(), refreshImage, {
     threshold: 0.7,
     region: [0, height * 0.6]
   });
-  refreshBtn = imgToBounds(refreshImage, refreshBtn);
   refreshImage.recycle();
   sleep(1000);
   let teamClone = status.team.slice();

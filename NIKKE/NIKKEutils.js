@@ -1,16 +1,19 @@
 var {
-  ocrUntilFound,
-  clickRect,
-  imgToBounds,
-  unlockIfNeed,
-  requestScreenCaptureAuto,
-  getDisplaySize
+  ocrUntilFound, clickRect, unlockIfNeed,
+  requestScreenCaptureAuto, getDisplaySize,
+  killApp, findImageByFeature
 } = require('./utils.js');
 if (typeof module === 'undefined') {
   auto.waitFor();
   unlockIfNeed();
   requestScreenCaptureAuto();
   刷刷刷();
+  if (confirm('已完成活动刷关，\n是否继续日常收菜？')) {
+    返回首页();
+    engines.execScriptFile('./NIKKE日常.js', {
+      dalay: 1000
+    });
+  }
   exit();
 }
 else {
@@ -119,6 +122,56 @@ function 等待NIKKE加载() {
   sleep(1000);
   back();
   toastLog('关闭公告');
+  等待每日签到();
+  关闭限时礼包();
+}
+
+function 退出NIKKE() {
+  home();
+  killApp('NIKKE');
+  if (storages.create("NIKKEconfig").get('v2rayNG', false) && app.launchApp("v2rayNG")) {
+    if (id('tv_test_state').findOne().text() != '未连接')
+      id('fab').click();
+    killApp('v2rayNG');
+  }
+}
+
+
+function 返回首页() {
+  const homeImage = images.read('./images/home.jpg');
+  let [width, height] = getDisplaySize();
+  var result = null;
+  for (let i = 0; i < 10; ++i) {
+    result = findImageByFeature(captureScreen(), homeImage, {
+      threshold: 0.6,
+      region: [0, height * 0.8, width / 2, height * 0.2]
+    });
+    if (result != null)
+      break;
+    sleep(300);
+  }
+  result.text = '首页图标';
+  homeImage.recycle();
+  sleep(1000);
+  for (let i = 0; i < 10; ++i) {
+    clickRect(result, 0.8, 0);
+    sleep(4000);
+    let hallBtn = ocrUntilFound(res => {
+      if (res.text.match(/(大厅|基地|物品|方舟)/) == null)
+        return null;
+      return res.find(e => e.text == '大厅');
+    }, 3, 400)
+    if (hallBtn != null) {
+      clickRect(hallBtn);
+      break;
+    }
+  }
+  log('返回首页');
+}
+
+function 等待每日签到() {
+  if (NIKKEstorage.get('checkDailyLogin', true) == false)
+    return;
   // 检查是否有每天签到
   let today = new Date().toLocaleDateString();
   let lastChecked = NIKKEstorage.get('dailyLogin', null);
@@ -136,42 +189,6 @@ function 等待NIKKE加载() {
       toastLog('关闭签到奖励');
     }
   }
-  关闭限时礼包();
-}
-
-function 退出NIKKE() {
-  home();
-  关闭应用('NIKKE');
-  if (storages.create("NIKKEconfig").get('v2rayNG', false) && app.launchApp("v2rayNG")) {
-    if (id('tv_test_state').findOne().text() != '未连接')
-      id('fab').click();
-    关闭应用('v2rayNG');
-  }
-}
-
-
-function 返回首页() {
-  const homeImage = images.read('./images/home.jpg');
-  var result = null;
-  for (let i = 0; i < 10; ++i) {
-    result = images.findImage(captureScreen(), homeImage, {
-      threshold: 0.6,
-      region: [50, height * 0.8]
-    });
-    if (result != null)
-      break;
-    sleep(300);
-  }
-  result = imgToBounds(homeImage, result);
-  homeImage.recycle();
-  sleep(1000);
-  for (let i = 0; i < 10; ++i) {
-    clickRect(result);
-    sleep(4000);
-    if (ocrUntilFound(res => res.text.match(/(大厅|基地|物品|方舟)/), 3, 400) != null)
-      break;
-  }
-  log('返回首页');
 }
 
 function 关闭限时礼包() {
@@ -227,12 +244,13 @@ function 刷刷刷() {
           sleep(2000);
           return null;
         }
-        return res.find(e => e.text.includes('点击'));
+        return res.find(e => e.text.includes('步'));
       }, 50, 1000);
-      let hasBlue = images.findColor(captureScreen(), '#00a1ff', {
+      let img = captureScreen();
+      let hasBlue = images.findColor(img, '#00a1ff', {
         region: [
-          0, clickNext.bounds.bottom, 
-          clickNext.bounds.right, height - clickNext.bounds.bottom
+          0, clickNext.bounds.bottom,
+          clickNext.bounds.right, img.height - clickNext.bounds.bottom
         ],
         threshold: 20
       });
@@ -267,33 +285,6 @@ function 刷刷刷() {
   }
 }
 
-function 关闭应用(packageName) {
-  var name = getPackageName(packageName);
-  if (!name) {
-    if (getAppName(packageName)) {
-      name = packageName;
-    } else {
-      return false;
-    }
-  }
-  app.openAppSetting(name);
-  while (text(app.getAppName(name)).findOne(2000) == null) {
-    back();
-    app.openAppSetting(name);
-  }
-  let is_sure = textMatches(/[强行停止结束]{2,}/).findOne();
-  if (is_sure.enabled()) {
-    is_sure.click();
-    sleep(1000);
-    textMatches(/(确定|[强行停止结束]{2,})/).click();
-    log(app.getAppName(name) + "应用已被关闭");
-    sleep(1000);
-    back();
-  } else {
-    log(app.getAppName(name) + "应用不能被正常关闭或不在后台运行");
-    back();
-  }
-}
 function mostSimilar(target, candidates) {
   let res = null, maxSim = -1;
   for (let candidate of candidates) {

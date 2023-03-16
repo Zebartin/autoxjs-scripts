@@ -235,8 +235,8 @@ function 基地收菜() {
     toastLog('今日派遣已完成');
   else {
     let [send, receive] = ocrUntilFound(res => {
-      let t1 = res.find(e => e.text.includes('全部派'));
-      let t2 = res.find(e => e.text.match(/全部[领領邻]/) != null);
+      let t1 = res.find(e => e.text.match(/全[都部]派/) != null);
+      let t2 = res.find(e => e.text.match(/全[都部][领領邻]/) != null);
       if (!t1 || !t2)
         return null;
       return [t1, t2];

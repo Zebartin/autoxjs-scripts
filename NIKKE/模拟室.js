@@ -419,12 +419,11 @@ function doWithOption(option, status) {
       /第[一二三]个/
     ];
     let optionLoadedCnt = 0;
-    let [choice, keywordType] = ocrUntilFound(res => {
+    let [choice, keywordType] = ocrUntilFound((res, img) => {
       if (res.text.includes('确认'))
         optionLoadedCnt++;
       if (optionLoadedCnt < 2)
         return null;
-      let img = images.copy(captureScreen());
       for (let i = 0; i < keywords.length; ++i)
         if (keywords[i].test(res.text)) {
           let t = res.filter(e => keywords[i].test(e.text));
@@ -437,7 +436,6 @@ function doWithOption(option, status) {
               return [j, i];
           }
         }
-      img.recycle();
       return null;
     }, 30, 500);
     clickRect(choice);
@@ -708,11 +706,11 @@ function getOptions(expectedOptionNumber) {
     specUp: /^强化/
   };
   const pattern = new RegExp(`(${Object.values(optionReg).map(x => x.source).join('|')})`);
-  return ocrUntilFound(res => {
+  return ocrUntilFound((res, img) => {
     let t = res.filter(e => e.level == 3 && pattern.test(e.text)).toArray();
     if (t.length < expectedOptionNumber)
       return null;
-    const verticalSplits = t.map(x => x.bounds.left).concat([width]);
+    const verticalSplits = t.map(x => x.bounds.left).concat([img.width]);
     let ret = [];
     for (let i = 0; i < t.length; ++i) {
       let oneOption = { bounds: t[i].bounds };
@@ -753,14 +751,14 @@ function getOptions(expectedOptionNumber) {
 
 // 预计在当前画面能识别到至少expectedCount个增益效果
 function getBuffs(expectedCount) {
-  return ocrUntilFound(res => {
+  return ocrUntilFound((res, img) => {
     const r = res.filter(e => e.text.match(/^([5S]{0,2}R|EP..)$/i) != null && e.level == 3).toArray();
     const l = res.filter(e => e.text.match(/[連達连][結练绪结]等[級级]/) != null && e.level == 3).toArray();
     r.sort((a, b) => a.bounds.top - b.bounds.top);
     l.sort((a, b) => a.bounds.top - b.bounds.top);
     if (r.length < expectedCount || l.length < expectedCount)
       return null;
-    const horizontalSplits = r.map(x => x.bounds.bottom).concat([height]);
+    const horizontalSplits = r.map(x => x.bounds.bottom).concat([img.height]);
     let ret = [];
     for (let i = 0; i < r.length; ++i) {
       let level = l.find(e =>
@@ -796,7 +794,7 @@ function getBuffs(expectedCount) {
       });
     }
     return ret;
-  }, 20, 1000);
+  }, 20, 1000, { maxScale: 4 });
 }
 
 function correctBuffName(buffName) {

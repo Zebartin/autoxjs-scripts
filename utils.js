@@ -72,7 +72,7 @@ function ocrUntilFound(found, retry, interval, options) {
       img && img.recycle();
       img = newImg;
     }
-    let res = found(gmlkit.ocr(img, "zh"));
+    let res = found(gmlkit.ocr(img, "zh"), img);
     img && img.recycle();
     if (res || res === 0) {
       if (scale > 1) {

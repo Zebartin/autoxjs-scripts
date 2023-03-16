@@ -42,6 +42,14 @@ function getDisplaySize(doNotForcePortrait) {
 
 function ocrUntilFound(found, retry, interval, maxScale) {
   maxScale = maxScale || 1;
+  let scaleBack = function (x, scale) {
+    if (!x.bounds)
+      return;
+    x.bounds.left /= scale;
+    x.bounds.right /= scale;
+    x.bounds.top /= scale;
+    x.bounds.bottom /= scale;
+  };
   for (let i = 0; i < retry; ++i) {
     sleep(interval);
     let scale = (i % maxScale) + 1;
@@ -52,8 +60,16 @@ function ocrUntilFound(found, retry, interval, maxScale) {
     }
     let res = found(gmlkit.ocr(img, "zh"));
     img && img.recycle();
-    if (res || res === 0)
+    if (res || res === 0) {
+      if (scale > 1) {
+        if (Array.isArray(res)) {
+          for (let j = 0; j < res.length; ++j)
+            scaleBack(res[j], scale);
+        } else
+          scaleBack(res, scale);
+      }
       return res;
+    }
   }
   console.trace("OCR失败");
   return null;

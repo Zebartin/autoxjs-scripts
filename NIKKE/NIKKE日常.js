@@ -404,7 +404,7 @@ function 爬塔() {
       sleep(1000);
       let endCombat = ocrUntilFound(res => res.find(
         e => e.text.match(/(下[^步方法]{2}|返回)/) != null
-      ), 30, 500, 2);
+      ), 30, 500, { maxScale: 4, gray: true });
       if (endCombat.text.includes('返回')) {
         clickRect(endCombat);
         toastLog('作战失败');

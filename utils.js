@@ -40,8 +40,15 @@ function getDisplaySize(doNotForcePortrait) {
   ];
 }
 
-function ocrUntilFound(found, retry, interval, maxScale) {
-  maxScale = maxScale || 1;
+/*
+options:
+- maxScale: 最大放大系数，默认1
+- gray: 是否灰度化处理后再OCR，默认false
+*/
+function ocrUntilFound(found, retry, interval, options) {
+  options = options || {};
+  maxScale = options.maxScale || 1;
+  gray = (options.gray === true);
   let scaleBack = function (x, scale) {
     if (!x.bounds)
       return;
@@ -54,9 +61,16 @@ function ocrUntilFound(found, retry, interval, maxScale) {
     sleep(interval);
     let scale = (i % maxScale) + 1;
     let img = captureScreen();
+    if (gray){
+      let newImg = images.grayscale(img);
+      img && img.recycle();
+      img = newImg;
+    }
     if (scale > 1) {
       log(`OCR：尝试放大${scale}倍`);
-      img = images.scale(img, scale, scale);
+      let newImg = images.scale(img, scale, scale, 'CUBIC');
+      img && img.recycle();
+      img = newImg;
     }
     let res = found(gmlkit.ocr(img, "zh"));
     img && img.recycle();

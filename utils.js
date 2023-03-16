@@ -40,20 +40,50 @@ function getDisplaySize(doNotForcePortrait) {
   ];
 }
 
-function ocrUntilFound(found, retry, interval, maxScale) {
-  maxScale = maxScale || 1;
+/*
+options:
+- maxScale: 最大放大系数，默认1
+- gray: 是否灰度化处理后再OCR，默认false
+*/
+function ocrUntilFound(found, retry, interval, options) {
+  options = options || {};
+  maxScale = options.maxScale || 1;
+  gray = (options.gray === true);
+  let scaleBack = function (x, scale) {
+    if (!x.bounds)
+      return;
+    x.bounds.left /= scale;
+    x.bounds.right /= scale;
+    x.bounds.top /= scale;
+    x.bounds.bottom /= scale;
+  };
   for (let i = 0; i < retry; ++i) {
     sleep(interval);
     let scale = (i % maxScale) + 1;
     let img = captureScreen();
+    if (gray){
+      let newImg = images.grayscale(img);
+      img && img.recycle();
+      img = newImg;
+    }
     if (scale > 1) {
       log(`OCR：尝试放大${scale}倍`);
-      img = images.scale(img, scale, scale);
+      let newImg = images.scale(img, scale, scale, 'CUBIC');
+      img && img.recycle();
+      img = newImg;
     }
-    let res = found(gmlkit.ocr(img, "zh"));
+    let res = found(gmlkit.ocr(img, "zh"), img);
     img && img.recycle();
-    if (res || res === 0)
+    if (res || res === 0) {
+      if (scale > 1) {
+        if (Array.isArray(res)) {
+          for (let j = 0; j < res.length; ++j)
+            scaleBack(res[j], scale);
+        } else
+          scaleBack(res, scale);
+      }
       return res;
+    }
   }
   console.trace("OCR失败");
   return null;

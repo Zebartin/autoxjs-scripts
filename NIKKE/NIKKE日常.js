@@ -235,8 +235,8 @@ function 基地收菜() {
     toastLog('今日派遣已完成');
   else {
     let [send, receive] = ocrUntilFound(res => {
-      let t1 = res.find(e => e.text.includes('全部派'));
-      let t2 = res.find(e => e.text.match(/全部[领領邻]/) != null);
+      let t1 = res.find(e => e.text.match(/全[都部]派/) != null);
+      let t2 = res.find(e => e.text.match(/全[都部][领領邻]/) != null);
       if (!t1 || !t2)
         return null;
       return [t1, t2];
@@ -404,7 +404,7 @@ function 爬塔() {
       sleep(1000);
       let endCombat = ocrUntilFound(res => res.find(
         e => e.text.match(/(下[^步方法]{2}|返回)/) != null
-      ), 30, 500, 2);
+      ), 30, 500, { maxScale: 4, gray: true });
       if (endCombat.text.includes('返回')) {
         clickRect(endCombat);
         toastLog('作战失败');

@@ -6,7 +6,6 @@ var { 模拟室 } = require('./模拟室.js');
 var {
   ocrUntilFound, clickRect, findImageByFeature,
   requestScreenCaptureAuto, getDisplaySize
-
 } = require('./utils.js');
 let width, height;
 let NIKKEstorage = storages.create("NIKKEconfig");
@@ -265,20 +264,22 @@ function 基地收菜() {
         toastLog('全部派遣');
         sleep(2000);
         target = ocrUntilFound(res => {
-          let x = res.filter(e => e.text.match(/派.$/) != null);
-          if (x.length > 3)
-            return x;
+          let x = res.filter(e => e.text.match(/派.$/) != null).toArray();
+          if (x.length > 3) {
+            x.sort((a, b) => b.bounds.top - a.bounds.top);
+            return x[0];
+          }
           return null;
         }, 30, 400);
-        clickRect(target[target.length - 1]);
+        clickRect(target);
         toastLog('点击派遣');
         ocrUntilFound(res => res.text.includes('全部'), 30, 1000);
-        sleep(600);
         break;
       }
       sleep(500);
     }
   }
+  sleep(600);
   back();
   let outpostBtn = ocrUntilFound(res => res.find(e =>
     e.text.match(/(DEFENSE|LV[\.\d]+|\d{1,3}%)/) != null
@@ -311,9 +312,9 @@ function 基地收菜() {
   back();
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('奖励')), 30, 1000));
   toastLog('点击获得奖励');
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 10, 3000));
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 10, 3000, { maxScale: 4 }));
   sleep(1000);
-  target = ocrUntilFound(res => res.find(e => e.text.includes('点击')), 5, 300);
+  target = ocrUntilFound(res => res.find(e => e.text.includes('点击')), 5, 300, { maxScale: 4 });
   if (target != null) {
     clickRect(target);
     toastLog('升级了');
@@ -353,7 +354,7 @@ function 好友() {
   ocrUntilFound(res => res.text.match(/(可以|目录|搜寻|赠送)/) != null, 20, 1500);
   let btnColor = colors.toString(images.pixel(captureScreen(), sendBtn.bounds.left, sendBtn.bounds.top));
   log(`赠送按钮颜色：${btnColor}`)
-  if (colors.isSimilar('#1aaff7', btnColor, 30)) {
+  if (colors.isSimilar('#1aaff7', btnColor, 60)) {
     clickRect(sendBtn);
     toastLog('点击赠送');
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('确认')), 30, 1000));

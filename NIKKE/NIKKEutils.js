@@ -201,8 +201,10 @@ function 关闭限时礼包() {
       return null;
     return res.find(e => e.text.includes('点击'));
   }, 3, 2000);
-  if (closeSale == null)
+  if (closeSale == null){
     toastLog('没有出现限时礼包');
+    sleep(2000);
+  }
   else {
     toastLog('关闭礼包页面');
     clickRect(closeSale);

@@ -902,7 +902,7 @@ function teamUp(status) {
         bottomY = Math.max(bottomY, n.bounds.bottom);
         let t = mostSimilar(n.name, teamClone);
         console.info(t);
-        if (t.similarity >= 0.5) {
+        if (t.similarity > 0.5) {
           clickRect(n, 0.01);
           teamClone.splice(teamClone.findIndex(x => x == t.result), 1);
         }
@@ -995,10 +995,10 @@ function detectNikkes(originalImg, baseX, baseY) {
   for (let j = 0; j < splitY.length - 1; ++j)
     for (let i = 0; i < splitX.length - 1; ++i) {
       let w = Math.floor((splitX[i + 1] - splitX[i]) / 4);
-      let h = Math.floor((splitY[j + 1] - splitY[j]) / 4);
+      let h = Math.floor((splitY[j + 1] - splitY[j]) / 5);
       if (w < 30 || h < 80)
         continue;
-      let clipimg = images.clip(originalImg, splitX[i] + w, splitY[j] + h * 3, w * 3, h);
+      let clipimg = images.clip(originalImg, splitX[i] + w, splitY[j] + h * 4, w * 3, h);
       for (let k = 3; k <= 16; ++k) {
         let ocr;
         if (k == 3)

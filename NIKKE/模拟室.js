@@ -1008,7 +1008,16 @@ function detectNikkes(originalImg, baseX, baseY) {
           ocr = gmlkit.ocr(scaleimg, 'zh');
           scaleimg.recycle();
         }
-        let name = ocr.text.replace(/[一\s\-·,]/g, '');
+        ocr = ocr.toArray(3).toArray();
+        if (ocr.length == 0)
+          continue;
+        let rightBottom = ocr.reduce((a, b) => {
+          let t = a.bounds.bottom - b.bounds.bottom;
+          if (Math.abs(t) < 10)
+            return a.bounds.right > b.bounds.right ? a : b;
+          return t > 0 ? a : b;
+        });
+        let name = rightBottom.text.replace(/[一\s\-·,]/g, '');
         if (name.length < 2 && !specialNameReg.test(name))
           continue;
         let bounds = new android.graphics.Rect();
@@ -1020,7 +1029,7 @@ function detectNikkes(originalImg, baseX, baseY) {
           name: name,
           bounds: bounds,
           scale: k == 3 ? 1 : k,
-          confidence: ocr.filter(e => e.text.match(new RegExp(`[${name}]{${Math.min(2, name.length)}}`)) != null && e.confidence != -1).toArray().map(x => x.confidence)[0]
+          confidence: rightBottom.confidence
         })
         break;
       }

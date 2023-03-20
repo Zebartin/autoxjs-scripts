@@ -891,10 +891,9 @@ function teamUp(status) {
     sleep(1000);
     let lastNikke = null;
     for (let page = 0; page < 10; ++page) {
-      let img = images.clip(captureScreen(), 0, upperBound, width, lowerBound - upperBound);
       let bottomY = 0;
       let lastPage = false;
-      let nikkes = detectNikkes(img, 0, upperBound);
+      let nikkes = detectNikkes(captureScreen(), [0, upperBound, width, lowerBound - upperBound]);
       console.info(nikkes);
       for (let n of nikkes) {
         if (n.name == lastNikke)
@@ -909,7 +908,6 @@ function teamUp(status) {
         if (teamClone.length == 0)
           break;
       }
-      img.recycle();
       if (teamClone.length == 0 || lastPage)
         break;
       lastNikke = nikkes[nikkes.length - 1].name;
@@ -932,9 +930,7 @@ function teamUp(status) {
   // 5. 刷新清空选择
   clickRect(refreshBtn);
   // 6. 按队伍顺序逐一选择
-  let img = images.clip(captureScreen(), 0, upperBound, width, lowerBound - upperBound);
-  let nikkes = detectNikkes(img, 0, upperBound).slice(0, 5);
-  img.recycle();
+  let nikkes = detectNikkes(captureScreen(), [0, upperBound, width, lowerBound - upperBound]).slice(0, 5);
   nikkes = Object.fromEntries(nikkes.map(x => [x.name, x]));
   for (let i of status.team) {
     let t = mostSimilar(i, Object.keys(nikkes));
@@ -944,12 +940,21 @@ function teamUp(status) {
   status.team = [];
   ocrUntilFound(res => res.text.includes('入战'), 30, 1000);
 }
-function detectNikkes(originalImg, baseX, baseY) {
+function detectNikkes(originalImg, region) {
+  let x = region[0] === undefined ? 0 : region[0];
+  let y = region[1] === undefined ? 0 : region[1];
+  let cw = region[2] === undefined ? originalImg.width - x : region[2];
+  let ch = region[3] === undefined ? originalImg.height - y : region[3];
+  if (x < 0 || y < 0 || x + cw > originalImg.width || y + ch > originalImg.height) {
+    throw new Error("out of region: region = [" + [x, y, cw, ch] + "], image.size = [" + [originalImg.width, originalImg.height] + "]");
+  }
   let splitX = [];
   let splitY = [];
-  let gbImg = images.gaussianBlur(originalImg, [3, 3], 0, 0);
+  let cImg = images.clip(originalImg, x, y, cw, ch);
+  let gbImg = images.gaussianBlur(cImg, [3, 3], 0, 0);
   let grayImg = images.cvtColor(gbImg, "BGR2GRAY");
   gbImg.recycle();
+  cImg.recycle();
   with (JavaImporter(com.stardust.autojs.core.opencv.Mat, org.opencv.imgproc)) {
     let edges = new Mat();
     let cannyColor = new Mat();
@@ -984,9 +989,9 @@ function detectNikkes(originalImg, baseX, baseY) {
     }
     lines.release();
     splitX.push(0);
-    splitX.push(originalImg.getWidth());
+    splitX.push(cw);
     splitY.push(0);
-    splitY.push(originalImg.getHeight());
+    splitY.push(ch);
     splitX.sort((a, b) => a - b);
     splitY.sort((a, b) => a - b);
   }
@@ -998,7 +1003,8 @@ function detectNikkes(originalImg, baseX, baseY) {
       let h = Math.floor((splitY[j + 1] - splitY[j]) / 5);
       if (w < 30 || h < 80)
         continue;
-      let clipimg = images.clip(originalImg, splitX[i] + w, splitY[j] + h * 4, w * 3, h);
+      let clipimg = images.clip(originalImg, splitX[i] + w + x, splitY[j] + h * 4 + y, w * 3, h);
+      // images.save(clipimg, `./images/nikkerror/${i}${j}.jpg`);
       for (let k = 3; k <= 16; ++k) {
         let ocr;
         if (k == 3)
@@ -1021,10 +1027,10 @@ function detectNikkes(originalImg, baseX, baseY) {
         if (name.length < 2 && !specialNameReg.test(name))
           continue;
         let bounds = new android.graphics.Rect();
-        bounds.left = splitX[i] + w + baseX;
-        bounds.right = splitX[i + 1] + baseX;
-        bounds.top = splitY[j] + h * 3 + baseY;
-        bounds.bottom = splitY[j + 1] + baseY;
+        bounds.left = splitX[i] + w + x;
+        bounds.right = splitX[i + 1] + x;
+        bounds.top = splitY[j] + h * 4 + y;
+        bounds.bottom = splitY[j + 1] + y;
         nikkes.push({
           name: name,
           bounds: bounds,

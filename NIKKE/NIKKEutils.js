@@ -1,7 +1,7 @@
 var {
   ocrUntilFound, clickRect, unlockIfNeed,
   requestScreenCaptureAuto, getDisplaySize,
-  killApp, findImageByFeature
+  killApp, findImageByFeature, buildRegion
 } = require('./utils.js');
 if (typeof module === 'undefined') {
   auto.waitFor();
@@ -11,7 +11,7 @@ if (typeof module === 'undefined') {
   if (confirm('已完成活动刷关，\n是否继续日常收菜？')) {
     返回首页();
     engines.execScriptFile('./NIKKE日常.js', {
-      dalay: 1000
+      delay: 1000
     });
   }
   exit();
@@ -202,7 +202,7 @@ function 关闭限时礼包() {
       return null;
     return res.find(e => e.text.includes('点击'));
   }, 3, 2000);
-  if (closeSale == null){
+  if (closeSale == null) {
     toastLog('没有出现限时礼包');
     sleep(2000);
   }
@@ -332,13 +332,7 @@ function similarity(s1, s2) {
 
 
 function detectNikkes(originalImg, region) {
-  let x = region[0] === undefined ? 0 : region[0];
-  let y = region[1] === undefined ? 0 : region[1];
-  let cw = region[2] === undefined ? originalImg.width - x : region[2];
-  let ch = region[3] === undefined ? originalImg.height - y : region[3];
-  if (x < 0 || y < 0 || x + cw > originalImg.width || y + ch > originalImg.height) {
-    throw new Error("out of region: region = [" + [x, y, cw, ch] + "], image.size = [" + [originalImg.width, originalImg.height] + "]");
-  }
+  let [x, y, cw, ch] = buildRegion(region, originalImg);
   let splitX = [];
   let splitY = [];
   let cImg = images.clip(originalImg, x, y, cw, ch);

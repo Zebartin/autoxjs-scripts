@@ -12,6 +12,7 @@ else {
     getOcrRes: getOcrRes,
     getDisplaySize: getDisplaySize,
     killApp: killApp,
+    buildRegion: buildRegion,
     findImageByFeature: findImageByFeature
   };
 }
@@ -61,7 +62,7 @@ function ocrUntilFound(found, retry, interval, options) {
     sleep(interval);
     let scale = (i % maxScale) + 1;
     let img = captureScreen();
-    if (gray){
+    if (gray) {
       let newImg = images.grayscale(img);
       img && img.recycle();
       img = newImg;
@@ -114,6 +115,17 @@ function imgToBounds(img, point) {
   return { bounds: ret };
 }
 
+function buildRegion(region, img) {
+  region = region || [];
+  let x = region[0] === undefined ? 0 : region[0];
+  let y = region[1] === undefined ? 0 : region[1];
+  let w = region[2] === undefined ? img.getWidth() - x : region[2];
+  let h = region[3] === undefined ? (img.getHeight() - y) : region[3];
+  if (x < 0 || y < 0 || x + w > img.width || y + h > img.height)
+    throw new Error("out of region: region = [" + [x, y, w, h] + "], image.size = [" + [img.width, img.height] + "]");
+  return [x, y, w, h];
+}
+
 // 参考：https://docs.opencv.org/3.4/d1/de0/tutorial_py_feature_homography.html
 // trainImg：大图
 // queryImg：小图
@@ -149,13 +161,7 @@ function findImageByFeature(trainImg, queryImg, options) {
     const minMatchCount = options.minMatchCount || 4; // 至少为4
     let img1 = grayImg1.getMat(), img2 = grayImg2.getMat();
     if (options.region) {
-      let x = options.region[0] === undefined ? 0 : options.region[0];
-      let y = options.region[1] === undefined ? 0 : options.region[1];
-      let w = options.region[2] === undefined ? grayImg2.width - x : options.region[2];
-      let h = options.region[3] === undefined ? grayImg2.height - y : options.region[3];
-      if (x < 0 || y < 0 || x + w > grayImg2.width || y + h > grayImg2.height) {
-        throw new Error("out of region: region = [" + [x, y, w, h] + "], image.size = [" + [grayImg2.width, grayImg2.height] + "]");
-      }
+      let [x, y, w, h] = buildRegion(options.region, grayImg2);
       clipImg = images.clip(grayImg2, x, y, w, h);
       img2 = clipImg.getMat();
     }

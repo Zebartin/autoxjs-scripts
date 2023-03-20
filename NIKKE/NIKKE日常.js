@@ -447,9 +447,15 @@ function getIntoNextTower() {
 function 新人竞技场(rookieTarget) {
   if (rookieTarget == 0)
     return;
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('新人')), 30, 1000));
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('ROOKIE')), 30, 1000));
   toastLog('进入新人竞技场');
   const targetFight = ocrUntilFound(res => {
+    if (res.text.match(/(入战|群组|更新|目录)/) == null) {
+      let rookie = res.find(e => e.text.includes('ROOKIE'));
+      if (rookie)
+        clickRect(rookie, 1, 0);
+      return null;
+    }
     let t = res.filter(e =>
       e.text.endsWith('战斗') && e.level == 1 &&
       e.bounds != null && e.bounds.left > width / 2

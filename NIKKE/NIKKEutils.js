@@ -23,6 +23,7 @@ else {
     退出NIKKE: 退出NIKKE,
     返回首页: 返回首页,
     mostSimilar: mostSimilar,
+    detectNikkes: detectNikkes,
     关闭限时礼包: 关闭限时礼包
   };
 }
@@ -327,4 +328,109 @@ function similarity(s1, s2) {
     }
   }
   return 1.0 - dp[n][m] / Math.max(m, n);
+}
+
+
+function detectNikkes(originalImg, region) {
+  let x = region[0] === undefined ? 0 : region[0];
+  let y = region[1] === undefined ? 0 : region[1];
+  let cw = region[2] === undefined ? originalImg.width - x : region[2];
+  let ch = region[3] === undefined ? originalImg.height - y : region[3];
+  if (x < 0 || y < 0 || x + cw > originalImg.width || y + ch > originalImg.height) {
+    throw new Error("out of region: region = [" + [x, y, cw, ch] + "], image.size = [" + [originalImg.width, originalImg.height] + "]");
+  }
+  let splitX = [];
+  let splitY = [];
+  let cImg = images.clip(originalImg, x, y, cw, ch);
+  let gbImg = images.gaussianBlur(cImg, [3, 3], 0, 0);
+  let grayImg = images.cvtColor(gbImg, "BGR2GRAY");
+  gbImg.recycle();
+  cImg.recycle();
+  with (JavaImporter(com.stardust.autojs.core.opencv.Mat, org.opencv.imgproc)) {
+    let edges = new Mat();
+    let cannyColor = new Mat();
+    let lines = new Mat();
+    const lowThresh = 45;
+    Imgproc.Canny(grayImg.getMat(), edges, lowThresh, lowThresh * 3, 3);
+    Imgproc.cvtColor(edges, cannyColor, Imgproc.COLOR_GRAY2BGR);
+    Imgproc.HoughLines(edges, lines, 1, Math.PI / 2, 400);
+    grayImg.recycle();
+    cannyColor.release();
+    edges.release();
+    for (let i = 0; i < lines.rows(); ++i) {
+      let [rho, theta] = lines.get(i, 0);
+      let a = Math.cos(theta);
+      let b = Math.sin(theta);
+      let x0 = Math.round(a * rho);
+      let y0 = Math.round(b * rho);
+      if (Math.round(a) == 0) {
+        let j = splitY.findIndex(y => Math.abs(y - y0) < 100);
+        if (j != -1)
+          splitY[j] = Math.max(splitY[j], y0);
+        else
+          splitY.push(y0);
+      }
+      else if (Math.round(b) == 0) {
+        let j = splitX.findIndex(x => Math.abs(x - x0) < 100)
+        if (j != -1)
+          splitX[j] = Math.max(splitX[j], x0);
+        else
+          splitX.push(x0);
+      }
+    }
+    lines.release();
+    splitX.push(0);
+    splitX.push(cw);
+    splitY.push(0);
+    splitY.push(ch);
+    splitX.sort((a, b) => a - b);
+    splitY.sort((a, b) => a - b);
+  }
+  let nikkes = [];
+  let specialNameReg = /[森杨]/;
+  for (let j = 0; j < splitY.length - 1; ++j)
+    for (let i = 0; i < splitX.length - 1; ++i) {
+      let w = Math.floor((splitX[i + 1] - splitX[i]) / 4);
+      let h = Math.floor((splitY[j + 1] - splitY[j]) / 5);
+      if (w < 30 || h < 80)
+        continue;
+      let clipimg = images.clip(originalImg, splitX[i] + w + x, splitY[j] + h * 4 + y, w * 3, h);
+      // images.save(clipimg, `./images/nikkerror/${i}${j}.jpg`);
+      for (let k = 3; k <= 16; ++k) {
+        let ocr;
+        if (k == 3)
+          ocr = gmlkit.ocr(clipimg, 'zh');
+        else {
+          let scaleimg = images.scale(clipimg, k, k, 'CUBIC');
+          ocr = gmlkit.ocr(scaleimg, 'zh');
+          scaleimg.recycle();
+        }
+        ocr = ocr.toArray(3).toArray();
+        if (ocr.length == 0)
+          continue;
+        let rightBottom = ocr.reduce((a, b) => {
+          let t = a.bounds.bottom - b.bounds.bottom;
+          if (Math.abs(t) < 10)
+            return a.bounds.right > b.bounds.right ? a : b;
+          return t > 0 ? a : b;
+        });
+        let name = rightBottom.text.replace(/[一\s\-·,]/g, '');
+        if (name.length < 2 && !specialNameReg.test(name))
+          continue;
+        let bounds = new android.graphics.Rect();
+        bounds.left = splitX[i] + w + x;
+        bounds.right = splitX[i + 1] + x;
+        bounds.top = splitY[j] + h * 4 + y;
+        bounds.bottom = splitY[j + 1] + y;
+        nikkes.push({
+          name: name,
+          bounds: bounds,
+          scale: k == 3 ? 1 : k,
+          confidence: rightBottom.confidence
+        })
+        break;
+      }
+      clipimg.recycle();
+    }
+  return nikkes;
 }

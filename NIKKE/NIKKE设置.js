@@ -36,7 +36,7 @@ ui.layout(
           </vertical>
         </horizontal>
       </card>
-      <vertical id="arena" aisibility="gone">
+      <vertical id="arena" visibility="gone">
         <text textSize="16sp" margin="8">竞技场设置</text>
         <horizontal margin="10 2">
           <text id="rookieArenaTargetText" textSize="14sp" w="0" layout_weight="4" >不打新人竞技场</text>

@@ -114,77 +114,63 @@ ui.layout(
           </horizontal>
           <text margin="10 2" textSize="14sp">刷buff时只考虑以下增益效果：</text>
           <vertical>
-            <card w="*" h="auto" margin="10 2" cardCornerRadius="2dp"
-              cardElevation="1dp">
-              <horizontal gravity="center_vertical">
-                <checkbox id="引流转换器" marginLeft="4" marginRight="6" />
-                <vertical padding="18 8" h="auto" w="0" layout_weight="1">
-                  <text text="引流转换器" textColor="#222222" textSize="14sp" />
-                  <text text="攻击命中时恢复体力" textColor="#999999" textSize="12sp" />
-                </vertical>
-              </horizontal>
-            </card>
-            <card w="*" h="auto" margin="10 2" cardCornerRadius="2dp"
-              cardElevation="1dp">
-              <horizontal gravity="center_vertical">
-                <checkbox id="高品质粉末" marginLeft="4" marginRight="6" />
-                <vertical padding="18 8" h="auto" w="0" layout_weight="1">
-                  <text text="高品质粉末" textColor="#222222" textSize="14sp" />
-                  <text text="提高攻击力（不限对象）" textColor="#999999" textSize="12sp" />
-                </vertical>
-              </horizontal>
-            </card>
-            <card w="*" h="auto" margin="10 2" cardCornerRadius="2dp"
-              cardElevation="1dp">
-              <horizontal gravity="center_vertical">
-                <checkbox id="冲击引流器" marginLeft="4" marginRight="6" />
-                <vertical padding="18 8" h="auto" w="0" layout_weight="1">
-                  <text text="冲击引流器" textColor="#222222" textSize="14sp" />
-                  <text text="提高暴击伤害（不限对象）" textColor="#999999" textSize="12sp" />
-                </vertical>
-              </horizontal>
-            </card>
-            <card w="*" h="auto" margin="10 2" cardCornerRadius="2dp"
-              cardElevation="1dp">
-              <horizontal gravity="center_vertical">
-                <checkbox id="控制引导器" marginLeft="4" marginRight="6" />
-                <vertical padding="18 8" h="auto" w="0" layout_weight="1">
-                  <text text="控制引导器" textColor="#222222" textSize="14sp" />
-                  <text text="提高暴击率（不限对象）" textColor="#999999" textSize="12sp" />
-                </vertical>
-              </horizontal>
-            </card>
-            <card w="*" h="auto" margin="10 2" cardCornerRadius="2dp"
-              cardElevation="1dp">
-              <horizontal gravity="center_vertical">
-                <checkbox id="聚焦瞄准镜" marginLeft="4" marginRight="6" />
-                <vertical padding="18 8" h="auto" w="0" layout_weight="1">
-                  <text text="聚焦瞄准镜" textColor="#222222" textSize="14sp" />
-                  <text text="提高命中率" textColor="#999999" textSize="12sp" />
-                </vertical>
-              </horizontal>
-            </card>
-            <card w="*" h="auto" margin="10 2" cardCornerRadius="2dp"
-              cardElevation="1dp">
-              <horizontal gravity="center_vertical">
-                <checkbox id="隐形粉" marginLeft="4" marginRight="6" />
-                <vertical padding="18 8" h="auto" w="0" layout_weight="1">
-                  <text text="隐形粉" textColor="#222222" textSize="14sp" />
-                  <text text="提高全蓄力攻击伤害" textColor="#999999" textSize="12sp" />
-                </vertical>
-              </horizontal>
-            </card>
-            <card w="*" h="auto" margin="10 2" cardCornerRadius="2dp"
-              cardElevation="1dp">
-              <horizontal gravity="center_vertical">
-                <checkbox id="快速充电器" marginLeft="4" marginRight="6" />
-                <vertical padding="18 8" h="auto" w="0" layout_weight="1">
-                  <text text="快速充电器" textColor="#222222" textSize="14sp" />
-                  <text text="减少蓄力时间" textColor="#999999" textSize="12sp" />
-                </vertical>
-              </horizontal>
-            </card>
+            <horizontal gravity="bottom">
+              <checkbox id="引流转换器" marginLeft="10" marginRight="6" />
+              <text text="引流转换器" textColor="#222222" textSize="14sp" layout_weight="3" w="0" />
+              <text text="攻击命中时恢复体力" textColor="#999999" textSize="12sp" layout_weight="7" w="0" />
+            </horizontal>
+            <horizontal gravity="bottom">
+              <checkbox id="高品质粉末" marginLeft="10" marginRight="6" />
+              <text text="高品质粉末" textColor="#222222" textSize="14sp" layout_weight="3" w="0" />
+              <text text="提高攻击力（不限对象）" textColor="#999999" textSize="12sp" layout_weight="7" w="0" />
+            </horizontal>
+            <horizontal gravity="bottom">
+              <checkbox id="冲击引流器" marginLeft="10" marginRight="6" />
+              <text text="冲击引流器" textColor="#222222" textSize="14sp" layout_weight="3" w="0" />
+              <text text="提高暴击伤害（不限对象）" textColor="#999999" textSize="12sp" layout_weight="7" w="0" />
+            </horizontal>
+            <horizontal gravity="bottom">
+              <checkbox id="控制引导器" marginLeft="10" marginRight="6" />
+              <text text="控制引导器" textColor="#222222" textSize="14sp" layout_weight="3" w="0" />
+              <text text="提高暴击率（不限对象）" textColor="#999999" textSize="12sp" layout_weight="7" w="0" />
+            </horizontal>
+            <horizontal gravity="bottom">
+              <checkbox id="聚焦瞄准镜" marginLeft="10" marginRight="6" />
+              <text text="聚焦瞄准镜" textColor="#222222" textSize="14sp" layout_weight="3" w="0" />
+              <text text="提高命中率" textColor="#999999" textSize="12sp" layout_weight="7" w="0" />
+            </horizontal>
+            <horizontal gravity="bottom">
+              <checkbox id="隐形粉" marginLeft="10" marginRight="6" />
+              <text text="隐形粉" textColor="#222222" textSize="14sp" layout_weight="3" w="0" />
+              <text text="提高全蓄力攻击伤害" textColor="#999999" textSize="12sp" layout_weight="7" w="0" />
+            </horizontal>
+            <horizontal gravity="bottom">
+              <checkbox id="快速充电器" marginLeft="10" marginRight="6" />
+              <text text="快速充电器" textColor="#222222" textSize="14sp" layout_weight="3" w="0" />
+              <text text="减少蓄力时间" textColor="#999999" textSize="12sp" layout_weight="7" w="0" />
+            </horizontal>
           </vertical>
+        </vertical>
+        <card w="*" h="auto" margin="10 5" cardCornerRadius="2dp"
+          cardElevation="1dp">
+          <horizontal gravity="center_vertical">
+            <checkbox id="每日任务" marginLeft="4" marginRight="6" />
+            <vertical padding="18 8" h="auto" w="0" layout_weight="1">
+              <text text="每日任务" textColor="#222222" textSize="16sp" />
+              <text text="完成其他每日任务：强化装备、社交点数招募" textColor="#999999" textSize="14sp" />
+            </vertical>
+          </horizontal>
+        </card>
+        <vertical id="dailyMission" visibility="gone">
+          <text textSize="16sp" margin="8">每日任务设置</text>
+          <horizontal margin="10 2">
+            <text textSize="14sp" w="0" layout_weight="5">强化装备指定妮姬：</text>
+            <input textSize="14sp" id="equipEnhanceNikke" w="0" layout_weight="5" hint="妮姬名/正则表达式" />
+          </horizontal>
+          <horizontal margin="10 2">
+            <text id="equipEnhanceSlotText" textSize="14sp" w="0" layout_weight="5">强化装备部位：头</text>
+            <seekbar id="equipEnhanceSlot" w="0" layout_weight="5" />
+          </horizontal>
         </vertical>
       </vertical>
       <text textSize="16sp" margin="8 50 8 8">其他设置</text>
@@ -255,7 +241,7 @@ function checkUpdate() {
 const NIKKEstorage = storages.create("NIKKEconfig");
 const todoTaskDefault = [
   "商店", "基地收菜", "好友", "竞技场",
-  "爬塔", "咨询", "模拟室"
+  "爬塔", "咨询", "模拟室", "每日任务"
 ];
 const simulationRoomDefault = {
   maxPass: 20,
@@ -282,6 +268,9 @@ ui.findView('竞技场').on('check', function (checked) {
 });
 ui.findView('模拟室').on('check', function (checked) {
   ui.simulationRoom.attr('visibility', checked ? 'visible' : 'gone');
+});
+ui.findView('每日任务').on('check', function (checked) {
+  ui.dailyMission.attr('visibility', checked ? 'visible' : 'gone');
 });
 
 ui.buyCodeManual.setMin(0);
@@ -366,6 +355,17 @@ for (let task of todoTask)
 for (let buffName of simulationRoom.preferredBuff)
   ui.findView(buffName).setChecked(true);
 
+ui.equipEnhanceSlot.setMin(0);
+ui.equipEnhanceSlot.setMax(3);
+ui.equipEnhanceSlot.setOnSeekBarChangeListener({
+  onProgressChanged: function (seekbar, p, fromUser) {
+    ui.equipEnhanceSlotText.setText(`强化装备部位：${'头身手腿'[p]}`);
+  }
+});
+let dailyMission = NIKKEstorage.get('dailyMission', {});
+ui.equipEnhanceNikke.setText(dailyMission.equipEnhanceNikke || '');
+ui.equipEnhanceSlot.setProgress(dailyMission.equipEnhanceSlot || 0);
+
 for (let generalOption of [
   'mute', 'alreadyInGame', 'checkUpdateAuto',
   'checkSale', 'exitGame', 'checkDailyLogin', 'v2rayNG'
@@ -414,10 +414,14 @@ ui.save.on("click", function () {
     toast('模拟室编队格式有误，无法保存');
     return;
   }
+  if (ui.findView('每日任务').isChecked() && ui.equipEnhanceNikke.text().trim() == '') {
+    toast('强化装备指定妮姬不可留空，无法保存');
+    return;
+  }
   let todoTask = [];
   for (let task of [
-    "基地收菜", "好友", "竞技场",
-    "商店", "爬塔", "咨询", "模拟室"
+    "基地收菜", "好友", "竞技场", "商店",
+    "爬塔", "咨询", "模拟室", "每日任务"
   ])
     if (ui.findView(task).isChecked())
       todoTask.push(task);
@@ -439,6 +443,11 @@ ui.save.on("click", function () {
     if (ui.findView(buffName).isChecked())
       simulationRoom.preferredBuff.push(buffName);
   NIKKEstorage.put('simulationRoom', JSON.stringify(simulationRoom));
+
+  let dailyMission = {};
+  dailyMission.equipEnhanceNikke = ui.equipEnhanceNikke.text().trim();
+  dailyMission.equipEnhanceSlot = ui.equipEnhanceSlot.getProgress();
+  NIKKEstorage.put('dailyMission', dailyMission);
 
   for (let generalOption of [
     'mute', 'alreadyInGame', 'checkUpdateAuto',

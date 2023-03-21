@@ -1,11 +1,13 @@
 var {
   启动NIKKE, 等待NIKKE加载, 退出NIKKE,
-  mostSimilar, 返回首页, 关闭限时礼包
+  mostSimilar, 返回首页, 关闭限时礼包,
+  detectNikkes
 } = require('./NIKKEutils.js');
 var { 模拟室 } = require('./模拟室.js');
 var {
   ocrUntilFound, clickRect, findImageByFeature,
-  requestScreenCaptureAuto, getDisplaySize
+  requestScreenCaptureAuto, getDisplaySize,
+  findContoursRect
 } = require('./utils.js');
 let width, height;
 let NIKKEstorage = storages.create("NIKKEconfig");
@@ -40,7 +42,8 @@ function 日常() {
     竞技场: 竞技场,
     爬塔: 爬塔,
     咨询: 咨询,
-    模拟室: () => 模拟室(true)
+    模拟室: () => 模拟室(true),
+    每日任务: 每日任务
   };
   let alreadyRetry = 0;
   const maxRetry = NIKKEstorage.get('maxRetry', 1);
@@ -97,7 +100,7 @@ function 商店() {
     clickRect(ocrUntilFound(res => res.find(e => e.text == '购买'), 30, 1000));
     let affordable = true;
     ocrUntilFound(res => {
-      if (res.text.includes('不足')) {
+      if (res.find(e => e.text.match(/不足.?$/) != null)) {
         affordable = false;
         return true;
       }
@@ -786,4 +789,136 @@ function 单次咨询(advise) {
   }
   toast('回到咨询首页');
   return true;
+}
+
+function listEquip() {
+  let [equip, leftBound, lowerBound] = ocrUntilFound(res => {
+    let e = res.find(e => e.text == 'EQUIP');
+    let le = res.find(e => e.text.match(/(装备|技能|魔方)/) != null);
+    let lo = res.find(e => e.text.match(/(快捷|全部)/) != null);
+    if (!e || !le || !lo)
+      return null;
+    return [e.bounds.bottom, le.bounds.right, lo.bounds.top];
+  }, 30, 300);
+  let ret = [];
+  let equipHeight = lowerBound - equip;
+  for (let i = 0; i < 10; ++i) {
+    ret = findContoursRect(captureScreen(), {
+      thresh: 160,
+      region: [leftBound, equip, width - leftBound, equipHeight]
+    }).filter(rect => {
+      if (rect.height() < equipHeight / 4 || rect.height() > equipHeight / 2)
+        return false;
+      if (rect.width() < equipHeight / 4 || rect.width() > equipHeight / 2)
+        return false;
+      return true;
+    });
+    if (ret.length == 4)
+      break;
+  }
+  return ret;
+}
+
+function 强化装备() {
+  let dailyMission = NIKKEstorage.get('dailyMission', {});
+  let targetEquip = dailyMission.equipEnhanceSlot || 0;
+  let targetNikke = dailyMission.equipEnhanceNikke || '';
+  if (targetNikke == '') {
+    toastLog('未指定强化装备妮姬');
+    return;
+  }
+  let targetNikkeReg = new RegExp(targetNikke);
+  let target = null;
+  clickRect(ocrUntilFound(res => res.find(e => e.text == '妮姬'), 40, 1000));
+  let upperBound = ocrUntilFound(res => {
+    let upper = res.find(e => e.text == 'ALL');
+    if (!upper)
+      return null;
+    return upper.bounds.bottom;
+  }, 30, 600);
+  // 找到指定妮姬
+  for (let retry = 0; target == null && retry < 3; ++retry) {
+    if (retry > 0)
+      for (let i = 0; i < 7; ++i)
+        swipe(width / 2, (upperBound + height) / 2, width / 2, height, 300);
+    sleep(1000);
+    let lastNikke = null;
+    for (let page = 0; page < 10; ++page) {
+      let nikkes = detectNikkes(captureScreen(), [0, upperBound]);
+      if (nikkes[nikkes.length - 1].name == lastNikke)
+        break;
+      lastNikke = nikkes[nikkes.length - 1].name;
+      let bottomY = nikkes[nikkes.length - 1].bounds.bottom;
+      let t = mostSimilar(targetNikke, nikkes.map(x => x.name));
+      if (t.similarity > 0.5) {
+        target = nikkes.find(e => e.name == t.result);
+        break;
+      }
+      t = nikkes.find(x => targetNikkeReg.test(x.name));
+      if (t != null) {
+        target = t;
+        break;
+      }
+      swipe(width / 2, bottomY, width / 2, upperBound, 1000);
+      swipe(100, bottomY, width / 2, bottomY, 500);
+      sleep(500);
+    }
+  }
+  if (target == null) {
+    console.error(`没有找到名为“${targetNikke}”的妮姬`);
+    clickRect(ocrUntilFound(res => res.find(e => e.text == '大厅'), 30, 1000));
+    return;
+  }
+  clickRect(target, 0.01);
+  ocrUntilFound(res => res.text.match(/(STATUS|体力|攻击|返回)/), 30, 1000);
+  // 点击指定装备
+  clickRect({ bounds: listEquip()[targetEquip] });
+  ocrUntilFound(res => res.find(e => e.text.match(/^(升级|穿戴|交换|改造)/) == null), 20, 1000);
+  // 检查是否可以升级
+  let enhanceBtn = ocrUntilFound(res => res.find(e => e.text.match(/^升级$/) != null), 3, 1000);
+  if (enhanceBtn == null) {
+    toastLog('指定装备不可升级');
+    back();
+    返回首页();
+    return;
+  }
+  // 检查升级材料
+  clickRect(enhanceBtn);
+  let [enhanceConfirm, equipUpperBound] = ocrUntilFound(res => {
+    if (!res.text.includes('自动'))
+      return null;
+    let confirm = res.find(e => e.text == '升级');
+    let upper = res.find(e => e.text.match(/(择升|级别|等级)/) != null);
+    if (!confirm || !upper)
+      return null;
+    return [confirm, upper.bounds.bottom];
+  }, 30, 1000);
+  let enhanceStuff = findContoursRect(captureScreen(), {
+    thresh: 170,
+    region: [0, equipUpperBound, width, enhanceConfirm.bounds.top - equipUpperBound]
+  }).filter(x => {
+    if (x.width() < 100)
+      return false;
+    if (Math.abs(x.width() - x.height()) > 20)
+      return false;
+    return true;
+  });
+  if (enhanceStuff.length == 0) {
+    toastLog('没有强化材料');
+  } else {
+    clickRect({ bounds: enhanceStuff[0] });
+    clickRect(enhanceConfirm);
+    sleep(1000);
+    while (colors.blue(captureScreen().pixel(
+      enhanceConfirm.bounds.left,
+      enhanceConfirm.bounds.top
+    )) > 220)
+      sleep(300);
+  }
+  back();
+  返回首页();
+}
+
+function 每日任务() {
+  强化装备();
 }

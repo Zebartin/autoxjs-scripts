@@ -801,6 +801,57 @@ function 单次咨询(advise) {
   return true;
 }
 
+function 社交点数招募() {
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('员招')), 40, 1000));
+  ocrUntilFound(res => res.text.match(/(招募\d+|机率)/) != null, 50, 500);
+  let socialPage = ocrUntilFound(res => {
+    if (res.text.match(/[杜社]交点数/))
+      return true;
+    swipe(width * 0.1, height / 2, width * 0.9, height / 2, 500);
+    return false;
+  }, 30, 1000);
+  if (socialPage != true) {
+    toastLog('没能找到社交点数招募页面，放弃招募');
+    return;
+  }
+  clickRect(ocrUntilFound(res => res.find(e =>
+    e.text.includes('1名') && e.bounds != null && e.bounds.right <= width / 2
+  ), 20, 300, { maxScale: 4 }));
+  sleep(2000);
+  ocrUntilFound(res => {
+    let skipBtn = res.find(e => e.text.match(/SK.P/) != null);
+    if (skipBtn) {
+      clickRect(skipBtn, 1, 0);
+      return null;
+    }
+    return res.find(e => e.text == '确认');
+  }, 50, 1000);
+  click(width / 2, height / 2);
+  let nikkeName = ocrUntilFound(res => {
+    if (!res.text.includes('返回'))
+      return false;
+    let upper = res.find(e => e.text.endsWith('资讯'));
+    let lower = res.find(e => e.text.endsWith('介绍'));
+    if (!upper || !lower) {
+      click(width / 2, height / 2);
+      return null;
+    }
+    let ret = res.find(e =>
+      e.bounds != null && e.bounds.right < upper.bounds.left &&
+      e.bounds.bottom > upper.bounds.top && e.bounds.bottom < lower.bounds.top);
+    return ret;
+  }, 20, 1000);
+  log(`招募结果：${nikkeName ? nikkeName.text : null}`);
+  back();
+  clickRect(ocrUntilFound(res => {
+    let t = res.find(e => e.text == '确认');
+    if (!t)
+      back();
+    return t;
+  }, 30, 1000));
+  ocrUntilFound(res => res.text.includes('大厅'), 30, 1000);
+}
+
 function listEquip() {
   let [equip, leftBound, lowerBound] = ocrUntilFound(res => {
     let e = res.find(e => e.text == 'EQUIP');
@@ -930,5 +981,58 @@ function 强化装备() {
 }
 
 function 每日任务() {
+  社交点数招募();
   强化装备();
+  let season = ocrUntilFound(res => res.find(e => e.text.includes('SEASON')), 30, 500);
+  let i;
+  for (i = 0; i < 10; ++i) {
+    let point = images.findColor(captureScreen(), '#119dea', {
+      region: [width / 2, 0, width - season.bounds.left, season.bounds.top],
+      threshold: 75 - i * 4
+    });
+    if (point != null) {
+      click(point.x, point.y);
+      if (ocrUntilFound(res => res.text.includes('领取'), 5, 1000))
+        break;
+    }
+  }
+  if (i == 10) {
+    log('没能找到每日任务图标');
+    return;
+  }
+  let getAllBtn = ocrUntilFound(res => res.find(e => e.text.startsWith('全')), 30, 500);
+  let btnColor = colors.toString(captureScreen().pixel(getAllBtn.bounds.left, getAllBtn.bounds.top));
+  if (!colors.isSimilar('#1aaff7', btnColor, 75)) {
+    log('每日任务全部领取按钮不可点击');
+  } else {
+    clickRect(getAllBtn);
+    clickRect(getAllBtn);
+    ocrUntilFound(res => {
+      let clickOut = res.find(e => e.text.match(/(REWARD|点击)/) != null);
+      clickRect(getAllBtn, 1, 500);
+      if (clickOut != null)
+        return true;
+      return false;
+    }, 4, 500);
+  }
+  clickRect(ocrUntilFound(res => res.find(e =>
+    e.text.includes('周') && !e.text.includes('每日')
+  ), 30, 600));
+  ocrUntilFound(res => res.text.includes('WEEK'), 30, 300);
+  btnColor = colors.toString(captureScreen().pixel(getAllBtn.bounds.left, getAllBtn.bounds.top));
+  if (!colors.isSimilar('#1aaff7', btnColor, 75)) {
+    log('周任务全部领取按钮不可点击');
+  } else {
+    clickRect(getAllBtn);
+    clickRect(getAllBtn);
+    ocrUntilFound(res => {
+      let clickOut = res.find(e => e.text.match(/(REWARD|点击)/));
+      clickRect(getAllBtn, 1, 500);
+      if (clickOut != null)
+        return true;
+      return false;
+    }, 4, 500);
+  }
+  back();
+  ocrUntilFound(res => res.text.includes('方舟'), 30, 1000);
 }

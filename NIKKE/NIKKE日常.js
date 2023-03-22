@@ -222,8 +222,18 @@ function 基地收菜() {
   let bulletin = ocrUntilFound(res => {
     let headquarter = res.find(e => e.text.endsWith('中心'));
     let ret = res.find(e => e.text.match(/^派.*[公告栏]+$/) != null);
-    if (!headquarter || !ret)
+    if (!headquarter || !ret) {
+      // 可能没进基地，重进一下
+      let enter = res.find(e =>
+        e.text.includes('基地') && e.bounds != null &&
+        e.bounds.bottom > height / 2
+      );
+      if (enter != null) {
+        clickRect(enter, 1, 100);
+        sleep(1000);
+      }
       return null;
+    }
     // 将识别区域扩宽到整个公告栏图标
     ret.bounds.top = headquarter.bounds.bottom;
     return ret;
@@ -357,7 +367,7 @@ function 好友() {
   ocrUntilFound(res => res.text.match(/(可以|目录|搜寻|赠送)/) != null, 20, 1500);
   let btnColor = colors.toString(images.pixel(captureScreen(), sendBtn.bounds.left, sendBtn.bounds.top));
   log(`赠送按钮颜色：${btnColor}`)
-  if (colors.isSimilar('#1aaff7', btnColor, 60)) {
+  if (colors.isSimilar('#1aaff7', btnColor, 75)) {
     clickRect(sendBtn);
     toastLog('点击赠送');
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('确认')), 30, 1000));

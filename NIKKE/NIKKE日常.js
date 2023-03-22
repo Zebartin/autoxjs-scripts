@@ -1,7 +1,7 @@
 var {
   启动NIKKE, 等待NIKKE加载, 退出NIKKE,
   mostSimilar, 返回首页, 关闭限时礼包,
-  detectNikkes
+  detectNikkes, NikkeToday
 } = require('./NIKKEutils.js');
 var { 模拟室 } = require('./模拟室.js');
 var {
@@ -996,16 +996,14 @@ function 强化装备() {
 }
 
 function dailyMissionCompleted() {
-  let today = new Date().toLocaleDateString();
-  let lastChecked = NIKKEstorage.get('dailyMissionCompleted', null);
-  return today == lastChecked;
+  return NikkeToday() == NIKKEstorage.get('dailyMissionCompleted', null);
 }
 
 function 每日任务() {
   if (dailyMissionCompleted())
     return;
-  社交点数招募();
-  强化装备();
+  // 社交点数招募();
+  // 强化装备();
   let season = ocrUntilFound(res => res.find(e => e.text.includes('SEASON')), 30, 500);
   let i;
   for (i = 0; i < 10; ++i) {
@@ -1072,5 +1070,5 @@ function 每日任务() {
     back();
     return false;
   }, 30, 1000);
-  NIKKEstorage.put('dailyMissionCompleted', new Date().toLocaleDateString());
+  NIKKEstorage.put('dailyMissionCompleted', NikkeToday());
 }

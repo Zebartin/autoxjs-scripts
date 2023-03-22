@@ -24,6 +24,7 @@ else {
     返回首页: 返回首页,
     mostSimilar: mostSimilar,
     detectNikkes: detectNikkes,
+    NikkeToday: NikkeToday,
     关闭限时礼包: 关闭限时礼包
   };
 }
@@ -180,7 +181,7 @@ function 等待每日签到() {
   if (NIKKEstorage.get('checkDailyLogin', true) == false)
     return;
   // 检查是否有每天签到
-  let today = new Date().toLocaleDateString();
+  let today = NikkeToday();
   let lastChecked = NIKKEstorage.get('dailyLogin', null);
   if (today == lastChecked) {
     log('今日已登录，不检查签到奖励');
@@ -218,6 +219,14 @@ function 关闭限时礼包() {
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('确认')), 20, 1000));
     ocrUntilFound(res => !res.text.includes('点击'), 20, 1500);
   }
+}
+
+// 根据刷新时间来确定
+// 比如03-22凌晨1点，视为03-21而非03-22
+function NikkeToday() {
+  let today = new Date();
+  today.setTime(today.getTime() + 4 * 60 * 60 * 1000);
+  return today.getUTCMonth() + '-' + today.getUTCDate();
 }
 
 function 刷刷刷() {

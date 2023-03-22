@@ -109,15 +109,21 @@ function 等待NIKKE加载() {
     else if (res.text.match(/[確确][認认]/) != null) {
       clickRect(res.find(e => e.text.match(/[確确][認认]/) != null));
     }
-    else if (res.text.includes('登出'))
+    else if (res.text.match(/(登出|T.UCH|C.NT.NUE)/) != null)
       return true;
     return false;
   }, 60, 5000) == null)
     throw new Error('游戏似乎一直在加载');
   click(width / 2, height / 2);
   sleep(1000);
-  // 等待游戏内公告出现
-  if (ocrUntilFound(res => res.text.includes('公告'), 30, 5000) == null)
+  // 等待游戏内公告出现，并处理月卡
+  if (ocrUntilFound(res => {
+    if (res.text.includes('公告'))
+      return true;
+    if (res.text.match(/(REWARD|30天|点击|奖励)/) != null)
+      click(width / 2, height * 0.8);
+    return false;
+  }, 20, 4000) == null)
     throw new Error('没有出现游戏公告');
   sleep(1000);
   back();

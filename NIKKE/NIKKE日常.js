@@ -37,7 +37,7 @@ function 日常() {
   const todoTask = JSON.parse(NIKKEstorage.get('todoTask', null));
   const taskFunc = {
     商店: 商店,
-    基地收菜: 基地收菜,
+    基地收菜: () => 基地收菜(todoTask.includes('每日任务') && !dailyMissionCompleted()),
     好友: 好友,
     竞技场: 竞技场,
     爬塔: 爬塔,
@@ -216,28 +216,54 @@ function 商店() {
   }
   返回首页();
 }
-function 基地收菜() {
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('基地')), 30, 1000));
-  toastLog('进入基地');
-  let bulletin = ocrUntilFound(res => {
-    let headquarter = res.find(e => e.text.endsWith('中心'));
-    let ret = res.find(e => e.text.match(/^派.*[公告栏]+$/) != null);
-    if (!headquarter || !ret) {
-      // 可能没进基地，重进一下
-      let enter = res.find(e =>
-        e.text.includes('基地') && e.bounds != null &&
-        e.bounds.bottom > height / 2
-      );
-      if (enter != null) {
-        clickRect(enter, 1, 100);
-        sleep(1000);
-      }
+
+function collectDefense(outpostBtn, wipeOut) {
+  clickRect(outpostBtn);
+  let wipeOutBtn = ocrUntilFound(res => {
+    let t = res.find(e => e.text.endsWith('灭'));
+    if (t == null) {
+      clickRect(outpostBtn, 1, 0);
       return null;
     }
-    // 将识别区域扩宽到整个公告栏图标
-    ret.bounds.top = headquarter.bounds.bottom;
-    return ret;
-  }, 50, 1000);
+    return t;
+  }, 30, 1000);
+  if (wipeOut && wipeOutBtn != null) {
+    clickRect(wipeOutBtn);
+    toastLog('尝试一举歼灭');
+    clickRect(ocrUntilFound(res => {
+      if (!res.text.includes('今日'))
+        return null;
+      return res.find(e => e.text.startsWith('进行'));
+    }, 30, 1000));
+    ocrUntilFound(res => {
+      if (res.text.match(/(优先|珠宝|确认)/) != null)
+        back();
+      else if (res.text.includes('点击'))
+        clickRect(res.find(e => e.text.includes('点击')));
+      else
+        return false;
+      return true;
+    }, 10, 1000);
+    ocrUntilFound(res => res.text.includes('今日'), 30, 1000);
+    back();
+  }
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('奖励')), 30, 1000));
+  toastLog('点击获得奖励');
+  clickRect(ocrUntilFound(res => res.find(e => e.text.match(/(点击|获得|奖励)/) != null), 10, 3000, { maxScale: 4 }));
+  ocrUntilFound(res => {
+    if (res.text.match(/(返回|中心|公告)/) != null)
+      return true;
+    let t = res.find(e => e.text.match(/(点击|获得|奖励)/) != null);
+    if (t != null) {
+      clickRect(t);
+      toastLog('升级了');
+      关闭限时礼包();
+    }
+    return false;
+  }, 20, 600);
+}
+
+function dispatch(bulletin) {
   clickRect(bulletin, 0.3);
   toastLog('进入公告栏');
   // 等待派遣内容加载
@@ -294,46 +320,35 @@ function 基地收菜() {
   }
   sleep(600);
   back();
-  let outpostBtn = ocrUntilFound(res => res.find(e =>
-    e.text.match(/(DEFENSE|LV[\.\d]+|\d{1,3}%)/) != null
-  ), 30, 1000);
-  clickRect(outpostBtn);
-  clickRect(ocrUntilFound(res => {
-    let t = res.find(e => e.text.endsWith('灭'));
-    if (t == null) {
-      clickRect(outpostBtn);
+}
+
+function 基地收菜(doDailyMission) {
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('基地')), 30, 1000));
+  toastLog('进入基地');
+  let [bulletin, outpostBtn] = ocrUntilFound(res => {
+    let headquarter = res.find(e => e.text.endsWith('中心'));
+    let ret = res.find(e => e.text.match(/^派.*[公告栏]+$/) != null);
+    let outpost = res.find(e => e.text.match(/(DEFENSE|LV[\.\d]+|\d{1,3}%)/) != null)
+    if (!headquarter || !ret || !outpost) {
+      // 可能没进基地，重进一下
+      let enter = res.find(e =>
+        e.text.endsWith('基地') && e.bounds != null &&
+        e.bounds.bottom > height / 2
+      );
+      if (enter != null) {
+        clickRect(enter, 1, 100);
+        sleep(1000);
+      }
       return null;
     }
-    return t;
-  }, 30, 1000));
-  toastLog('尝试一举歼灭');
-  clickRect(ocrUntilFound(res => {
-    if (!res.text.includes('今日'))
-      return null;
-    return res.find(e => e.text.startsWith('进行'));
-  }, 30, 1000));
-  ocrUntilFound(res => {
-    if (res.text.match(/(优先|珠宝|确认)/) != null)
-      back();
-    else if (res.text.includes('点击'))
-      clickRect(res.find(e => e.text.includes('点击')));
-    else
-      return false;
-    return true;
-  }, 10, 1000);
-  ocrUntilFound(res => res.text.includes('今日'), 30, 1000);
-  back();
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('奖励')), 30, 1000));
-  toastLog('点击获得奖励');
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 10, 3000, { maxScale: 4 }));
-  sleep(1000);
-  target = ocrUntilFound(res => res.find(e => e.text.includes('点击')), 5, 300, { maxScale: 4 });
-  if (target != null) {
-    clickRect(target);
-    toastLog('升级了');
-    关闭限时礼包();
-  }
-  sleep(1000);
+    // 将识别区域扩宽到整个公告栏图标
+    ret.bounds.top = headquarter.bounds.bottom;
+    return [ret, outpost];
+  }, 50, 1000);
+  collectDefense(outpostBtn, true);
+  dispatch(bulletin);
+  if (doDailyMission)
+    collectDefense(outpostBtn, false);
   返回首页();
 }
 function 好友() {
@@ -980,7 +995,15 @@ function 强化装备() {
   返回首页();
 }
 
+function dailyMissionCompleted() {
+  let today = new Date().toLocaleDateString();
+  let lastChecked = NIKKEstorage.get('dailyMissionCompleted', null);
+  return today == lastChecked;
+}
+
 function 每日任务() {
+  if (dailyMissionCompleted())
+    return;
   社交点数招募();
   强化装备();
   let season = ocrUntilFound(res => res.find(e => e.text.includes('SEASON')), 30, 500);
@@ -1000,39 +1023,54 @@ function 每日任务() {
     log('没能找到每日任务图标');
     return;
   }
+  clickRect(ocrUntilFound(res => {
+    let ret = res.find(e => e.text.includes('每日') && !e.text.includes('周'));
+    ret.bounds.left += ret.bounds.width() / 2;
+    return ret;
+  }, 30, 600));
   let getAllBtn = ocrUntilFound(res => res.find(e => e.text.startsWith('全')), 30, 500);
   let btnColor = colors.toString(captureScreen().pixel(getAllBtn.bounds.left, getAllBtn.bounds.top));
   if (!colors.isSimilar('#1aaff7', btnColor, 75)) {
     log('每日任务全部领取按钮不可点击');
   } else {
-    clickRect(getAllBtn);
-    clickRect(getAllBtn);
-    ocrUntilFound(res => {
-      let clickOut = res.find(e => e.text.match(/(REWARD|点击)/) != null);
+    for (i = 0; i < 3; ++i)
       clickRect(getAllBtn, 1, 500);
-      if (clickOut != null)
-        return true;
-      return false;
-    }, 4, 500);
   }
-  clickRect(ocrUntilFound(res => res.find(e =>
-    e.text.includes('周') && !e.text.includes('每日')
-  ), 30, 600));
-  ocrUntilFound(res => res.text.includes('WEEK'), 30, 300);
+  ocrUntilFound(res => {
+    if (res.text.includes('WEEK'))
+      return true;
+    if (res.text.includes('点击') || !res.text.includes('DA')) {
+      click(width / 2, height * 0.7);
+      return false;
+    }
+    let t = res.find(e =>
+      e.text.includes('周') && !e.text.includes('每日')
+    );
+    if (t != null)
+      clickRect(t, 1, 0);
+    return false;
+  }, 30, 600);
   btnColor = colors.toString(captureScreen().pixel(getAllBtn.bounds.left, getAllBtn.bounds.top));
   if (!colors.isSimilar('#1aaff7', btnColor, 75)) {
     log('周任务全部领取按钮不可点击');
   } else {
-    clickRect(getAllBtn);
-    clickRect(getAllBtn);
-    ocrUntilFound(res => {
-      let clickOut = res.find(e => e.text.match(/(REWARD|点击)/));
+    for (i = 0; i < 3; ++i)
       clickRect(getAllBtn, 1, 500);
-      if (clickOut != null)
-        return true;
-      return false;
-    }, 4, 500);
   }
   back();
-  ocrUntilFound(res => res.text.includes('方舟'), 30, 1000);
+  ocrUntilFound(res => {
+    if (res.text.match(/(结束|确认|取消)/) != null) {
+      back();
+      return true;
+    }
+    if (res.text.includes('方舟'))
+      return true;
+    if (res.text.includes('点击') || !res.text.includes('WEEK')) {
+      click(width / 2, height * 0.7);
+      return false;
+    }
+    back();
+    return false;
+  }, 30, 1000);
+  NIKKEstorage.put('dailyMissionCompleted', new Date().toLocaleDateString());
 }

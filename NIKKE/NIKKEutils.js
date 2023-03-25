@@ -1,7 +1,7 @@
 var {
   ocrUntilFound, clickRect, unlockIfNeed,
   requestScreenCaptureAuto, getDisplaySize,
-  killApp, findImageByFeature
+  killApp, findImageByFeature, buildRegion
 } = require('./utils.js');
 if (typeof module === 'undefined') {
   auto.waitFor();
@@ -11,7 +11,7 @@ if (typeof module === 'undefined') {
   if (confirm('已完成活动刷关，\n是否继续日常收菜？')) {
     返回首页();
     engines.execScriptFile('./NIKKE日常.js', {
-      dalay: 1000
+      delay: 1000
     });
   }
   exit();
@@ -23,6 +23,8 @@ else {
     退出NIKKE: 退出NIKKE,
     返回首页: 返回首页,
     mostSimilar: mostSimilar,
+    detectNikkes: detectNikkes,
+    NikkeToday: NikkeToday,
     关闭限时礼包: 关闭限时礼包
   };
 }
@@ -87,7 +89,6 @@ function 启动NIKKE() {
 }
 
 function 等待NIKKE加载() {
-  let NIKKEstorage = storages.create("NIKKEconfig");
   if (ocrUntilFound(res => res.text.match(/(大厅|方舟|物品栏)/), 3, 300) != null)
     return;
   let [width, height] = getDisplaySize();
@@ -109,15 +110,21 @@ function 等待NIKKE加载() {
     else if (res.text.match(/[確确][認认]/) != null) {
       clickRect(res.find(e => e.text.match(/[確确][認认]/) != null));
     }
-    else if (res.text.includes('登出'))
+    else if (res.text.match(/(登出|T.UCH|C.NT.NUE)/) != null)
       return true;
     return false;
   }, 60, 5000) == null)
     throw new Error('游戏似乎一直在加载');
   click(width / 2, height / 2);
   sleep(1000);
-  // 等待游戏内公告出现
-  if (ocrUntilFound(res => res.text.includes('公告'), 30, 5000) == null)
+  // 等待游戏内公告出现，并处理月卡
+  if (ocrUntilFound(res => {
+    if (res.text.includes('公告'))
+      return true;
+    if (res.text.match(/(REWARD|30天|点击|奖励)/) != null)
+      click(width / 2, height * 0.8);
+    return false;
+  }, 20, 4000) == null)
     throw new Error('没有出现游戏公告');
   sleep(1000);
   back();
@@ -170,10 +177,11 @@ function 返回首页() {
 }
 
 function 等待每日签到() {
+  let NIKKEstorage = storages.create("NIKKEconfig");
   if (NIKKEstorage.get('checkDailyLogin', true) == false)
     return;
   // 检查是否有每天签到
-  let today = new Date().toLocaleDateString();
+  let today = NikkeToday();
   let lastChecked = NIKKEstorage.get('dailyLogin', null);
   if (today == lastChecked) {
     log('今日已登录，不检查签到奖励');
@@ -201,14 +209,24 @@ function 关闭限时礼包() {
       return null;
     return res.find(e => e.text.includes('点击'));
   }, 3, 2000);
-  if (closeSale == null)
+  if (closeSale == null) {
     toastLog('没有出现限时礼包');
+    sleep(2000);
+  }
   else {
     toastLog('关闭礼包页面');
     clickRect(closeSale);
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('确认')), 20, 1000));
     ocrUntilFound(res => !res.text.includes('点击'), 20, 1500);
   }
+}
+
+// 根据刷新时间来确定
+// 比如03-22凌晨1点，视为03-21而非03-22
+function NikkeToday() {
+  let today = new Date();
+  today.setTime(today.getTime() + 4 * 60 * 60 * 1000);
+  return today.getUTCMonth() + '-' + today.getUTCDate();
 }
 
 function 刷刷刷() {
@@ -325,4 +343,103 @@ function similarity(s1, s2) {
     }
   }
   return 1.0 - dp[n][m] / Math.max(m, n);
+}
+
+
+function detectNikkes(originalImg, region) {
+  let [x, y, cw, ch] = buildRegion(region, originalImg);
+  let splitX = [];
+  let splitY = [];
+  let cImg = images.clip(originalImg, x, y, cw, ch);
+  let gbImg = images.gaussianBlur(cImg, [3, 3], 0, 0);
+  let grayImg = images.cvtColor(gbImg, "BGR2GRAY");
+  gbImg.recycle();
+  cImg.recycle();
+  with (JavaImporter(com.stardust.autojs.core.opencv.Mat, org.opencv.imgproc)) {
+    let edges = new Mat();
+    let cannyColor = new Mat();
+    let lines = new Mat();
+    const lowThresh = 45;
+    Imgproc.Canny(grayImg.getMat(), edges, lowThresh, lowThresh * 3, 3);
+    Imgproc.cvtColor(edges, cannyColor, Imgproc.COLOR_GRAY2BGR);
+    Imgproc.HoughLines(edges, lines, 1, Math.PI / 2, 400);
+    grayImg.recycle();
+    cannyColor.release();
+    edges.release();
+    for (let i = 0; i < lines.rows(); ++i) {
+      let [rho, theta] = lines.get(i, 0);
+      let a = Math.cos(theta);
+      let b = Math.sin(theta);
+      let x0 = Math.round(a * rho);
+      let y0 = Math.round(b * rho);
+      if (Math.round(a) == 0) {
+        let j = splitY.findIndex(y => Math.abs(y - y0) < 100);
+        if (j != -1)
+          splitY[j] = Math.max(splitY[j], y0);
+        else
+          splitY.push(y0);
+      }
+      else if (Math.round(b) == 0) {
+        let j = splitX.findIndex(x => Math.abs(x - x0) < 100)
+        if (j != -1)
+          splitX[j] = Math.max(splitX[j], x0);
+        else
+          splitX.push(x0);
+      }
+    }
+    lines.release();
+    splitX.push(0);
+    splitX.push(cw);
+    splitY.push(0);
+    splitY.push(ch);
+    splitX.sort((a, b) => a - b);
+    splitY.sort((a, b) => a - b);
+  }
+  let nikkes = [];
+  let specialNameReg = /[森杨]/;
+  for (let j = 0; j < splitY.length - 1; ++j)
+    for (let i = 0; i < splitX.length - 1; ++i) {
+      let w = Math.floor((splitX[i + 1] - splitX[i]) / 4);
+      let h = Math.floor((splitY[j + 1] - splitY[j]) / 5);
+      if (w < 30 || h < 80)
+        continue;
+      let clipimg = images.clip(originalImg, splitX[i] + w + x, splitY[j] + h * 4 + y, w * 3, h);
+      // images.save(clipimg, `./images/nikkerror/${i}${j}.jpg`);
+      for (let k = 3; k <= 16; ++k) {
+        let ocr;
+        if (k == 3)
+          ocr = gmlkit.ocr(clipimg, 'zh');
+        else {
+          let scaleimg = images.scale(clipimg, k, k, 'CUBIC');
+          ocr = gmlkit.ocr(scaleimg, 'zh');
+          scaleimg.recycle();
+        }
+        ocr = ocr.toArray(3).toArray();
+        if (ocr.length == 0)
+          continue;
+        let rightBottom = ocr.reduce((a, b) => {
+          let t = a.bounds.bottom - b.bounds.bottom;
+          if (Math.abs(t) < 10)
+            return a.bounds.right > b.bounds.right ? a : b;
+          return t > 0 ? a : b;
+        });
+        let name = rightBottom.text.replace(/[一\s\-·,]/g, '');
+        if (name.length < 2 && !specialNameReg.test(name))
+          continue;
+        let bounds = new android.graphics.Rect();
+        bounds.left = splitX[i] + w + x;
+        bounds.right = splitX[i + 1] + x;
+        bounds.top = splitY[j] + h * 4 + y;
+        bounds.bottom = splitY[j + 1] + y;
+        nikkes.push({
+          name: name,
+          bounds: bounds,
+          scale: k == 3 ? 1 : k,
+          confidence: rightBottom.confidence
+        })
+        break;
+      }
+      clipimg.recycle();
+    }
+  return nikkes;
 }

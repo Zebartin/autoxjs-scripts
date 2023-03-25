@@ -5,8 +5,8 @@ var {
   getDisplaySize
 } = require('./utils.js');
 var {
-  启动NIKKE, 等待NIKKE加载,
-  退出NIKKE, 返回首页, mostSimilar
+  启动NIKKE, 等待NIKKE加载, 退出NIKKE,
+  返回首页, mostSimilar, detectNikkes
 } = require('./NIKKEutils.js');
 let width, height;
 let curPass = 0;
@@ -891,10 +891,9 @@ function teamUp(status) {
     sleep(1000);
     let lastNikke = null;
     for (let page = 0; page < 10; ++page) {
-      let img = images.clip(captureScreen(), 0, upperBound, width, lowerBound - upperBound);
       let bottomY = 0;
       let lastPage = false;
-      let nikkes = detectNikkes(img, 0, upperBound);
+      let nikkes = detectNikkes(captureScreen(), [0, upperBound, width, lowerBound - upperBound]);
       console.info(nikkes);
       for (let n of nikkes) {
         if (n.name == lastNikke)
@@ -902,14 +901,13 @@ function teamUp(status) {
         bottomY = Math.max(bottomY, n.bounds.bottom);
         let t = mostSimilar(n.name, teamClone);
         console.info(t);
-        if (t.similarity >= 0.5) {
+        if (t.similarity > 0.5) {
           clickRect(n, 0.01);
           teamClone.splice(teamClone.findIndex(x => x == t.result), 1);
         }
         if (teamClone.length == 0)
           break;
       }
-      img.recycle();
       if (teamClone.length == 0 || lastPage)
         break;
       lastNikke = nikkes[nikkes.length - 1].name;
@@ -932,9 +930,7 @@ function teamUp(status) {
   // 5. 刷新清空选择
   clickRect(refreshBtn);
   // 6. 按队伍顺序逐一选择
-  let img = images.clip(captureScreen(), 0, upperBound, width, lowerBound - upperBound);
-  let nikkes = detectNikkes(img, 0, upperBound).slice(0, 5);
-  img.recycle();
+  let nikkes = detectNikkes(captureScreen(), [0, upperBound, width, lowerBound - upperBound]).slice(0, 5);
   nikkes = Object.fromEntries(nikkes.map(x => [x.name, x]));
   for (let i of status.team) {
     let t = mostSimilar(i, Object.keys(nikkes));
@@ -943,88 +939,4 @@ function teamUp(status) {
   clickRect(saveBtn);
   status.team = [];
   ocrUntilFound(res => res.text.includes('入战'), 30, 1000);
-}
-function detectNikkes(originalImg, baseX, baseY) {
-  let splitX = [];
-  let splitY = [];
-  let gbImg = images.gaussianBlur(originalImg, [3, 3], 0, 0);
-  let grayImg = images.cvtColor(gbImg, "BGR2GRAY");
-  gbImg.recycle();
-  with (JavaImporter(com.stardust.autojs.core.opencv.Mat, org.opencv.imgproc)) {
-    let edges = new Mat();
-    let cannyColor = new Mat();
-    let lines = new Mat();
-    const lowThresh = 45;
-    Imgproc.Canny(grayImg.getMat(), edges, lowThresh, lowThresh * 3, 3);
-    Imgproc.cvtColor(edges, cannyColor, Imgproc.COLOR_GRAY2BGR);
-    Imgproc.HoughLines(edges, lines, 1, Math.PI / 2, 400);
-    grayImg.recycle();
-    cannyColor.release();
-    edges.release();
-    for (let i = 0; i < lines.rows(); ++i) {
-      let [rho, theta] = lines.get(i, 0);
-      let a = Math.cos(theta);
-      let b = Math.sin(theta);
-      let x0 = Math.round(a * rho);
-      let y0 = Math.round(b * rho);
-      if (Math.round(a) == 0) {
-        let j = splitY.findIndex(y => Math.abs(y - y0) < 100);
-        if (j != -1)
-          splitY[j] = Math.max(splitY[j], y0);
-        else
-          splitY.push(y0);
-      }
-      else if (Math.round(b) == 0) {
-        let j = splitX.findIndex(x => Math.abs(x - x0) < 100)
-        if (j != -1)
-          splitX[j] = Math.max(splitX[j], x0);
-        else
-          splitX.push(x0);
-      }
-    }
-    lines.release();
-    splitX.push(0);
-    splitX.push(originalImg.getWidth());
-    splitY.push(0);
-    splitY.push(originalImg.getHeight());
-    splitX.sort((a, b) => a - b);
-    splitY.sort((a, b) => a - b);
-  }
-  let nikkes = [];
-  let specialNameReg = /[森杨]/;
-  for (let j = 0; j < splitY.length - 1; ++j)
-    for (let i = 0; i < splitX.length - 1; ++i) {
-      let w = Math.floor((splitX[i + 1] - splitX[i]) / 4);
-      let h = Math.floor((splitY[j + 1] - splitY[j]) / 4);
-      if (w < 30 || h < 80)
-        continue;
-      let clipimg = images.clip(originalImg, splitX[i] + w, splitY[j] + h * 3, w * 3, h);
-      for (let k = 3; k <= 16; ++k) {
-        let ocr;
-        if (k == 3)
-          ocr = gmlkit.ocr(clipimg, 'zh');
-        else {
-          let scaleimg = images.scale(clipimg, k, k, 'CUBIC');
-          ocr = gmlkit.ocr(scaleimg, 'zh');
-          scaleimg.recycle();
-        }
-        let name = ocr.text.replace(/[一\s\-·,]/g, '');
-        if (name.length < 2 && !specialNameReg.test(name))
-          continue;
-        let bounds = new android.graphics.Rect();
-        bounds.left = splitX[i] + w + baseX;
-        bounds.right = splitX[i + 1] + baseX;
-        bounds.top = splitY[j] + h * 3 + baseY;
-        bounds.bottom = splitY[j + 1] + baseY;
-        nikkes.push({
-          name: name,
-          bounds: bounds,
-          scale: k == 3 ? 1 : k,
-          confidence: ocr.filter(e => e.text.match(new RegExp(`[${name}]{${Math.min(2, name.length)}}`)) != null && e.confidence != -1).toArray().map(x => x.confidence)[0]
-        })
-        break;
-      }
-      clipimg.recycle();
-    }
-  return nikkes;
 }

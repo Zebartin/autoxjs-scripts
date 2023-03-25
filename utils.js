@@ -12,6 +12,8 @@ else {
     getOcrRes: getOcrRes,
     getDisplaySize: getDisplaySize,
     killApp: killApp,
+    buildRegion: buildRegion,
+    findContoursRect: findContoursRect,
     findImageByFeature: findImageByFeature
   };
 }
@@ -61,7 +63,7 @@ function ocrUntilFound(found, retry, interval, options) {
     sleep(interval);
     let scale = (i % maxScale) + 1;
     let img = captureScreen();
-    if (gray){
+    if (gray) {
       let newImg = images.grayscale(img);
       img && img.recycle();
       img = newImg;
@@ -114,6 +116,17 @@ function imgToBounds(img, point) {
   return { bounds: ret };
 }
 
+function buildRegion(region, img) {
+  region = region || [];
+  let x = region[0] === undefined ? 0 : region[0];
+  let y = region[1] === undefined ? 0 : region[1];
+  let w = region[2] === undefined ? img.getWidth() - x : region[2];
+  let h = region[3] === undefined ? (img.getHeight() - y) : region[3];
+  if (x < 0 || y < 0 || x + w > img.width || y + h > img.height)
+    throw new Error("out of region: region = [" + [x, y, w, h] + "], image.size = [" + [img.width, img.height] + "]");
+  return [x, y, w, h];
+}
+
 // 参考：https://docs.opencv.org/3.4/d1/de0/tutorial_py_feature_homography.html
 // trainImg：大图
 // queryImg：小图
@@ -149,13 +162,7 @@ function findImageByFeature(trainImg, queryImg, options) {
     const minMatchCount = options.minMatchCount || 4; // 至少为4
     let img1 = grayImg1.getMat(), img2 = grayImg2.getMat();
     if (options.region) {
-      let x = options.region[0] === undefined ? 0 : options.region[0];
-      let y = options.region[1] === undefined ? 0 : options.region[1];
-      let w = options.region[2] === undefined ? grayImg2.width - x : options.region[2];
-      let h = options.region[3] === undefined ? grayImg2.height - y : options.region[3];
-      if (x < 0 || y < 0 || x + w > grayImg2.width || y + h > grayImg2.height) {
-        throw new Error("out of region: region = [" + [x, y, w, h] + "], image.size = [" + [grayImg2.width, grayImg2.height] + "]");
-      }
+      let [x, y, w, h] = buildRegion(options.region, grayImg2);
       clipImg = images.clip(grayImg2, x, y, w, h);
       img2 = clipImg.getMat();
     }
@@ -247,6 +254,56 @@ function findImageByFeature(trainImg, queryImg, options) {
     beforeReturn();
     return { bounds: bounds };
   }
+}
+
+function findContoursRect(img, options) {
+  options = options || {};
+  let thresh = options.thresh || 160;
+  let [x, y, w, h] = buildRegion(options.region, img);
+  let clipImg = images.clip(img, x, y, w, h);
+  let grayImg = images.cvtColor(clipImg, "BGR2GRAY");
+  let threImg = images.threshold(grayImg, thresh, 255, "BINARY_INV");
+  let ret = [];
+  with (JavaImporter(
+    org.opencv.imgproc.Imgproc,
+    com.stardust.autojs.core.opencv,
+    org.opencv.core.Core,
+    org.opencv.core.Point,
+    org.opencv.core.MatOfPoint2f,
+    org.opencv.core.Scalar,
+    com.stardust.autojs.core.opencv.Mat
+  )) {
+    let threImgMat = threImg.getMat();
+    let contours = java.lang.reflect.Array.newInstance(MatOfPoint, 0);
+    contours = java.util.ArrayList(java.util.Arrays.asList(contours));
+    Imgproc.findContours(threImgMat, contours, Mat(), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+    for (let i = 0; i < contours.size(); ++i) {
+      let contour2f = MatOfPoint2f(contours.get(i).toArray());
+      let epsilon = Imgproc.arcLength(contour2f, true) * 0.1;
+      let approxCurve = MatOfPoint2f();
+      Imgproc.approxPolyDP(contour2f, approxCurve, epsilon, true);
+      let pts = MatOfPoint(approxCurve.toArray());
+      let rect = Imgproc.boundingRect(pts);
+      ret.push(android.graphics.Rect(
+        rect.x + x,
+        rect.y + y,
+        rect.x + rect.width + x,
+        rect.y + rect.height + y
+      ));
+      // Imgproc.rectangle(threImgMat, Point(rect.x, rect.y), Point(rect.x + rect.width, rect.y + rect.height), Scalar(150), 3);
+    }
+    // images.save(images.matToImage(threImgMat), `./images/nikkerror/${Date.now()}.jpg`);
+  }
+  threImg.recycle();
+  grayImg.recycle();
+  clipImg.recycle();
+  ret.sort((a, b) => {
+    let t = a.top - b.top;
+    if (Math.abs(t) < 20)
+      return a.left - b.left;
+    return t;
+  });
+  return ret;
 }
 
 function killApp(packageName) {

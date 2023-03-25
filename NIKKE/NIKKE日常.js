@@ -1013,7 +1013,7 @@ function 每日任务() {
     });
     if (point != null) {
       click(point.x, point.y);
-      if (ocrUntilFound(res => res.text.includes('领取'), 5, 1000))
+      if (ocrUntilFound(res => res.text.includes('成就'), 5, 1000))
         break;
     }
   }
@@ -1027,48 +1027,41 @@ function 每日任务() {
     return ret;
   }, 30, 600));
   let getAllBtn = ocrUntilFound(res => res.find(e => e.text.startsWith('全')), 30, 500);
-  let btnColor = colors.toString(captureScreen().pixel(getAllBtn.bounds.left, getAllBtn.bounds.top));
-  if (!colors.isSimilar('#1aaff7', btnColor, 75)) {
-    log('每日任务全部领取按钮不可点击');
-  } else {
-    for (i = 0; i < 3; ++i)
-      clickRect(getAllBtn, 1, 500);
-  }
-  ocrUntilFound(res => {
-    if (res.text.includes('WEEK'))
-      return true;
-    if (res.text.includes('点击') || !res.text.includes('DA')) {
-      click(width / 2, height * 0.7);
-      return false;
+  ocrUntilFound((res, img) => {
+    if (res.text.includes('全')) {
+      let c = colors.toString(img.pixel(getAllBtn.bounds.left, getAllBtn.bounds.top));
+      let t = res.find(e =>
+        e.text.includes('周') && !e.text.includes('每日')
+      );
+      if (!colors.isSimilar('#1aaff7', c, 75) && t != null) {
+        clickRect(t, 1, 0);
+        return true;
+      }
     }
-    let t = res.find(e =>
-      e.text.includes('周') && !e.text.includes('每日')
-    );
-    if (t != null)
-      clickRect(t, 1, 0);
+    clickRect(getAllBtn, 1, 0);
     return false;
   }, 30, 600);
-  btnColor = colors.toString(captureScreen().pixel(getAllBtn.bounds.left, getAllBtn.bounds.top));
-  if (!colors.isSimilar('#1aaff7', btnColor, 75)) {
-    log('周任务全部领取按钮不可点击');
-  } else {
-    for (i = 0; i < 3; ++i)
-      clickRect(getAllBtn, 1, 500);
-  }
-  back();
-  ocrUntilFound(res => {
-    if (res.text.match(/(结束|确认|取消)/) != null) {
-      back();
-      return true;
+  ocrUntilFound((res, img) => {
+    if (res.text.includes('全') && res.text.includes('WEEK')) {
+      let c = colors.toString(img.pixel(getAllBtn.bounds.left, getAllBtn.bounds.top));
+      let t = res.find(e => e.text.includes('成就'));
+      if (!colors.isSimilar('#1aaff7', c, 75) && t != null) {
+        clickRect(t, 1, 0);
+        return true;
+      }
     }
-    if (res.text.includes('方舟'))
-      return true;
-    if (res.text.includes('点击') || !res.text.includes('WEEK')) {
-      click(width / 2, height * 0.7);
-      return false;
-    }
-    back();
+    clickRect(getAllBtn, 1, 0);
     return false;
-  }, 30, 1000);
+  }, 30, 600);
+  ocrUntilFound((res, img) => {
+    if (res.text.includes('全') && res.text.includes('CHA')) {
+      let c = colors.toString(img.pixel(getAllBtn.bounds.left, getAllBtn.bounds.top));
+      if (!colors.isSimilar('#1aaff7', c, 75))
+        return true;
+    }
+    clickRect(getAllBtn, 1, 0);
+    return false;
+  }, 30, 600);
+  back();
   NIKKEstorage.put('dailyMissionCompleted', NikkeToday());
 }

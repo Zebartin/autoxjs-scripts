@@ -823,6 +823,8 @@ function 单次咨询(advise) {
 }
 
 function 社交点数招募() {
+  if (NikkeToday() == NIKKEstorage.get('dailyMissionRecruit', null))
+    return;
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('员招')), 40, 1000));
   ocrUntilFound(res => res.text.match(/(招募\d+|机率)/) != null, 50, 500);
   let socialPage = ocrUntilFound(res => {
@@ -838,6 +840,7 @@ function 社交点数招募() {
   clickRect(ocrUntilFound(res => res.find(e =>
     e.text.includes('1名') && e.bounds != null && e.bounds.right <= width / 2
   ), 20, 300, { maxScale: 4 }));
+  NIKKEstorage.put('dailyMissionRecruit', NikkeToday());
   sleep(2000);
   ocrUntilFound(res => {
     let skipBtn = res.find(e => e.text.match(/SK.P/) != null);
@@ -858,8 +861,11 @@ function 社交点数招募() {
       return null;
     }
     let ret = res.find(e =>
-      e.bounds != null && e.bounds.right < upper.bounds.left &&
-      e.bounds.bottom > upper.bounds.top && e.bounds.bottom < lower.bounds.top);
+      e.bounds != null && !e.text.includes('CV') &&
+      e.bounds.right < upper.bounds.left &&
+      e.bounds.bottom > upper.bounds.top &&
+      e.bounds.bottom < lower.bounds.top
+    );
     return ret;
   }, 20, 1000);
   log(`招募结果：${nikkeName ? nikkeName.text : null}`);
@@ -886,7 +892,7 @@ function listEquip() {
   let equipHeight = lowerBound - equip;
   for (let i = 0; i < 10; ++i) {
     ret = findContoursRect(captureScreen(), {
-      thresh: 160,
+      thresh: 170 - i * 7,
       region: [leftBound, equip, width - leftBound, equipHeight]
     }).filter(rect => {
       if (rect.height() < equipHeight / 4 || rect.height() > equipHeight / 2)
@@ -902,6 +908,8 @@ function listEquip() {
 }
 
 function 强化装备() {
+  if (NikkeToday() == NIKKEstorage.get('dailyMissionEquip', null))
+    return;
   let dailyMission = NIKKEstorage.get('dailyMission', {});
   let targetEquip = dailyMission.equipEnhanceSlot || 0;
   let targetNikke = dailyMission.equipEnhanceNikke || '';
@@ -975,16 +983,21 @@ function 强化装备() {
       return null;
     return [confirm, upper.bounds.bottom];
   }, 30, 1000);
-  let enhanceStuff = findContoursRect(captureScreen(), {
-    thresh: 170,
-    region: [0, equipUpperBound, width, enhanceConfirm.bounds.top - equipUpperBound]
-  }).filter(x => {
-    if (x.width() < 100)
-      return false;
-    if (Math.abs(x.width() - x.height()) > 20)
-      return false;
-    return true;
-  });
+  let enhanceStuff = [];
+  for (let i = 0; i < 10; ++i) {
+    enhanceStuff = findContoursRect(captureScreen(), {
+      thresh: 180 - i * 8,
+      region: [0, equipUpperBound, width, enhanceConfirm.bounds.top - equipUpperBound]
+    }).filter(x => {
+      if (x.width() < 100)
+        return false;
+      if (Math.abs(x.width() - x.height()) > 20)
+        return false;
+      return true;
+    });
+    if (enhanceStuff.length != 0)
+      break;
+  }
   if (enhanceStuff.length == 0) {
     toastLog('没有强化材料');
   } else {
@@ -997,6 +1010,7 @@ function 强化装备() {
     )) > 220)
       sleep(300);
   }
+  NIKKEstorage.put('dailyMissionEquip', NikkeToday());
   back();
   返回首页();
 }

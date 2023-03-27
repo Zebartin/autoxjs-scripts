@@ -97,7 +97,18 @@ function 商店() {
   let buyGood = (good) => {
     toastLog(`购买${good.text}`);
     clickRect(good, 0.5);
-    clickRect(ocrUntilFound(res => res.find(e => e.text == '购买'), 30, 1000));
+    let [buyBtn, costGem] = ocrUntilFound(res => {
+      let t = res.find(e => e.text == '购买');
+      if (!t)
+        return null;
+      return [t, res.text.match(/(珠宝|招募|优先|扣除)/) != null];
+    }, 30, 1000);
+    if (costGem) {
+      log('消耗珠宝，放弃购买');
+      back();
+      return;
+    }
+    clickRect(buyBtn);
     let affordable = true;
     ocrUntilFound(res => {
       if (res.find(e => e.text.match(/不足.?$/) != null)) {
@@ -121,13 +132,18 @@ function 商店() {
   };
   let buyFree = () => {
     let freeGood = ocrUntilFound(res => res.find(e => e.text.match(/(100%|s[oq0]l[od0] [oq0]ut)/i) != null), 10, 300);
-    if (freeGood != null && freeGood.text.includes('100%')) {
+    let hasFree = (freeGood != null && freeGood.text.includes('100%'));
+    if (hasFree) {
       freeGood.text = '免费商品';
       buyGood(freeGood);
-      return true;
+    } else
+      toastLog('免费商品已售');
+    if (NIKKEstorage.get('buyCoreDust', false)) {
+      let coreDust = ocrUntilFound(res => res.find(e => e.text.match(/芯尘盒/) != null), 10, 300);
+      if (coreDust != null)
+        buyGood(coreDust);
     }
-    toastLog('免费商品已售');
-    return false;
+    return hasFree;
   };
   clickRect(ocrUntilFound(res => res.find(e => e.text == '商店'), 30, 1000));
   toastLog('进入商店');

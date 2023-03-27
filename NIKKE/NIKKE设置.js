@@ -57,6 +57,10 @@ ui.layout(
         <vertical id="shopping" visibility="gone">
           <text textSize="16sp" margin="8">商店设置</text>
           <horizontal margin="10 2">
+            <text textSize="14sp" w="0" layout_weight="8" >使用信用点购买芯尘盒</text>
+            <checkbox id="buyCoreDust" w="0" layout_weight="2" />
+          </horizontal>
+          <horizontal margin="10 2">
             <text id="buyCodeManualText" textSize="14sp" w="0" layout_weight="4" >不购买代码手册</text>
             <seekbar id="buyCodeManual" w="0" layout_weight="6" />
           </horizontal>
@@ -285,6 +289,7 @@ ui.buyCodeManual.setOnSeekBarChangeListener({
       ui.buyCodeManualText.setText(`购买前${p}本代码手册`);
   }
 });
+ui.buyCoreDust.setChecked(NIKKEstorage.get('buyCoreDust', false));
 ui.buyCodeManual.setProgress(NIKKEstorage.get('buyCodeManual', 3));
 
 ui.rookieArenaTarget.setMin(0);
@@ -427,6 +432,7 @@ ui.save.on("click", function () {
       todoTask.push(task);
   NIKKEstorage.put('todoTask', JSON.stringify(todoTask));
 
+  NIKKEstorage.put('buyCoreDust', ui.buyCoreDust.isChecked());
   NIKKEstorage.put('buyCodeManual', ui.buyCodeManual.getProgress());
   NIKKEstorage.put('rookieArenaTarget', ui.rookieArenaTarget.getProgress());
 

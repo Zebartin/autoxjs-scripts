@@ -854,9 +854,20 @@ function teamUp(status) {
     return;
   // 找空位
   const emptyImage = images.read("./images/simEmpty.jpg");
+  let [emptyUpperBound, emptyLowerBound] = ocrUntilFound((res, img) => {
+    let u = res.find(e =>
+      e.text.includes('室') && e.bounds != null &&
+      e.bounds.bottom > img.height / 2
+    );
+    let l = res.find(e => e.text.match(/(资讯|入战)/) != null);
+    if (!u || !l)
+      return null;
+    return [u.bounds.bottom, l.bounds.top];
+  }, 30, 700);
   let teamEmpty = findImageByFeature(captureScreen(), emptyImage, {
     threshold: 0.7,
-    region: [0, height * 0.6]
+    minMatchCount: 15,
+    region: [0, emptyUpperBound, width, emptyLowerBound-emptyUpperBound]
   });
   emptyImage.recycle();
   if (teamEmpty == null) {

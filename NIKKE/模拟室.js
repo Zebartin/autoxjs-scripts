@@ -867,7 +867,7 @@ function teamUp(status) {
   let teamEmpty = findImageByFeature(captureScreen(), emptyImage, {
     threshold: 0.7,
     minMatchCount: 15,
-    region: [0, emptyUpperBound, width, emptyLowerBound-emptyUpperBound]
+    region: [0, emptyUpperBound, width, emptyLowerBound - emptyUpperBound]
   });
   emptyImage.recycle();
   if (teamEmpty == null) {
@@ -875,7 +875,7 @@ function teamUp(status) {
     status.team = [];
     return;
   }
-  log(`开始模拟室编队：${status.team}`);
+  log(`开始模拟室编队：${status.team.join('、')}`);
   clickRect(teamEmpty);
   let [upperBound, lowerBound, allBtn, saveBtn] = ocrUntilFound(res => {
     let upper = res.find(e => e.text.match(/[可以变更编队]{3}/) != null);
@@ -907,16 +907,17 @@ function teamUp(status) {
     for (let page = 0; page < 10; ++page) {
       let bottomY = 0;
       let lastPage = false;
-      let nikkes = detectNikkes(captureScreen(), [0, upperBound, width, lowerBound - upperBound]);
-      console.info(nikkes);
+      let nikkes = detectNikkes(captureScreen(), {
+        region: [0, upperBound, width, lowerBound - upperBound]
+      });
+      console.info(`当前页面：${nikkes.map(x => x.name).join('、')}`);
       for (let n of nikkes) {
         if (n.name == lastNikke)
           lastPage = true;
         bottomY = Math.max(bottomY, n.bounds.bottom);
         let t = mostSimilar(n.name, teamClone);
-        console.info(t);
         if (t.similarity > 0.5) {
-          clickRect(n, 0.01);
+          clickRect(n, 0.5);
           teamClone.splice(teamClone.findIndex(x => x == t.result), 1);
         }
         if (teamClone.length == 0)
@@ -944,11 +945,13 @@ function teamUp(status) {
   // 5. 刷新清空选择
   clickRect(refreshBtn);
   // 6. 按队伍顺序逐一选择
-  let nikkes = detectNikkes(captureScreen(), [0, upperBound, width, lowerBound - upperBound]).slice(0, 5);
+  let nikkes = detectNikkes(captureScreen(), {
+    region: [0, upperBound, width, lowerBound - upperBound]
+  }).slice(0, 5);
   nikkes = Object.fromEntries(nikkes.map(x => [x.name, x]));
   for (let i of status.team) {
     let t = mostSimilar(i, Object.keys(nikkes));
-    clickRect(nikkes[t.result], 0.01);
+    clickRect(nikkes[t.result], 0.5);
   }
   clickRect(saveBtn);
   status.team = [];

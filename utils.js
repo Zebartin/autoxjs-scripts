@@ -284,7 +284,7 @@ function findContoursRect(img, options) {
     Imgproc.findContours(threImgMat, contours, Mat(), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
     for (let i = 0; i < contours.size(); ++i) {
       let contour2f = MatOfPoint2f(contours.get(i).toArray());
-      let epsilon = Imgproc.arcLength(contour2f, true) * 0.1;
+      let epsilon = Imgproc.arcLength(contour2f, true) * 0.01;
       let approxCurve = MatOfPoint2f();
       Imgproc.approxPolyDP(contour2f, approxCurve, epsilon, true);
       let pts = MatOfPoint(approxCurve.toArray());

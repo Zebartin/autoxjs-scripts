@@ -1,7 +1,7 @@
 var {
   ocrUntilFound, clickRect, unlockIfNeed,
   requestScreenCaptureAuto, getDisplaySize,
-  killApp, findImageByFeature, buildRegion
+  killApp, findImageByFeature, findContoursRect
 } = require('./utils.js');
 if (typeof module === 'undefined') {
   auto.waitFor();
@@ -346,100 +346,56 @@ function similarity(s1, s2) {
 }
 
 
-function detectNikkes(originalImg, region) {
-  let [x, y, cw, ch] = buildRegion(region, originalImg);
-  let splitX = [];
-  let splitY = [];
-  let cImg = images.clip(originalImg, x, y, cw, ch);
-  let gbImg = images.gaussianBlur(cImg, [3, 3], 0, 0);
-  let grayImg = images.cvtColor(gbImg, "BGR2GRAY");
-  gbImg.recycle();
-  cImg.recycle();
-  with (JavaImporter(com.stardust.autojs.core.opencv.Mat, org.opencv.imgproc)) {
-    let edges = new Mat();
-    let cannyColor = new Mat();
-    let lines = new Mat();
-    const lowThresh = 45;
-    Imgproc.Canny(grayImg.getMat(), edges, lowThresh, lowThresh * 3, 3);
-    Imgproc.cvtColor(edges, cannyColor, Imgproc.COLOR_GRAY2BGR);
-    Imgproc.HoughLines(edges, lines, 1, Math.PI / 2, 400);
-    grayImg.recycle();
-    cannyColor.release();
-    edges.release();
-    for (let i = 0; i < lines.rows(); ++i) {
-      let [rho, theta] = lines.get(i, 0);
-      let a = Math.cos(theta);
-      let b = Math.sin(theta);
-      let x0 = Math.round(a * rho);
-      let y0 = Math.round(b * rho);
-      if (Math.round(a) == 0) {
-        let j = splitY.findIndex(y => Math.abs(y - y0) < 100);
-        if (j != -1)
-          splitY[j] = Math.max(splitY[j], y0);
-        else
-          splitY.push(y0);
-      }
-      else if (Math.round(b) == 0) {
-        let j = splitX.findIndex(x => Math.abs(x - x0) < 100)
-        if (j != -1)
-          splitX[j] = Math.max(splitX[j], x0);
-        else
-          splitX.push(x0);
-      }
-    }
-    lines.release();
-    splitX.push(0);
-    splitX.push(cw);
-    splitY.push(0);
-    splitY.push(ch);
-    splitX.sort((a, b) => a - b);
-    splitY.sort((a, b) => a - b);
-  }
+function detectNikkes(originalImg, options) {
+  let nikkeContours = findContoursRect(originalImg, {
+    thresh: options.thresh || 200,
+    region: options.region
+  }).filter(rect => {
+    if (rect.width() < 100)
+      return false;
+    if (rect.width() * 2.5 < rect.height())
+      return false;
+    if (rect.width() * 1.5 > rect.height())
+      return false;
+    return true;
+  });
   let nikkes = [];
   let specialNameReg = /[森杨]/;
-  for (let j = 0; j < splitY.length - 1; ++j)
-    for (let i = 0; i < splitX.length - 1; ++i) {
-      let w = Math.floor((splitX[i + 1] - splitX[i]) / 4);
-      let h = Math.floor((splitY[j + 1] - splitY[j]) / 5);
-      if (w < 30 || h < 80)
-        continue;
-      let clipimg = images.clip(originalImg, splitX[i] + w + x, splitY[j] + h * 4 + y, w * 3, h);
-      // images.save(clipimg, `./images/nikkerror/${i}${j}.jpg`);
-      for (let k = 3; k <= 16; ++k) {
-        let ocr;
-        if (k == 3)
-          ocr = gmlkit.ocr(clipimg, 'zh');
-        else {
-          let scaleimg = images.scale(clipimg, k, k, 'CUBIC');
-          ocr = gmlkit.ocr(scaleimg, 'zh');
-          scaleimg.recycle();
-        }
-        ocr = ocr.toArray(3).toArray();
-        if (ocr.length == 0)
-          continue;
-        let rightBottom = ocr.reduce((a, b) => {
-          let t = a.bounds.bottom - b.bounds.bottom;
-          if (Math.abs(t) < 10)
-            return a.bounds.right > b.bounds.right ? a : b;
-          return t > 0 ? a : b;
-        });
-        let name = rightBottom.text.replace(/[一\s\-·,]/g, '');
-        if (name.length < 2 && !specialNameReg.test(name))
-          continue;
-        let bounds = new android.graphics.Rect();
-        bounds.left = splitX[i] + w + x;
-        bounds.right = splitX[i + 1] + x;
-        bounds.top = splitY[j] + h * 4 + y;
-        bounds.bottom = splitY[j + 1] + y;
-        nikkes.push({
-          name: name,
-          bounds: bounds,
-          scale: k == 3 ? 1 : k,
-          confidence: rightBottom.confidence
-        })
-        break;
+  for (let con of nikkeContours) {
+    let w = Math.floor(con.width() / 4);
+    let h = Math.floor(con.height() / 5);
+    let clipImg = images.clip(originalImg, con.left + w, con.top + h * 4, w * 3, h);
+    // images.save(clipimg, `./images/nikkerror/${con.left}_${con.top}.jpg`);
+    for (let k = 3; k <= 16; ++k) {
+      let ocr;
+      if (k == 3)
+        ocr = gmlkit.ocr(clipImg, 'zh');
+      else {
+        let scaleimg = images.scale(clipImg, k, k, 'CUBIC');
+        ocr = gmlkit.ocr(scaleimg, 'zh');
+        scaleimg.recycle();
       }
-      clipimg.recycle();
+      ocr = ocr.toArray(3).toArray();
+      if (ocr.length == 0)
+        continue;
+      let rightBottom = ocr.reduce((a, b) => {
+        let t = a.bounds.bottom - b.bounds.bottom;
+        if (Math.abs(t) < 10)
+          return a.bounds.right > b.bounds.right ? a : b;
+        return t > 0 ? a : b;
+      });
+      let name = rightBottom.text.replace(/[一\s\-·,]/g, '');
+      if (name.length < 2 && !specialNameReg.test(name))
+        continue;
+      nikkes.push({
+        name: name,
+        bounds: con,
+        scale: k == 3 ? 1 : k,
+        confidence: rightBottom.confidence
+      })
+      break;
     }
+    clipImg.recycle();
+  }
   return nikkes;
 }

@@ -934,7 +934,10 @@ function 强化装备() {
     sleep(1000);
     let lastNikke = null;
     for (let page = 0; page < 10; ++page) {
-      let nikkes = detectNikkes(captureScreen(), [0, upperBound]);
+      let nikkes = detectNikkes(captureScreen(), {
+        region: [0, upperBound]
+      });
+      console.info(`当前页面：${nikkes.map(x => x.name).join('、')}`);
       if (nikkes[nikkes.length - 1].name == lastNikke)
         break;
       lastNikke = nikkes[nikkes.length - 1].name;
@@ -959,7 +962,7 @@ function 强化装备() {
     clickRect(ocrUntilFound(res => res.find(e => e.text == '大厅'), 30, 1000));
     return;
   }
-  clickRect(target, 0.01);
+  clickRect(target, 0.5);
   ocrUntilFound(res => res.text.match(/(STATUS|体力|攻击|返回)/), 30, 1000);
   // 点击指定装备
   clickRect({ bounds: listEquip()[targetEquip] });

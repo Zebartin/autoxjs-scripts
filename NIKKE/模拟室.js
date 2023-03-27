@@ -71,7 +71,10 @@ function 模拟室(fromIndex) {
   let tryDiff = (Math.floor(tryDiffArea / 3) + 3).toString();
   let tryArea = tryDiffArea % 3;
   if (fromIndex) {
-    clickRect(ocrUntilFound(res => res.find(e => e.text == '方舟'), 30, 1000));
+    clickRect(ocrUntilFound((res, img) => res.find(e =>
+      e.text.includes('方舟') && e.bounds != null &&
+      e.bounds.bottom > img.height / 2
+    ), 30, 1000));
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('模拟室')), 30, 1000));
     sleep(2000);
   }
@@ -851,9 +854,20 @@ function teamUp(status) {
     return;
   // 找空位
   const emptyImage = images.read("./images/simEmpty.jpg");
+  let [emptyUpperBound, emptyLowerBound] = ocrUntilFound((res, img) => {
+    let u = res.find(e =>
+      e.text.includes('室') && e.bounds != null &&
+      e.bounds.bottom > img.height / 2
+    );
+    let l = res.find(e => e.text.match(/(资讯|入战)/) != null);
+    if (!u || !l)
+      return null;
+    return [u.bounds.bottom, l.bounds.top];
+  }, 30, 700);
   let teamEmpty = findImageByFeature(captureScreen(), emptyImage, {
     threshold: 0.7,
-    region: [0, height * 0.6]
+    minMatchCount: 15,
+    region: [0, emptyUpperBound, width, emptyLowerBound - emptyUpperBound]
   });
   emptyImage.recycle();
   if (teamEmpty == null) {
@@ -861,7 +875,7 @@ function teamUp(status) {
     status.team = [];
     return;
   }
-  log(`开始模拟室编队：${status.team}`);
+  log(`开始模拟室编队：${status.team.join('、')}`);
   clickRect(teamEmpty);
   let [upperBound, lowerBound, allBtn, saveBtn] = ocrUntilFound(res => {
     let upper = res.find(e => e.text.match(/[可以变更编队]{3}/) != null);
@@ -893,16 +907,17 @@ function teamUp(status) {
     for (let page = 0; page < 10; ++page) {
       let bottomY = 0;
       let lastPage = false;
-      let nikkes = detectNikkes(captureScreen(), [0, upperBound, width, lowerBound - upperBound]);
-      console.info(nikkes);
+      let nikkes = detectNikkes(captureScreen(), {
+        region: [0, upperBound, width, lowerBound - upperBound]
+      });
+      console.info(`当前页面：${nikkes.map(x => x.name).join('、')}`);
       for (let n of nikkes) {
         if (n.name == lastNikke)
           lastPage = true;
         bottomY = Math.max(bottomY, n.bounds.bottom);
         let t = mostSimilar(n.name, teamClone);
-        console.info(t);
         if (t.similarity > 0.5) {
-          clickRect(n, 0.01);
+          clickRect(n, 0.5);
           teamClone.splice(teamClone.findIndex(x => x == t.result), 1);
         }
         if (teamClone.length == 0)
@@ -930,11 +945,13 @@ function teamUp(status) {
   // 5. 刷新清空选择
   clickRect(refreshBtn);
   // 6. 按队伍顺序逐一选择
-  let nikkes = detectNikkes(captureScreen(), [0, upperBound, width, lowerBound - upperBound]).slice(0, 5);
+  let nikkes = detectNikkes(captureScreen(), {
+    region: [0, upperBound, width, lowerBound - upperBound]
+  }).slice(0, 5);
   nikkes = Object.fromEntries(nikkes.map(x => [x.name, x]));
   for (let i of status.team) {
     let t = mostSimilar(i, Object.keys(nikkes));
-    clickRect(nikkes[t.result], 0.01);
+    clickRect(nikkes[t.result], 0.5);
   }
   clickRect(saveBtn);
   status.team = [];

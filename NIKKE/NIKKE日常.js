@@ -97,7 +97,18 @@ function 商店() {
   let buyGood = (good) => {
     toastLog(`购买${good.text}`);
     clickRect(good, 0.5);
-    clickRect(ocrUntilFound(res => res.find(e => e.text == '购买'), 30, 1000));
+    let [buyBtn, costGem] = ocrUntilFound(res => {
+      let t = res.find(e => e.text == '购买');
+      if (!t)
+        return null;
+      return [t, res.text.match(/(珠宝|招募|优先|扣除)/) != null];
+    }, 30, 1000);
+    if (costGem) {
+      log('消耗珠宝，放弃购买');
+      back();
+      return;
+    }
+    clickRect(buyBtn);
     let affordable = true;
     ocrUntilFound(res => {
       if (res.find(e => e.text.match(/不足.?$/) != null)) {
@@ -121,13 +132,18 @@ function 商店() {
   };
   let buyFree = () => {
     let freeGood = ocrUntilFound(res => res.find(e => e.text.match(/(100%|s[oq0]l[od0] [oq0]ut)/i) != null), 10, 300);
-    if (freeGood != null && freeGood.text.includes('100%')) {
+    let hasFree = (freeGood != null && freeGood.text.includes('100%'));
+    if (hasFree) {
       freeGood.text = '免费商品';
       buyGood(freeGood);
-      return true;
+    } else
+      toastLog('免费商品已售');
+    if (NIKKEstorage.get('buyCoreDust', false)) {
+      let coreDust = ocrUntilFound(res => res.find(e => e.text.match(/芯尘盒/) != null), 10, 300);
+      if (coreDust != null)
+        buyGood(coreDust);
     }
-    toastLog('免费商品已售');
-    return false;
+    return hasFree;
   };
   clickRect(ocrUntilFound(res => res.find(e => e.text == '商店'), 30, 1000));
   toastLog('进入商店');
@@ -392,7 +408,10 @@ function 好友() {
   back();
 }
 function 爬塔() {
-  clickRect(ocrUntilFound(res => res.find(e => e.text == '方舟'), 30, 1000));
+  clickRect(ocrUntilFound((res, img) => res.find(e =>
+    e.text.includes('方舟') && e.bounds != null &&
+    e.bounds.bottom > img.height / 2
+  ), 30, 1000));
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('无限之塔')), 30, 1000));
   toastLog('进入无限之塔');
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('正常开启')), 30, 1000));
@@ -475,11 +494,11 @@ function getIntoNextTower() {
 function 新人竞技场(rookieTarget) {
   if (rookieTarget == 0)
     return;
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('ROOKIE')), 30, 1000));
+  clickRect(ocrUntilFound(res => res.find(e => e.text.match(/R[OD][OD]K.E/) != null), 30, 1000));
   toastLog('进入新人竞技场');
   const targetFight = ocrUntilFound(res => {
     if (res.text.match(/(入战|群组|更新|目录)/) == null) {
-      let rookie = res.find(e => e.text.includes('ROOKIE'));
+      let rookie = res.find(e => e.text.match(/R[OD][OD]K.E/) != null);
       if (rookie)
         clickRect(rookie, 1, 0);
       return null;
@@ -522,7 +541,10 @@ function 新人竞技场(rookieTarget) {
 }
 
 function 竞技场() {
-  clickRect(ocrUntilFound(res => res.find(e => e.text == '方舟'), 30, 1000));
+  clickRect(ocrUntilFound((res, img) => res.find(e =>
+    e.text.includes('方舟') && e.bounds != null &&
+    e.bounds.bottom > img.height / 2
+  ), 30, 1000));
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('技场')), 30, 1000));
   新人竞技场(NIKKEstorage.get('rookieArenaTarget', 1));
 
@@ -928,7 +950,10 @@ function 强化装备() {
     sleep(1000);
     let lastNikke = null;
     for (let page = 0; page < 10; ++page) {
-      let nikkes = detectNikkes(captureScreen(), [0, upperBound]);
+      let nikkes = detectNikkes(captureScreen(), {
+        region: [0, upperBound]
+      });
+      console.info(`当前页面：${nikkes.map(x => x.name).join('、')}`);
       if (nikkes[nikkes.length - 1].name == lastNikke)
         break;
       lastNikke = nikkes[nikkes.length - 1].name;
@@ -953,7 +978,7 @@ function 强化装备() {
     clickRect(ocrUntilFound(res => res.find(e => e.text == '大厅'), 30, 1000));
     return;
   }
-  clickRect(target, 0.01);
+  clickRect(target, 0.5);
   ocrUntilFound(res => res.text.match(/(STATUS|体力|攻击|返回)/), 30, 1000);
   // 点击指定装备
   clickRect({ bounds: listEquip()[targetEquip] });
@@ -1037,16 +1062,20 @@ function 每日任务() {
   }
   clickRect(ocrUntilFound(res => {
     let ret = res.find(e => e.text.includes('每日') && !e.text.includes('周'));
-    if (ret != null)
-      ret.bounds.left += ret.bounds.width() / 2;
+    ret.bounds.left += ret.bounds.width() / 2;
     return ret;
   }, 30, 600));
-  let getAllBtn = ocrUntilFound(res => res.find(e => e.text.startsWith('全')), 30, 500);
+  let getAllBtn = ocrUntilFound(res => {
+    if (!res.text.includes('DA'))
+      return null;
+    return res.find(e => e.text.startsWith('全'));
+  }, 30, 500);
   ocrUntilFound((res, img) => {
     if (res.text.includes('全')) {
       let c = colors.toString(img.pixel(getAllBtn.bounds.left, getAllBtn.bounds.top));
       let t = res.find(e =>
-        e.text.includes('周') && !e.text.includes('每日')
+        e.text.endsWith('周任务') &&
+        !e.text.includes('每日')
       );
       if (!colors.isSimilar('#1aaff7', c, 75) && t != null) {
         clickRect(t, 1, 0);
@@ -1059,7 +1088,10 @@ function 每日任务() {
   ocrUntilFound((res, img) => {
     if (res.text.includes('全') && res.text.includes('WEEK')) {
       let c = colors.toString(img.pixel(getAllBtn.bounds.left, getAllBtn.bounds.top));
-      let t = res.find(e => e.text.includes('成就'));
+      let t = res.find(e =>
+        e.text.includes('成就') &&
+        !e.text.includes('任务')
+      );
       if (!colors.isSimilar('#1aaff7', c, 75) && t != null) {
         clickRect(t, 1, 0);
         return true;

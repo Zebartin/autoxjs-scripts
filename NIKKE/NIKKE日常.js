@@ -1061,8 +1061,9 @@ function 每日任务() {
     return;
   }
   clickRect(ocrUntilFound(res => {
-    let ret = res.find(e => e.text.includes('每日') && !e.text.includes('周'));
-    ret.bounds.left += ret.bounds.width() / 2;
+    let ret = res.find(e => e.text.endsWith('每日任务'));
+    if (ret != null)
+      ret.bounds.left += ret.bounds.width() / 2;
     return ret;
   }, 30, 600));
   let getAllBtn = ocrUntilFound(res => {

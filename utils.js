@@ -34,6 +34,11 @@ function getOcrRes() {
 
 function getDisplaySize(doNotForcePortrait) {
   let { width, height } = device;
+  if (width == 0) {
+    let metrics = context.getResources().getDisplayMetrics();
+    width = metrics.widthPixels;
+    height = metrics.heightPixels;
+  }
   if (doNotForcePortrait)
     return [width, height]
   return [

@@ -392,7 +392,10 @@ function 好友() {
   back();
 }
 function 爬塔() {
-  clickRect(ocrUntilFound(res => res.find(e => e.text == '方舟'), 30, 1000));
+  clickRect(ocrUntilFound((res, img) => res.find(e =>
+    e.text.includes('方舟') && e.bounds != null &&
+    e.bounds.bottom > img.height / 2
+  ), 30, 1000));
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('无限之塔')), 30, 1000));
   toastLog('进入无限之塔');
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('正常开启')), 30, 1000));
@@ -475,11 +478,11 @@ function getIntoNextTower() {
 function 新人竞技场(rookieTarget) {
   if (rookieTarget == 0)
     return;
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('ROOKIE')), 30, 1000));
+  clickRect(ocrUntilFound(res => res.find(e => e.text.match(/R[OD][OD]K.E/) != null), 30, 1000));
   toastLog('进入新人竞技场');
   const targetFight = ocrUntilFound(res => {
     if (res.text.match(/(入战|群组|更新|目录)/) == null) {
-      let rookie = res.find(e => e.text.includes('ROOKIE'));
+      let rookie = res.find(e => e.text.match(/R[OD][OD]K.E/) != null);
       if (rookie)
         clickRect(rookie, 1, 0);
       return null;
@@ -522,7 +525,10 @@ function 新人竞技场(rookieTarget) {
 }
 
 function 竞技场() {
-  clickRect(ocrUntilFound(res => res.find(e => e.text == '方舟'), 30, 1000));
+  clickRect(ocrUntilFound((res, img) => res.find(e =>
+    e.text.includes('方舟') && e.bounds != null &&
+    e.bounds.bottom > img.height / 2
+  ), 30, 1000));
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('技场')), 30, 1000));
   新人竞技场(NIKKEstorage.get('rookieArenaTarget', 1));
 
@@ -1022,16 +1028,22 @@ function 每日任务() {
     return;
   }
   clickRect(ocrUntilFound(res => {
-    let ret = res.find(e => e.text.includes('每日') && !e.text.includes('周'));
-    ret.bounds.left += ret.bounds.width() / 2;
+    let ret = res.find(e => e.text.endsWith('每日任务'));
+    if (ret != null)
+      ret.bounds.left += ret.bounds.width() / 2;
     return ret;
   }, 30, 600));
-  let getAllBtn = ocrUntilFound(res => res.find(e => e.text.startsWith('全')), 30, 500);
+  let getAllBtn = ocrUntilFound(res => {
+    if (!res.text.includes('DA'))
+      return null;
+    return res.find(e => e.text.startsWith('全'));
+  }, 30, 500);
   ocrUntilFound((res, img) => {
     if (res.text.includes('全')) {
       let c = colors.toString(img.pixel(getAllBtn.bounds.left, getAllBtn.bounds.top));
       let t = res.find(e =>
-        e.text.includes('周') && !e.text.includes('每日')
+        e.text.endsWith('周任务') &&
+        !e.text.includes('每日')
       );
       if (!colors.isSimilar('#1aaff7', c, 75) && t != null) {
         clickRect(t, 1, 0);
@@ -1044,7 +1056,10 @@ function 每日任务() {
   ocrUntilFound((res, img) => {
     if (res.text.includes('全') && res.text.includes('WEEK')) {
       let c = colors.toString(img.pixel(getAllBtn.bounds.left, getAllBtn.bounds.top));
-      let t = res.find(e => e.text.includes('成就'));
+      let t = res.find(e =>
+        e.text.includes('成就') &&
+        !e.text.includes('任务')
+      );
       if (!colors.isSimilar('#1aaff7', c, 75) && t != null) {
         clickRect(t, 1, 0);
         return true;

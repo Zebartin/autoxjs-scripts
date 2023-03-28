@@ -103,7 +103,7 @@ function 商店() {
         return null;
       return [t, res.text.match(/(珠宝|招募|优先|扣除)/) != null];
     }, 30, 1000);
-    if (costGem) {
+    if (costGem && good.text != '免费商品') {
       log('消耗珠宝，放弃购买');
       back();
       return;

@@ -372,7 +372,7 @@ function detectNikkes(originalImg, options) {
     let w = Math.floor(con.width() / 4);
     let h = Math.floor(con.height() / 5);
     let clipImg = images.clip(originalImg, con.left + w, con.top + h * 4, w * 3, h);
-    // images.save(clipimg, `./images/nikkerror/${con.left}_${con.top}.jpg`);
+    // images.save(clipImg, `./images/nikkerror/${con.left}_${con.top}.jpg`);
     for (let k = 3; k <= 16; ++k) {
       let ocr;
       if (k == 3)
@@ -391,7 +391,7 @@ function detectNikkes(originalImg, options) {
           return a.bounds.right > b.bounds.right ? a : b;
         return t > 0 ? a : b;
       });
-      let name = rightBottom.text.replace(/[一\s\-·,]/g, '');
+      let name = rightBottom.text.replace(/([一\s\-·,]|[：:]$|^[G])/g, '');
       if (name.length < 2 && !specialNameReg.test(name))
         continue;
       nikkes.push({
@@ -404,5 +404,6 @@ function detectNikkes(originalImg, options) {
     }
     clipImg.recycle();
   }
+  console.info(`当前页面：${nikkes.map(x => x.name).join('、')}`);
   return nikkes;
 }

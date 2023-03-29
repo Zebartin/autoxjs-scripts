@@ -560,7 +560,7 @@ function doWithOption(option, status) {
       return true;
     clickRect(option, 1, 0);
     return null;
-  }, 3, 2000);
+  }, 10, 2000);
   teamUp(status);
   let quickFight = null;
   if (option.type == 'normal') {
@@ -883,15 +883,16 @@ function teamUp(status) {
   clickRect(teamEmpty);
   let [upperBound, lowerBound, allBtn, saveBtn] = ocrUntilFound(res => {
     let upper = res.find(e => e.text.match(/[可以变更编队]{3}/) != null);
-    let lower = res.find(e => e.text.includes('返回'));
     let allBtn = res.find(e => e.text == 'ALL');
     let save = res.find(e => e.text.includes('储存'));
-    if (!upper || !lower || !allBtn || !save) {
+    if (!upper || !allBtn || !save) {
       sleep(500);
       return null;
     }
-    return [upper.bounds.bottom, lower.bounds.top, allBtn, save];
+    return [upper.bounds.bottom, save.bounds.top, allBtn, save];
   }, 30, 600);
+  // 缩小ALL按钮范围
+  allBtn.bounds.left += allBtn.bounds.width() * 0.8;
   const refreshImage = images.read("./images/simRefresh.jpg");
   let refreshBtn = findImageByFeature(captureScreen(), refreshImage, {
     threshold: 0.7,
@@ -914,7 +915,6 @@ function teamUp(status) {
       let nikkes = detectNikkes(captureScreen(), {
         region: [0, upperBound, width, lowerBound - upperBound]
       });
-      console.info(`当前页面：${nikkes.map(x => x.name).join('、')}`);
       for (let n of nikkes) {
         if (n.name == lastNikke)
           lastPage = true;
@@ -934,6 +934,8 @@ function teamUp(status) {
       swipe(100, bottomY, width / 2, bottomY, 500);
       sleep(500);
     }
+    // 打乱排版，以期识别结果有变化
+    clickRect(allBtn);
   }
   if (teamClone.length > 0) {
     log(`没有找到以下妮姬：${teamClone}，放弃组队`);
@@ -949,13 +951,31 @@ function teamUp(status) {
   // 5. 刷新清空选择
   clickRect(refreshBtn);
   // 6. 按队伍顺序逐一选择
-  let nikkes = detectNikkes(captureScreen(), {
-    region: [0, upperBound, width, lowerBound - upperBound]
-  }).slice(0, 5);
-  nikkes = Object.fromEntries(nikkes.map(x => [x.name, x]));
-  for (let i of status.team) {
-    let t = mostSimilar(i, Object.keys(nikkes));
-    clickRect(nikkes[t.result], 0.5);
+  let teamIndex = 0;
+  while (teamIndex < status.team.length) {
+    for (let i = 0; i < 3; ++i)
+      swipe(width / 2, (upperBound + lowerBound) / 2, width / 2, lowerBound, 300);
+    sleep(500);
+    for (let page = 0; page < 2 && teamIndex < status.team.length; ++page) {
+      let nikkes = detectNikkes(captureScreen(), {
+        region: [0, upperBound, width, lowerBound - upperBound]
+      });
+      let bottomY = nikkes.map(x => x.bounds.bottom).reduce((a, b) => a > b ? a : b);
+      nikkes = Object.fromEntries(nikkes.map(x => [x.name, x]));
+      while (teamIndex < status.team.length) {
+        let t = mostSimilar(status.team[teamIndex], Object.keys(nikkes));
+        if (t.similarity >= 0.5) {
+          clickRect(nikkes[t.result], 0.5);
+          teamIndex++;
+        } else
+          break;
+      }
+      if (page == 1 || teamIndex == status.team.length)
+        continue;
+      swipe(width / 2, bottomY, width / 2, upperBound, 1000);
+      swipe(100, bottomY, width / 2, bottomY, 500);
+      sleep(500);
+    }
   }
   clickRect(saveBtn);
   status.team = [];

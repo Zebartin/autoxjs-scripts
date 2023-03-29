@@ -390,7 +390,7 @@ function 好友() {
   ocrUntilFound(res => {
     if (res.text.match(/(ID|日期|代表|进度)/) != null)
       return true;
-    clickRect(someFriend);
+    clickRect(someFriend, 1, 0);
     return false;
   }, 30, 500);
   sleep(500);
@@ -846,7 +846,7 @@ function 社交点数招募() {
   let socialPage = ocrUntilFound(res => {
     if (res.text.match(/[杜社]交点数/))
       return true;
-    swipe(width * 0.1, height / 2, width * 0.9, height / 2, 500);
+    swipe(width * 0.3, height / 2, width * 0.7, height / 2, 500);
     return false;
   }, 30, 1000);
   if (socialPage != true) {
@@ -953,7 +953,6 @@ function 强化装备() {
       let nikkes = detectNikkes(captureScreen(), {
         region: [0, upperBound]
       });
-      console.info(`当前页面：${nikkes.map(x => x.name).join('、')}`);
       if (nikkes[nikkes.length - 1].name == lastNikke)
         break;
       lastNikke = nikkes[nikkes.length - 1].name;

@@ -68,7 +68,7 @@ AutoX.js在初版Auto.js（现为[Auto.js Pro](https://pro.autojs.org/)）的基
 - 赠送一次友情点；
 - 刷完新人竞技场免费次数，尝试领取特殊竞技场奖励；
 - 尝试企业塔；
-- 消耗所有咨询次数，依次咨询列表上的对象（建议事先设置好特殊关照对象）。具体可咨询的妮姬可以参考`nikke.json`或者[GAMEKEE NIKKE wiki页面](https://nikke.gamekee.com/575965.html)，前者是从后者生成而来的；
+- 消耗所有咨询次数，依次咨询列表上的对象（建议事先设置好特殊关照对象）。具体可咨询的妮姬可以参考`nikke.json`文件内容或者[GAMEKEE NIKKE wiki页面](https://nikke.gamekee.com/575965.html)和[繁中服玩家整理的Google表格](https://docs.google.com/spreadsheets/d/1K_oGZWL4uvuqYM9JL2l5Kb-L0IXIuyrDI347b6rurho/edit#gid=161504329)。在此感谢相关攻略组和玩家的悉心整理；
 - 反复刷取模拟室3A，目标是刷满特定的SSR级增益效果（无视形状），之后尝试选定难度的模拟室直到成功，可选3B~5C；
 - 完成其他每日任务，包括一次社交点数招募和一次装备强化，后者会选择强化材料的第一个进行消耗。二者完成后领取每日任务、周任务和成就奖励。
 

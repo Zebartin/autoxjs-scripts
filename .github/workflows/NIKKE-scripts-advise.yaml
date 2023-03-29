@@ -25,7 +25,7 @@ jobs:
       working-directory: ./NIKKE/tools/
     - name: Run python script
       run: |
-        python fetch_answers.py {{secrets.GOOGLE_API_KEY}}
+        python fetch_answers.py ${{ secrets.GOOGLE_API_KEY }}
       working-directory: ./NIKKE/tools/
     - name: Commit nikke.json file if changed
       uses: stefanzweifel/git-auto-commit-action@v4

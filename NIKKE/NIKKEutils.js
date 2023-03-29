@@ -92,6 +92,7 @@ function 等待NIKKE加载() {
   if (ocrUntilFound(res => res.text.match(/(大厅|方舟|物品栏)/), 3, 300) != null)
     return;
   let [width, height] = getDisplaySize();
+  let manuallyEnter = false;
   if (ocrUntilFound(res => {
     toast('等待加载……');
     if (res.text.includes('今日不再')) {
@@ -112,9 +113,15 @@ function 等待NIKKE加载() {
     }
     else if (res.text.match(/(登出|T.UCH|C.NT.NUE)/) != null)
       return true;
+    else if (res.text.match(/(大厅|方舟|物品栏)/) != null) {
+      manuallyEnter = true;
+      return true;
+    }
     return false;
   }, 60, 5000) == null)
     throw new Error('游戏似乎一直在加载');
+  if (manuallyEnter)
+    return;
   click(width / 2, height / 2);
   sleep(1000);
   // 等待游戏内公告出现，并处理月卡

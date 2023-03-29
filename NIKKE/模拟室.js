@@ -892,6 +892,8 @@ function teamUp(status) {
     }
     return [upper.bounds.bottom, lower.bounds.top, allBtn, save];
   }, 30, 600);
+  // 缩小ALL按钮范围
+  allBtn.bounds.left += allBtn.bounds.width() * 0.8;
   const refreshImage = images.read("./images/simRefresh.jpg");
   let refreshBtn = findImageByFeature(captureScreen(), refreshImage, {
     threshold: 0.7,

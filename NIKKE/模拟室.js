@@ -552,9 +552,13 @@ function doWithOption(option, status) {
     return;
   }
   ocrUntilFound(res => {
+    if (res.text.includes('射程')) {
+      back();
+      return null;
+    }
     if (res.text.includes('入战'))
       return true;
-    clickRect(option);
+    clickRect(option, 1, 0);
     return null;
   }, 3, 2000);
   teamUp(status);

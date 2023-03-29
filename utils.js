@@ -220,7 +220,13 @@ function findImageByFeature(trainImg, queryImg, options) {
     pts.put(2, 0, doubleArr);
     doubleArr[1] = 0;
     pts.put(3, 0, doubleArr);
-    Core.perspectiveTransform(pts, dst, homoMat);
+    try {
+      Core.perspectiveTransform(pts, dst, homoMat);
+    } catch (error) {
+      log(error);
+      beforeReturn();
+      return null;
+    }
     // 6、从dst中获得投影点，并转化为Rect
     let ptsArr = [];
     for (let i = 0; i < dst.rows(); ++i) {

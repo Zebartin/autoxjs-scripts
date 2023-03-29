@@ -391,7 +391,7 @@ function detectNikkes(originalImg, options) {
           return a.bounds.right > b.bounds.right ? a : b;
         return t > 0 ? a : b;
       });
-      let name = rightBottom.text.replace(/[一\s\-·,]/g, '');
+      let name = rightBottom.text.replace(/([一\s\-·,]|[：:]$)/g, '');
       if (name.length < 2 && !specialNameReg.test(name))
         continue;
       nikkes.push({

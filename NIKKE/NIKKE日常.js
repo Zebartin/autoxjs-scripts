@@ -390,7 +390,7 @@ function 好友() {
   ocrUntilFound(res => {
     if (res.text.match(/(ID|日期|代表|进度)/) != null)
       return true;
-    clickRect(someFriend);
+    clickRect(someFriend, 1, 0);
     return false;
   }, 30, 500);
   sleep(500);

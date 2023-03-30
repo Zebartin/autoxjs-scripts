@@ -200,12 +200,12 @@ ui.layout(
           <checkbox id="exitGame" w="0" layout_weight="2" />
         </horizontal>
         <horizontal margin="10 2" gravity="center_vertical" weightSum="10" h="0" layout_weight="1">
-          <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">等待每日签到出现</text>
-          <checkbox id="checkDailyLogin" w="0" layout_weight="2" />
-        </horizontal>
-        <horizontal margin="10 2" gravity="center_vertical" weightSum="10" h="0" layout_weight="1">
           <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">v2rayNG魔法</text>
           <checkbox id="v2rayNG" w="0" layout_weight="2" />
+        </horizontal>
+        <horizontal margin="10 2" gravity="center_vertical|left" weightSum="10" h="0" layout_weight="1">
+          <text id="checkDailyLoginText" textSize="16sp" textColor="#222222" w="0" layout_weight="6">不等待每日签到出现</text>
+          <seekbar id="checkDailyLogin" w="0" layout_weight="4" />
         </horizontal>
         <horizontal margin="10 2" gravity="center_vertical|left" weightSum="10" h="0" layout_weight="1">
           <text id="maxRetryText" textSize="16sp" textColor="#222222" w="0" layout_weight="6">脚本出错时不重试</text>
@@ -373,9 +373,21 @@ ui.equipEnhanceSlot.setProgress(dailyMission.equipEnhanceSlot || 0);
 
 for (let generalOption of [
   'mute', 'alreadyInGame', 'checkUpdateAuto',
-  'checkSale', 'exitGame', 'checkDailyLogin', 'v2rayNG'
+  'checkSale', 'exitGame', 'v2rayNG'
 ])
   ui.findView(generalOption).setChecked(NIKKEstorage.get(generalOption, false));
+ui.checkDailyLogin.setOnSeekBarChangeListener({
+  onProgressChanged: function (seekbar, p, fromUser) {
+    if (p == 0)
+      ui.checkDailyLoginText.setText('不等待每日签到出现');
+    else
+      ui.checkDailyLoginText.setText(`检查${p}次每日签到`);
+  }
+});
+ui.checkDailyLogin.setMin(0);
+ui.checkDailyLogin.setMax(2);
+// 兼容老版本，+号将boolean转为整数值
+ui.checkDailyLogin.setProgress(+NIKKEstorage.get('checkDailyLogin', 1));
 ui.maxRetry.setOnSeekBarChangeListener({
   onProgressChanged: function (seekbar, p, fromUser) {
     let s = '脚本出错时';
@@ -457,9 +469,10 @@ ui.save.on("click", function () {
 
   for (let generalOption of [
     'mute', 'alreadyInGame', 'checkUpdateAuto',
-    'checkSale', 'exitGame', 'checkDailyLogin', 'v2rayNG'
+    'checkSale', 'exitGame', 'v2rayNG'
   ])
     NIKKEstorage.put(generalOption, ui.findView(generalOption).isChecked());
+  NIKKEstorage.put('checkDailyLogin', ui.checkDailyLogin.getProgress());
   NIKKEstorage.put('maxRetry', ui.maxRetry.getProgress());
 
   ui.finish();

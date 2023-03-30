@@ -185,24 +185,57 @@ function 返回首页() {
 
 function 等待每日签到() {
   let NIKKEstorage = storages.create("NIKKEconfig");
-  if (NIKKEstorage.get('checkDailyLogin', true) == false)
+  let checkDailyLogin = +NIKKEstorage.get('checkDailyLogin', 1);
+  if (checkDailyLogin == 0)
     return;
   // 检查是否有每天签到
   let today = NikkeToday();
   let lastChecked = NIKKEstorage.get('dailyLogin', null);
   if (today == lastChecked) {
     log('今日已登录，不检查签到奖励');
-  } else {
-    NIKKEstorage.put('dailyLogin', today);
-    if (ocrUntilFound(res => {
+    return;
+  }
+  NIKKEstorage.put('dailyLogin', today);
+  for (let i = 0; i < checkDailyLogin; ++i) {
+    log(`等待第${i + 1}个每日签到`);
+    let checkRes = ocrUntilFound(res => {
       toast('正在等待每日签到出现，请勿操作');
-      return res.text.match(/\d+(小时|天|分钟)/);
-    }, 4, 5000) == null)
+      let check = res.text.match(/\d+(小时|天|分钟)/);
+      let receive = res.filter(e =>
+        e.text.match(/[领領]取/) != null &&
+        e.bounds != null
+      ).toArray();
+      if (receive.length > 0)
+        receive = receive.reduce((prev, curr) =>
+          prev.bounds.top > curr.bounds.top ? prev : curr
+        );
+      else
+        receive = null;
+      if (!check)
+        return null;
+      return [check, receive];
+    }, 4, 3000);
+    if (checkRes == null) {
       log('没有出现签到奖励');
-    else {
-      back();   // 每次的登录奖励ui都不一样，不处理直接返回
-      toastLog('关闭签到奖励');
+      continue;
     }
+    let receiveBtn = checkRes[1];
+    if (receiveBtn == null)
+      toastLog('没有找到“领取”字样');
+    else {
+      if (receiveBtn.text.match(/[已巳己]/) != null)
+        toastLog('登录奖励已被领取');
+      else {
+        toastLog('领取登录奖励');
+        clickRect(receiveBtn);
+        let clickBtn = ocrUntilFound(res => res.find(e => e.text.includes('点击')), 10, 1000, { maxScale: 4 });
+        if (clickBtn != null)
+          clickRect(clickBtn);
+        sleep(1000);
+      }
+    }
+    back();
+    toastLog('关闭签到奖励');
   }
 }
 

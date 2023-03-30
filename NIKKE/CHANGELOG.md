@@ -1,12 +1,9 @@
 修复以下问题：
 
-- 模拟室误点；
-- 修改妮姬识别算法；
-- 其他细节问题。
+- 由于游戏UI变动，模拟室检查高难是否完成时误认为已完成。
 
 新增功能：
 
-- 商店购买芯尘盒；
-- 补充饼干相关咨询文本。
+- 选择每日签到的检查次数。
 
 具体使用方式详见[README](https://github.com/Zebartin/autoxjs-scripts/blob/master/NIKKE/README.md)。

@@ -313,7 +313,7 @@ function clickIntoDiffArea(diff, area, checkFinished) {
     let finishedText = ocrUntilFound(res => res.find(e =>
       e.bounds != null && e.bounds.top >= areaChoice.bounds.bottom &&
       e.bounds.bottom <= startBtn.bounds.top &&
-      e.text.match(/[该地区已通关。重置后可获得奖励]/) != null
+      e.text.match(/[该地区已通关重置后可获得奖励]{3,}/) != null
     ), 3, 300);
     back();
     ocrUntilFound(res => res.text.includes('开始'), 30, 1000);
@@ -905,8 +905,9 @@ function teamUp(status) {
   clickRect(refreshBtn);
   // 2. 识别每页妮姬，选中目标
   for (let retry = 0; teamClone.length > 0 && retry < 3; ++retry) {
-    for (let i = 0; i < 7; ++i)
-      swipe(width / 2, (upperBound + lowerBound) / 2, width / 2, lowerBound, 300);
+    if (retry != 0)
+      for (let i = 0; i < 7; ++i)
+        swipe(width / 2, (upperBound + lowerBound) / 2, width / 2, lowerBound, 300);
     sleep(1000);
     let lastNikke = null;
     for (let page = 0; page < 10; ++page) {
@@ -935,14 +936,13 @@ function teamUp(status) {
       sleep(500);
     }
     // 打乱排版，以期识别结果有变化
+    // 3. 点击ALL，刷新顺序，使选中对象排到最上
     clickRect(allBtn);
   }
   if (teamClone.length > 0) {
     log(`没有找到以下妮姬：${teamClone}，放弃组队`);
     throw new Error('模拟室自动编队失败');
   }
-  // 3. 点击ALL，刷新顺序，使选中对象排到最上
-  clickRect(allBtn);
   sleep(1000);
   // 4. 拉到最上
   for (let i = 0; i < 7; ++i)

@@ -303,7 +303,7 @@ function findContoursRect(img, options) {
       ));
       // Imgproc.rectangle(threImgMat, Point(rect.x, rect.y), Point(rect.x + rect.width, rect.y + rect.height), Scalar(150), 3);
     }
-    // images.save(images.matToImage(threImgMat), `./images/nikkerror/${Date.now()}.jpg`);
+    // images.save(images.matToImage(threImgMat), `./images/nikkerror/${thresh}_${Date.now()}.jpg`);
   }
   threImg.recycle();
   grayImg.recycle();

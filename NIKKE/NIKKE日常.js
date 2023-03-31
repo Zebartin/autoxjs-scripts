@@ -413,23 +413,34 @@ function 爬塔() {
     e.bounds.bottom > img.height / 2
   ), 30, 1000));
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('无限之塔')), 30, 1000));
+  ocrUntilFound(res => res.text.includes('开启'), 30, 500);
   toastLog('进入无限之塔');
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('正常开启')), 30, 1000));
-  for (let i = 0; i < 7; ++i) {
-    let successFlag = false;
-    let curTower = getIntoNextTower();
-    if (curTower.match(/[无限]/)) {
-      toastLog('没有下一个塔了');
-      break;
-    }
-    let cnt = ocrUntilFound(res => {
-      let t = res.text.match(/[余关]次[^\d]+(\d)\/3/);
-      if (t != null)
-        return parseInt(t[1]);
-    }, 30, 300);
-    log(`通关次数 ${cnt}/3`);
-    if (cnt == 0)
+  let manufacturerTowers = ocrUntilFound(res => {
+    let ret = res.toArray(3).toArray().filter(e => e.text.match(/(目前|每日)/));
+    if (ret.length < 4)
+      return null;
+    return ret;
+  }, 30, 1000, { maxScale: 3 });
+  for (let tower of manufacturerTowers) {
+    if (tower.text.includes('目前'))
       continue;
+    clickRect(tower);
+    let successFlag = false;
+    let [curTower, cnt] = ocrUntilFound(res => {
+      let tower = res.find(e =>
+        e.text.endsWith('之塔') && e.bounds.top > height / 2
+      );
+      let times = res.text.match(/[余关]次[^\d]+(\d)\/3/);
+      if (!tower || !times)
+        return null;
+      return [tower.text, parseInt(times[1])];
+    }, 20, 1000);
+    toastLog(`${curTower}（${cnt}/3）`);
+    if (cnt == 0) {
+      back();
+      ocrUntilFound(res => res.text.includes('开启'), 30, 1000);
+      continue;
+    }
     sleep(1000);
     click(width / 2, height / 2 - 100);
     toast('点击屏幕中央');
@@ -474,21 +485,10 @@ function 爬塔() {
     // 等待可能出现的限时礼包
     if (successFlag)
       关闭限时礼包();
+    back();
+    ocrUntilFound(res => res.text.includes('开启'), 30, 1000);
   }
   返回首页();
-}
-function getIntoNextTower() {
-  let towerName = ocrUntilFound(res => res.find(
-    e => e.text.endsWith('之塔') && e.bounds.top > height / 2
-  ), 20, 1000);
-  sleep(1000);
-  click(width - 50, towerName.bounds.centerY());
-  sleep(2000);
-  let curTowerName = ocrUntilFound(res => res.find(
-    e => e.text.endsWith('之塔') && e.bounds.top > height / 2
-  ), 20, 1000).text;
-  toastLog(`进入${curTowerName}`);
-  return curTowerName;
 }
 
 function 新人竞技场(rookieTarget) {

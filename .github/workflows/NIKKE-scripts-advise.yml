@@ -2,13 +2,12 @@ name: 获取咨询文本
 
 on: 
   schedule:
-    - cron:  '0 0 */3 * *'
+    - cron:  '0 0 */2 * *'
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/dev'
     steps:
     - uses: actions/checkout@v3
       with:

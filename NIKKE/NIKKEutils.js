@@ -126,9 +126,16 @@ function 等待NIKKE加载() {
   sleep(1000);
   // 等待游戏内公告出现，并处理月卡
   if (ocrUntilFound(res => {
-    if (res.text.includes('公告'))
+    let dontShow = res.find(e => e.text.match(/.{0,4}今日不再/) != null);
+    if (dontShow != null) {
+      clickRect(dontShow, 1, 0);
+      sleep(300);
+      back();
+      return false;
+    }
+    if (res.text.includes('系统公告'))
       return true;
-    if (res.text.match(/(REWARD|30天|点击|奖励)/) != null)
+    if (res.text.match(/(REWARD|点击|奖励)/) != null)
       click(width / 2, height * 0.8);
     return false;
   }, 20, 4000) == null)
@@ -228,10 +235,11 @@ function 等待每日签到() {
       else {
         toastLog('领取登录奖励');
         clickRect(receiveBtn);
-        let clickBtn = ocrUntilFound(res => res.find(e => e.text.includes('点击')), 10, 1000, { maxScale: 4 });
-        if (clickBtn != null)
+        let clickBtn = ocrUntilFound(res => res.find(e => e.text.includes('点击')), 8, 1000, { maxScale: 4 });
+        if (clickBtn != null) {
           clickRect(clickBtn);
-        sleep(1000);
+          sleep(1000);
+        }
       }
     }
     back();

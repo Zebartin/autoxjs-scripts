@@ -334,8 +334,13 @@ function dispatch(bulletin) {
       sleep(500);
     }
   }
-  sleep(600);
-  back();
+  clickRect(bulletin, 1, 0);
+  ocrUntilFound(res => {
+    if (res.text.includes('中心'))
+      return true;
+    clickRect(bulletin, 1, 0);
+    return false;
+  }, 30, 1000);
 }
 
 function 基地收菜(doDailyMission) {

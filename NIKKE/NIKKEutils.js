@@ -160,12 +160,12 @@ function 退出NIKKE() {
 
 function 返回首页() {
   const homeImage = images.read('./images/home.jpg');
-  let [width, height] = getDisplaySize();
   var result = null;
   for (let i = 0; i < 10; ++i) {
-    result = findImageByFeature(captureScreen(), homeImage, {
+    let img = captureScreen();
+    result = findImageByFeature(img, homeImage, {
       threshold: 0.6,
-      region: [0, height * 0.8, width / 2, height * 0.2]
+      region: [0, img.height * 0.8, img.width / 2, img.height * 0.2]
     });
     if (result != null)
       break;

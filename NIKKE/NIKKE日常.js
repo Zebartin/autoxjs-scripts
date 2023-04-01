@@ -1079,17 +1079,18 @@ function 每日任务() {
   ocrUntilFound((res, img) => {
     if (res.text.includes('全')) {
       let c = colors.toString(img.pixel(getAllBtn.bounds.left, getAllBtn.bounds.top));
-      if (!colors.isSimilar('#1aaff7', c, 75))
+      if (!colors.isSimilar('#1aaff7', c, 75)) {
         confirmReceived--;
-      if (confirmReceived > 0)
-        return false;
-      let t = res.find(e =>
-        e.text.endsWith('周任务') &&
-        !e.text.includes('每日')
-      );
-      if (t != null) {
-        clickRect(t, 1, 0);
-        return true;
+        if (confirmReceived > 0)
+          return false;
+        let t = res.find(e =>
+          e.text.endsWith('周任务') &&
+          !e.text.includes('每日')
+        );
+        if (t != null) {
+          clickRect(t, 1, 0);
+          return true;
+        }
       }
     }
     clickRect(getAllBtn, 1, 0);
@@ -1099,17 +1100,18 @@ function 每日任务() {
   ocrUntilFound((res, img) => {
     if (res.text.includes('全') && res.text.includes('WEEK')) {
       let c = colors.toString(img.pixel(getAllBtn.bounds.left, getAllBtn.bounds.top));
-      if (!colors.isSimilar('#1aaff7', c, 75))
+      if (!colors.isSimilar('#1aaff7', c, 75)) {
         confirmReceived--;
-      if (confirmReceived > 0)
-        return false;
-      let t = res.find(e =>
-        e.text.includes('成就') &&
-        !e.text.includes('任务')
-      );
-      if (t != null) {
-        clickRect(t, 1, 0);
-        return true;
+        if (confirmReceived > 0)
+          return false;
+        let t = res.find(e =>
+          e.text.includes('成就') &&
+          !e.text.includes('任务')
+        );
+        if (t != null) {
+          clickRect(t, 1, 0);
+          return true;
+        }
       }
     }
     clickRect(getAllBtn, 1, 0);
@@ -1119,11 +1121,12 @@ function 每日任务() {
   ocrUntilFound((res, img) => {
     if (res.text.includes('全') && res.text.includes('CHA')) {
       let c = colors.toString(img.pixel(getAllBtn.bounds.left, getAllBtn.bounds.top));
-      if (!colors.isSimilar('#1aaff7', c, 75))
+      if (!colors.isSimilar('#1aaff7', c, 75)) {
         confirmReceived--;
-      if (confirmReceived > 0)
-        return false;
-      return true;
+        if (confirmReceived > 0)
+          return false;
+        return true;
+      }
     }
     clickRect(getAllBtn, 1, 0);
     return false;

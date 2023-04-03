@@ -7,12 +7,12 @@ import requests
 from collections import defaultdict
 from bs4 import BeautifulSoup as bs
 
+punctuation_pattern = re.compile(r"[，…？?、!！「」～☆【】。.—{}'\"“”♪\s]")
 def getFromGamekee():
     r = requests.get('https://nikke.gamekee.com/v1/content/detail/575965', headers={
         'game-alias': 'nikke'
     })
     soup = bs(r.json()['data']['content'], 'html.parser')
-    pattern = re.compile(r"[，…？、!！「」～☆【】。.—{}'\"“”♪\s]")
     ret = {}
     person = None
     answers = []
@@ -27,7 +27,7 @@ def getFromGamekee():
         if line.startswith('100'):
             if line.find('AccountData') != -1:
                 continue
-            a = pattern.sub('', line[5:])
+            a = punctuation_pattern.sub('', line[5:])
             if len(a) == 0:
                 continue
             answers.append(a)
@@ -55,7 +55,6 @@ def getFromGoogleSheet(apiKey):
     result = response.json()
     valueRanges = result.get('valueRanges', [])
     # 整理结果
-    punctuation_pattern = re.compile(r"[，…？、!！「」～☆【】。.—{}'\"“”♪\s]")
     excluded_pattern = re.compile(r'[<＜]指挥官名[>＞]')
     if not valueRanges:
         print('No data found.')

@@ -846,7 +846,9 @@ function 单次咨询(advise) {
 function 社交点数招募() {
   if (NikkeToday() == NIKKEstorage.get('dailyMissionRecruit', null))
     return;
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('员招')), 40, 1000));
+  clickRect(ocrUntilFound(res => res.find(e =>
+    e.text.includes('员招') && e.text.match(/[物品栏]/) == null
+  ), 40, 1000));
   ocrUntilFound(res => res.text.match(/(招募\d+|机率)/) != null, 50, 500);
   let socialPage = ocrUntilFound(res => {
     if (res.text.match(/[杜社]交点数/))

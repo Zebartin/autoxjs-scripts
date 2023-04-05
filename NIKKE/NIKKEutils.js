@@ -3,6 +3,7 @@ var {
   requestScreenCaptureAuto, getDisplaySize,
   killApp, findImageByFeature, findContoursRect
 } = require('./utils.js');
+var firstBoot = true;
 if (typeof module === 'undefined') {
   auto.waitFor();
   unlockIfNeed();
@@ -29,8 +30,16 @@ else {
   };
 }
 function 启动NIKKE() {
+  let NIKKEstorage = storages.create("NIKKEconfig");
+  if (firstBoot && NIKKEstorage.get('alreadyInGame', false)) {
+    toastLog('已勾选“游戏已启动”选项\n请确保游戏此时正处于前台画面');
+    firstBoot = false;
+    return;
+  }
+  firstBoot = false;
   unlockIfNeed();
   home();
+  sleep(500);
   // 保证错误截图不要过多
   let maxErr = 20;
   let errorPath = files.path('./images/nikkerror/');
@@ -41,7 +50,6 @@ function 启动NIKKE() {
     for (let f of errorImages.slice(maxErr))
       files.remove(files.join(errorPath, f));
   }
-  let NIKKEstorage = storages.create("NIKKEconfig");
   if (NIKKEstorage.get('mute', false)) {
     try {
       device.setMusicVolume(0);

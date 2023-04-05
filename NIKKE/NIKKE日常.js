@@ -16,7 +16,7 @@ if (typeof module === 'undefined') {
   checkConfig();
   启动NIKKE();
   // 保证申请截屏权限时，屏幕是游戏画面
-  sleep(5000);
+  sleep(1000);
   if (NIKKEstorage.get('alreadyInGame', false) == false) {
     for (let i = 0; i < 3; ++i) {
       toast('脚本等待中...');

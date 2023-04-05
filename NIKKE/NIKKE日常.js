@@ -989,8 +989,8 @@ function 强化装备() {
   clickRect(target, 0.5);
   ocrUntilFound(res => res.text.match(/(STATUS|体力|攻击|返回)/), 30, 1000);
   // 点击指定装备
-  clickRect({ bounds: listEquip()[targetEquip] });
-  ocrUntilFound(res => res.find(e => e.text.match(/^(升级|穿戴|交换|改造)/) == null), 20, 1000);
+  clickRect({ bounds: listEquip()[targetEquip] }, 0.5);
+  ocrUntilFound(res => res.find(e => e.text.match(/^(升级|穿戴|交换|改造)/) != null), 20, 1000);
   // 检查是否可以升级
   let enhanceBtn = ocrUntilFound(res => res.find(e => e.text.match(/^升级$/) != null), 3, 1000);
   if (enhanceBtn == null) {

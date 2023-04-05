@@ -857,6 +857,7 @@ function teamUp(status) {
   if (status.team.length == 0)
     return;
   // 找空位
+  let img;
   const emptyImage = images.read("./images/simEmpty.jpg");
   let [emptyUpperBound, emptyLowerBound] = ocrUntilFound((res, img) => {
     let u = res.find(e =>
@@ -868,10 +869,11 @@ function teamUp(status) {
       return null;
     return [u.bounds.bottom, l.bounds.top];
   }, 30, 700);
-  let teamEmpty = findImageByFeature(captureScreen(), emptyImage, {
+  img = captureScreen();
+  let teamEmpty = findImageByFeature(img, emptyImage, {
     threshold: 0.7,
     minMatchCount: 15,
-    region: [0, emptyUpperBound, captureScreen().width, emptyLowerBound - emptyUpperBound]
+    region: [0, emptyUpperBound, img.width, emptyLowerBound - emptyUpperBound]
   });
   emptyImage.recycle();
   if (teamEmpty == null) {
@@ -910,11 +912,12 @@ function teamUp(status) {
         swipe(width / 2, (upperBound + lowerBound) / 2, width / 2, lowerBound, 300);
     sleep(1000);
     let lastNikke = null;
+    img = captureScreen();
     for (let page = 0; page < 10; ++page) {
       let bottomY = 0;
       let lastPage = false;
-      let nikkes = detectNikkes(captureScreen(), {
-        region: [0, upperBound, captureScreen().width, lowerBound - upperBound]
+      let nikkes = detectNikkes(img, {
+        region: [0, upperBound, img.width, lowerBound - upperBound]
       });
       for (let n of nikkes) {
         if (n.name == lastNikke)
@@ -957,8 +960,9 @@ function teamUp(status) {
       swipe(width / 2, (upperBound + lowerBound) / 2, width / 2, lowerBound, 300);
     sleep(500);
     for (let page = 0; page < 2 && teamIndex < status.team.length; ++page) {
-      let nikkes = detectNikkes(captureScreen(), {
-        region: [0, upperBound, captureScreen().width, lowerBound - upperBound]
+      img = captureScreen();
+      let nikkes = detectNikkes(img, {
+        region: [0, upperBound, img.width, lowerBound - upperBound]
       });
       let bottomY = nikkes.map(x => x.bounds.bottom).reduce((a, b) => a > b ? a : b);
       nikkes = Object.fromEntries(nikkes.map(x => [x.name, x]));

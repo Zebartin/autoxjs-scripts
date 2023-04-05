@@ -891,15 +891,17 @@ function 社交点数招募() {
       click(width / 2, height / 2);
       return null;
     }
-    let ret = res.find(e =>
-      e.bounds != null && !e.text.includes('CV') &&
+    let ret = res.filter(e =>
+      e.bounds != null && e.level == 3 &&
       e.bounds.right < upper.bounds.left &&
       e.bounds.bottom > upper.bounds.top &&
       e.bounds.bottom < lower.bounds.top
-    );
-    return ret;
+    ).toArray();
+    if (ret.length == 0)
+      return null;
+    return ret.map(x => x.text).join('，');
   }, 20, 1000);
-  log(`招募结果：${nikkeName ? nikkeName.text : null}`);
+  log(`招募结果：${nikkeName}`);
   back();
   clickRect(ocrUntilFound(res => {
     let t = res.find(e => e.text == '确认');

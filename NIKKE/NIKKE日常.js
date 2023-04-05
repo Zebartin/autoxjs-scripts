@@ -317,15 +317,17 @@ function dispatch(bulletin) {
       if (colors.red(images.pixel(captureScreen(), send.bounds.right, send.bounds.top)) > 240) {
         clickRect(send);
         toastLog('全部派遣');
-        sleep(2000);
+        sleep(1000);
         target = ocrUntilFound(res => {
-          let x = res.filter(e => e.text.match(/派.$/) != null).toArray();
-          if (x.length > 3) {
-            x.sort((a, b) => b.bounds.top - a.bounds.top);
-            return x[0];
-          }
-          return null;
-        }, 30, 400);
+          let cancel = res.find(e => e.text.includes('取消'));
+          if (!cancel)
+            return null;
+          let ret = res.find(e =>
+            e.text.includes('派') && e.bounds != null &&
+            e.bounds.bottom > cancel.bounds.top
+          )
+          return ret;
+        }, 30, 600);
         clickRect(target);
         toastLog('点击派遣');
         ocrUntilFound(res => res.text.includes('全部'), 30, 1000);

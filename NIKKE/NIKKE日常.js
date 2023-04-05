@@ -353,7 +353,7 @@ function dispatch(bulletin) {
 function 基地收菜(doDailyMission) {
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('基地')), 30, 1000));
   toastLog('进入基地');
-  let [bulletin, outpostBtn] = ocrUntilFound(res => {
+  let [bulletin, outpostBtn] = ocrUntilFound((res, img) => {
     let headquarter = res.find(e => e.text.endsWith('中心'));
     let ret = res.find(e => e.text.match(/^派.*[公告栏]+$/) != null);
     let outpost = res.find(e => e.text.match(/(DEFENSE|LV[\.\d]+|\d{1,3}%)/) != null)
@@ -361,7 +361,7 @@ function 基地收菜(doDailyMission) {
       // 可能没进基地，重进一下
       let enter = res.find(e =>
         e.text.endsWith('基地') && e.bounds != null &&
-        e.bounds.bottom > height / 2
+        e.bounds.bottom > img.height / 2
       );
       if (enter != null) {
         clickRect(enter, 1, 100);
@@ -508,7 +508,7 @@ function 新人竞技场(rookieTarget) {
     return;
   clickRect(ocrUntilFound(res => res.find(e => e.text.match(/R[OD][OD]K.E/) != null), 30, 1000));
   toastLog('进入新人竞技场');
-  const targetFight = ocrUntilFound(res => {
+  const targetFight = ocrUntilFound((res, img) => {
     if (res.text.match(/(入战|群组|更新|目录)/) == null) {
       let rookie = res.find(e => e.text.match(/R[OD][OD]K.E/) != null);
       if (rookie)
@@ -517,7 +517,7 @@ function 新人竞技场(rookieTarget) {
     }
     let t = res.filter(e =>
       e.text.endsWith('战斗') && e.level == 1 &&
-      e.bounds != null && e.bounds.left > width / 2
+      e.bounds != null && e.bounds.left > img.width / 2
     ).toArray();
     if (t.length != 3)
       return null;
@@ -525,12 +525,12 @@ function 新人竞技场(rookieTarget) {
     return t[rookieTarget - 1];
   }, 30, 1000);
   while (true) {
-    let hasFree = ocrUntilFound(res => {
+    let hasFree = ocrUntilFound((res, img) => {
       if (!res.text.includes('ROOKIE'))
         return null;
       let t = res.find(e =>
         e.text.includes('免') && e.bounds != null &&
-        e.bounds.left >= width / 2
+        e.bounds.left >= img.width / 2
       );
       return t == null ? 'notFree' : 'free';
     }, 30, 1000);
@@ -686,12 +686,12 @@ function 单次咨询(advise) {
   };
   const maxRetry = 3;
   let nameRetry = 0;
-  let [adviseBtn, name, hasMax] = ocrUntilFound(res => {
+  let [adviseBtn, name, hasMax] = ocrUntilFound((res, img) => {
     if (!res.text.includes('看花'))
       return null;
     let btn = res.find(e =>
       e.text.includes('咨询') && e.bounds != null &&
-      e.bounds.top > height / 2 && e.bounds.left > width / 2
+      e.bounds.top > img.height / 2 && e.bounds.left > img.width / 2
     );
     let upper = res.find(e => e.text.includes('看花') && e.bounds != null);
     let lower = res.find(e => e.text.includes('下') && e.bounds != null);
@@ -867,8 +867,8 @@ function 社交点数招募() {
     toastLog('没能找到社交点数招募页面，放弃招募');
     return;
   }
-  clickRect(ocrUntilFound(res => res.find(e =>
-    e.text.includes('1名') && e.bounds != null && e.bounds.right <= width / 2
+  clickRect(ocrUntilFound((res, img) => res.find(e =>
+    e.text.includes('1名') && e.bounds != null && e.bounds.right <= img.width / 2
   ), 20, 300, { maxScale: 4 }));
   NIKKEstorage.put('dailyMissionRecruit', NikkeToday());
   sleep(2000);
@@ -921,9 +921,10 @@ function listEquip() {
   let ret = [];
   let equipHeight = lowerBound - equip;
   for (let i = 0; i < 10; ++i) {
-    ret = findContoursRect(captureScreen(), {
+    let img = captureScreen();
+    ret = findContoursRect(img, {
       thresh: 170 - i * 7,
-      region: [leftBound, equip, width - leftBound, equipHeight]
+      region: [leftBound, equip, img.width - leftBound, equipHeight]
     }).filter(rect => {
       if (rect.height() < equipHeight / 4 || rect.height() > equipHeight / 2)
         return false;
@@ -1017,9 +1018,10 @@ function 强化装备() {
   }, 30, 1000);
   let enhanceStuff = [];
   for (let i = 0; i < 10; ++i) {
-    enhanceStuff = findContoursRect(captureScreen(), {
+    let img = captureScreen();
+    enhanceStuff = findContoursRect(img, {
       thresh: 180 - i * 8,
-      region: [0, equipUpperBound, width, enhanceConfirm.bounds.top - equipUpperBound]
+      region: [0, equipUpperBound, img.width, enhanceConfirm.bounds.top - equipUpperBound]
     }).filter(x => {
       if (x.width() < 100)
         return false;
@@ -1059,8 +1061,9 @@ function 每日任务() {
   let season = ocrUntilFound(res => res.find(e => e.text.includes('SEASON')), 30, 500);
   let i;
   for (i = 0; i < 10; ++i) {
-    let point = images.findColor(captureScreen(), '#119dea', {
-      region: [width / 2, 0, width - season.bounds.left, season.bounds.top],
+    let img = captureScreen();
+    let point = images.findColor(img, '#119dea', {
+      region: [img.width / 2, 0, img.width - season.bounds.left, season.bounds.top],
       threshold: 75 - i * 4
     });
     if (point != null) {

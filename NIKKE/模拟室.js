@@ -164,10 +164,10 @@ function oneSimulation(status) {
     clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('确认')), 10, 300));
   } else {
     log(`bestBuffToKeep = ${status.bestBuffToKeep.name}(${status.bestBuffToKeep.level})`);
-    clickRect(ocrUntilFound(res => res.find(e =>
+    clickRect(ocrUntilFound((res, img) => res.find(e =>
       e.text.endsWith('结束') &&
       e.bounds != null &&
-      e.bounds.bottom > height / 2
+      e.bounds.bottom > img.height / 2
     ), 20, 1000));
     sleep(600);
     clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('确认')), 10, 300));
@@ -871,7 +871,7 @@ function teamUp(status) {
   let teamEmpty = findImageByFeature(captureScreen(), emptyImage, {
     threshold: 0.7,
     minMatchCount: 15,
-    region: [0, emptyUpperBound, width, emptyLowerBound - emptyUpperBound]
+    region: [0, emptyUpperBound, captureScreen().width, emptyLowerBound - emptyUpperBound]
   });
   emptyImage.recycle();
   if (teamEmpty == null) {
@@ -914,7 +914,7 @@ function teamUp(status) {
       let bottomY = 0;
       let lastPage = false;
       let nikkes = detectNikkes(captureScreen(), {
-        region: [0, upperBound, width, lowerBound - upperBound]
+        region: [0, upperBound, captureScreen().width, lowerBound - upperBound]
       });
       for (let n of nikkes) {
         if (n.name == lastNikke)
@@ -958,7 +958,7 @@ function teamUp(status) {
     sleep(500);
     for (let page = 0; page < 2 && teamIndex < status.team.length; ++page) {
       let nikkes = detectNikkes(captureScreen(), {
-        region: [0, upperBound, width, lowerBound - upperBound]
+        region: [0, upperBound, captureScreen().width, lowerBound - upperBound]
       });
       let bottomY = nikkes.map(x => x.bounds.bottom).reduce((a, b) => a > b ? a : b);
       nikkes = Object.fromEntries(nikkes.map(x => [x.name, x]));

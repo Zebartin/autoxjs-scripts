@@ -286,13 +286,13 @@ function 刷刷刷() {
   sleep(2000);
   if (ocrUntilFound(res => res.text.includes('AUT'), 20, 1000) != null) {
     while (true) {
-      ocrUntilFound(res => {
+      ocrUntilFound((res, img) => {
         if (!res.text.includes('AUT')) {
           sleep(1000);
           return null;
         }
         let autoBtn = res.find(e => e.text.includes('AUT'));
-        if (autoBtn.bounds.right < width / 2)
+        if (autoBtn.bounds.right < img.width / 2)
           return true;
         let skipBtn = res.find(e =>
           e.text.match(/[LAUTOG]/) == null && e.text.match(/SK.P/) != null
@@ -322,12 +322,12 @@ function 刷刷刷() {
       });
       if (hasBlue == null)
         break;
-      let target = ocrUntilFound(res => {
+      let target = ocrUntilFound((res, img) => {
         let nextCombat = res.find(e => e.text.match(/下[^步方法]{2}/) != null);
         if (nextCombat != null)
           return nextCombat;
         let restart = res.find(e => e.text.includes('重新开始'));
-        if (restart != null && restart.bounds.left >= width / 2)
+        if (restart != null && restart.bounds.left >= img.width / 2)
           return restart;
         return null;
       }, 30, 500);

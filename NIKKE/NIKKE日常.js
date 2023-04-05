@@ -139,8 +139,13 @@ function 商店() {
     } else
       toastLog('免费商品已售');
     if (NIKKEstorage.get('buyCoreDust', false)) {
-      let coreDust = ocrUntilFound(res => res.find(e => e.text.match(/芯尘盒/) != null), 10, 300);
-      if (coreDust != null)
+      let coreDusts = ocrUntilFound(res => {
+        let ret = res.toArray(3).toArray().filter(e => e.text.match(/芯尘盒/) != null);
+        if (ret.length == 0)
+          return null;
+        return ret;
+      }, 4, 300) || [];
+      for (let coreDust of coreDusts)
         buyGood(coreDust);
     }
     return hasFree;

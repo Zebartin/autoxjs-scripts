@@ -89,40 +89,38 @@ function 启动NIKKE() {
 }
 
 function 等待NIKKE加载() {
-  if (ocrUntilFound(res => res.text.match(/(大厅|方舟|物品栏)/), 3, 300) != null)
-    return;
   let [width, height] = getDisplaySize();
-  let manuallyEnter = false;
+  let manuallyEnter = true;
   if (ocrUntilFound(res => {
+    if (res.text.match(/(大厅|方舟|物品栏)/) != null)
+      return true;
     toast('等待加载……');
-    if (res.text.includes('今日不再')) {
+    if (res.text.match(/(密|验证)码/) != null) {
+      toastLog('未登录游戏，停止运行脚本');
+      退出NIKKE();
+      exit();
+    }
+    else if (res.text.includes('今日不再')) {
       var target = res.find(e => e.text.match(/.{0,4}今日不再/) != null);
       clickRect(target);
       sleep(500);
-      click(width / 2, height * 0.9);
-    }
-    else if (res.text.includes('SIGN IN')) {
-      toastLog('未登录游戏，停止运行脚本');
-      exit();
-    }
-    else if (res.text.includes('正在下载')) {
-      sleep(20000);
+      back();
     }
     else if (res.text.match(/[確确][認认]/) != null) {
       clickRect(res.find(e => e.text.match(/[確确][認认]/) != null));
     }
-    else if (res.text.match(/(登出|T.UCH|C.NT.NUE)/) != null)
-      return true;
-    else if (res.text.match(/(大厅|方舟|物品栏)/) != null) {
-      manuallyEnter = true;
-      return true;
+    else if (res.text.includes('正在下载')) {
+      sleep(20000);
+    }
+    else if (res.text.match(/(登出|T.UCH|C.NT.NUE)/) != null) {
+      click(width / 2, height / 2);
+      manuallyEnter = false;
     }
     return false;
   }, 60, 5000) == null)
     throw new Error('游戏似乎一直在加载');
   if (manuallyEnter)
     return;
-  click(width / 2, height / 2);
   sleep(1000);
   // 等待游戏内公告出现，并处理月卡
   if (ocrUntilFound(res => {

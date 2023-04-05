@@ -820,10 +820,8 @@ function 单次咨询(advise) {
       );
       if (skipBtn == null)
         click(width / 2, height / 2);
-      else {
+      else
         clickRect(skipBtn, 0.1);
-        return true;
-      }
     }, 30, 1000);
     break;
   }

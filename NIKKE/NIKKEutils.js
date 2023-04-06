@@ -329,10 +329,10 @@ function 刷刷刷() {
       if (hasBlue == null)
         break;
       let target = ocrUntilFound((res, img) => {
-        let nextCombat = res.find(e => e.text.match(/下[^步方法]{2}/) != null);
+        let nextCombat = res.find(e => e.text.match(/^[^重新开始]{0,3}下[^步方法]{2}/) != null);
         if (nextCombat != null)
           return nextCombat;
-        let restart = res.find(e => e.text.includes('重新开始'));
+        let restart = res.find(e => e.text.match(/[重新开始]{3,4}[^下一关卡]{0,3}$/));
         if (restart != null && restart.bounds.left >= img.width / 2)
           return restart;
         return null;

@@ -912,10 +912,10 @@ function teamUp(status) {
         swipe(width / 2, (upperBound + lowerBound) / 2, width / 2, lowerBound, 300);
     sleep(1000);
     let lastNikke = null;
-    img = captureScreen();
     for (let page = 0; page < 10; ++page) {
       let bottomY = 0;
       let lastPage = false;
+      img = captureScreen();
       let nikkes = detectNikkes(img, {
         region: [0, upperBound, img.width, lowerBound - upperBound]
       });

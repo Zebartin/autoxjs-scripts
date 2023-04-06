@@ -679,16 +679,15 @@ function 咨询() {
   返回首页();
 }
 function 单次咨询(advise) {
-  let failFunc = () => {
+  let failFunc = (ret) => {
     back();
     ocrUntilFound(res => res.text.includes('可以'), 30, 3000);
-    return false;
+    return ret;
   };
   const maxRetry = 3;
   let nameRetry = 0;
+  ocrUntilFound(res => res.text.includes('看花'), 30, 1000);
   let [adviseBtn, name, hasMax] = ocrUntilFound((res, img) => {
-    if (!res.text.includes('看花'))
-      return null;
     let btn = res.find(e =>
       e.text.includes('咨询') && e.bounds != null &&
       e.bounds.top > img.height / 2 && e.bounds.left > img.width / 2
@@ -718,20 +717,24 @@ function 单次咨询(advise) {
       return null;
     }
     return [btn, nameResult.result, value.text.includes('MAX')];
-  }, 30, 2000);
+  }, 30, 1000, { maxScale: 8 }) || [null, null, null];
+  if (adviseBtn == null) {
+    toastLog('咨询页面解析失败');
+    return failFunc(true);
+  }
   if (nameRetry == maxRetry) {
     log(`已达最大尝试次数${maxRetry}。可能原因：暂不支持新版本妮姬的咨询`);
     toast('妮姬名字识别失败');
-    return failFunc();
+    return failFunc(false);
   }
   log(`咨询对象：${name}`);
   if (hasMax) {
     log('已达好感度上限');
-    return failFunc();
+    return failFunc(false);
   }
   if (colors.blue(captureScreen().pixel(adviseBtn.bounds.right, adviseBtn.bounds.top)) < 200) {
     log('咨询按钮不可点击');
-    return failFunc();
+    return failFunc(false);
   }
   for (let i = 1; i <= maxRetry; ++i) {
     clickRect(adviseBtn);
@@ -749,7 +752,7 @@ function 单次咨询(advise) {
       log('已达好感度上限');
       back();
       sleep(1000);
-      return failFunc();
+      return failFunc(false);
     }
     // 连点直到出现选项
     let adviseImage = images.read('./images/counsel.jpg');
@@ -770,7 +773,7 @@ function 单次咨询(advise) {
     let options = ocrUntilFound(res => {
       let t = res.filter(
         e => e.level == 1 && e.bounds.top >= optionTop &&
-        e.bounds.bottom <= optionBottom + adviseImage.getHeight()
+          e.bounds.bottom <= optionBottom + adviseImage.getHeight()
       );
       if (t.length != 2)
         return null;

@@ -304,7 +304,7 @@ function dispatch(bulletin) {
       toastLog('全部领取');
       clickRect(receive);
       clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 10, 3000));
-      ocrUntilFound(res => res.text.includes('全部'), 30, 1000);
+      ocrUntilFound(res => res.text.includes('全'), 30, 1000);
       sleep(600);
       back();
       ocrUntilFound(res => {
@@ -321,7 +321,6 @@ function dispatch(bulletin) {
     for (let i = 0; i < 6; ++i) {
       if (colors.red(images.pixel(captureScreen(), send.bounds.right, send.bounds.top)) > 240) {
         clickRect(send);
-        toastLog('全部派遣');
         sleep(1000);
         target = ocrUntilFound(res => {
           let cancel = res.find(e => e.text.includes('取消'));
@@ -334,8 +333,7 @@ function dispatch(bulletin) {
           return ret;
         }, 30, 600);
         clickRect(target);
-        toastLog('点击派遣');
-        ocrUntilFound(res => res.text.includes('全部'), 30, 1000);
+        ocrUntilFound(res => res.text.includes('全'), 30, 1000);
         break;
       }
       sleep(500);

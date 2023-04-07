@@ -662,9 +662,10 @@ function 咨询() {
     // 减少可点击范围，避免点到悬浮窗
     attrs[adviseTarget].bounds.left += attrs[adviseTarget].bounds.width() * 0.7;
     clickRect(attrs[adviseTarget]);
-    if (单次咨询(advise))
+    let res = 单次咨询(advise);
+    if (res == 'ok')
       cnt++;
-    else {
+    else if (res == 'failed') {
       let lastAttr = attrs[attrs.length - 1].bounds.top;
       swipe(
         width / 2, attrs[adviseTarget + 1].bounds.top,
@@ -680,7 +681,7 @@ function 单次咨询(advise) {
   let failFunc = (ret) => {
     back();
     ocrUntilFound(res => res.text.includes('可以'), 30, 3000);
-    return ret;
+    return ret || 'failed';
   };
   const maxRetry = 3;
   let nameRetry = 0;
@@ -718,21 +719,21 @@ function 单次咨询(advise) {
   }, 30, 1000, { maxScale: 8 }) || [null, null, null];
   if (adviseBtn == null) {
     toastLog('咨询页面解析失败');
-    return failFunc(true);
+    return failFunc('retry');
   }
   if (nameRetry == maxRetry) {
     log(`已达最大尝试次数${maxRetry}。可能原因：暂不支持新版本妮姬的咨询`);
     toast('妮姬名字识别失败');
-    return failFunc(false);
+    return failFunc();
   }
   log(`咨询对象：${name}`);
   if (hasMax) {
     log('已达好感度上限');
-    return failFunc(false);
+    return failFunc();
   }
   if (colors.blue(captureScreen().pixel(adviseBtn.bounds.right, adviseBtn.bounds.top)) < 200) {
     log('咨询按钮不可点击');
-    return failFunc(false);
+    return failFunc();
   }
   for (let i = 1; i <= maxRetry; ++i) {
     clickRect(adviseBtn);
@@ -750,7 +751,7 @@ function 单次咨询(advise) {
       log('已达好感度上限');
       back();
       sleep(1000);
-      return failFunc(false);
+      return failFunc();
     }
     // 连点直到出现选项
     let adviseImage = images.read('./images/counsel.jpg');
@@ -849,7 +850,7 @@ function 单次咨询(advise) {
     clickRect(ocrUntilFound(res => res.find(e => e.text == '咨询'), 30, 1000));
   }
   toast('回到咨询首页');
-  return true;
+  return 'ok';
 }
 
 function 社交点数招募() {

@@ -1000,9 +1000,10 @@ function 强化装备() {
   ocrUntilFound(res => res.text.match(/(STATUS|体力|攻击|返回)/), 30, 1000);
   // 点击指定装备
   clickRect({ bounds: listEquip()[targetEquip] }, 0.5);
+  log('点击指定装备');
   ocrUntilFound(res => res.find(e => e.text.match(/^(升级|穿戴|交换|改造)/) != null), 20, 1000);
   // 检查是否可以升级
-  let enhanceBtn = ocrUntilFound(res => res.find(e => e.text.match(/^升级$/) != null), 3, 1000);
+  let enhanceBtn = ocrUntilFound(res => res.find(e => e.text.endsWith('升级')), 3, 1000);
   if (enhanceBtn == null) {
     toastLog('指定装备不可升级');
     back();
@@ -1014,7 +1015,7 @@ function 强化装备() {
   let [enhanceConfirm, equipUpperBound] = ocrUntilFound(res => {
     if (!res.text.includes('自动'))
       return null;
-    let confirm = res.find(e => e.text == '升级');
+    let confirm = res.find(e => e.text.match(/^[^装备请选择]{0,3}升级$/) != null);
     let upper = res.find(e => e.text.match(/(择升|级别|等级)/) != null);
     if (!confirm || !upper)
       return null;
@@ -1040,6 +1041,7 @@ function 强化装备() {
     toastLog('没有强化材料');
   } else {
     clickRect({ bounds: enhanceStuff[0] });
+    log('点击第一个强化材料');
     clickRect(enhanceConfirm);
     sleep(1000);
     while (colors.blue(captureScreen().pixel(

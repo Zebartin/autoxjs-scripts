@@ -332,7 +332,7 @@ function 刷刷刷() {
         let nextCombat = res.find(e => e.text.match(/^[^重新开始]{0,3}下[^步方法]{2}/) != null);
         if (nextCombat != null)
           return nextCombat;
-        let restart = res.find(e => e.text.match(/[重新开始]{3,4}[^下一关卡]{0,3}$/));
+        let restart = res.find(e => e.text.match(/[重新开始]{3,4}[^下一关卡]{0,3}$/) != null);
         if (restart != null && restart.bounds.left >= img.width / 2)
           return restart;
         return null;

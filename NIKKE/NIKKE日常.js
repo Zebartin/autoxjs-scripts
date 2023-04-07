@@ -774,8 +774,6 @@ function 单次咨询(advise) {
         e => e.level == 1 && e.bounds.top >= optionTop &&
           e.bounds.bottom <= optionBottom + adviseImage.getHeight()
       );
-      if (t.length != 2)
-        return null;
       let t1 = null, t2 = null;
       for (let i of t) {
         if (i.bounds.top < optionBottom)

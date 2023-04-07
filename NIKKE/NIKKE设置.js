@@ -184,7 +184,7 @@ ui.layout(
           <checkbox id="mute" w="0" layout_weight="2" />
         </horizontal>
         <horizontal margin="10 2" gravity="center_vertical" weightSum="10" h="0" layout_weight="1">
-          <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">已启动游戏且位于首页位置</text>
+          <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">已启动游戏且位于首页或正在加载</text>
           <checkbox id="alreadyInGame" w="0" layout_weight="2" />
         </horizontal>
         <horizontal margin="10 2" gravity="center_vertical" weightSum="10" h="0" layout_weight="1">

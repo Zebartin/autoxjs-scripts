@@ -213,7 +213,7 @@ ui.layout(
         </horizontal>
       </vertical>
       <button id="save" text="保存设置" />
-      <button id="update" text="更新脚本（需要能够访问GITHUB）" />
+      <button id="update" text="更新脚本" />
       <text id="updateText" text="" textColor="#999999" textSize="12sp" gravity="center" visibility="gone" />
     </vertical>
   </ScrollView>
@@ -487,7 +487,7 @@ ui.update.on("click", function () {
       console.hide();
     };
     console.show();
-    log('开始更新，请确保Github访问正常');
+    log('开始更新');
     const curTagName = NIKKEstorage.get('tagName', '');
     const newTagName = checkUpdate();
     if (newTagName == null) {
@@ -511,7 +511,7 @@ ui.update.on("click", function () {
     // AutoX.js的解压不能替换原文件，只能先放到tmp目录下
     let fileName = `NIKKE-scripts-${newTagName}.7z`;
     let filePath = files.path(`./tmp/${fileName}`);
-    let fileResp = http.get(`https://github.com/Zebartin/autoxjs-scripts/releases/download/${newTagName}/${fileName}`);
+    let fileResp = http.get(`https://github.blindbuffalo.xyz/https://github.com/Zebartin/autoxjs-scripts/releases/download/${newTagName}/${fileName}`);
     if (fileResp.statusCode != 200) {
       log(`下载${fileName}失败: ` + fileResp.statusCode + " " + fileResp.statusMessage);
       beforeReturn();

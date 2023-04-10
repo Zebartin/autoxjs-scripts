@@ -417,7 +417,7 @@ function doWithOption(option, status) {
   sleep(1000);
   if (option.type == 'abilitiesTest') {
     let keywords = [
-      /不选/,
+      /不[选迷]/,
       /体力/,
       /第[一二三]个/
     ];

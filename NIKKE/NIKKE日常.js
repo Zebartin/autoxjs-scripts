@@ -573,7 +573,7 @@ function 竞技场() {
     );
     if (ret == null) {
       let touch = res.find(e =>
-        e.text == 'TOUCH' && e.bounds != null &&
+        e.text.match(/^T.UCH/) != null && e.bounds != null &&
         e.bounds.bottom < atk.bounds.top &&
         e.bounds.left > atk.bounds.right
       );

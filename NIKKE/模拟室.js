@@ -447,22 +447,22 @@ function doWithOption(option, status) {
     clickRect(choice);
     clickRect(ocrUntilFound(res => {
       if (keywordType == 0 && res.text.match(/[什么都没有发生3分之2]{3}/) == null) {
-        clickRect(choice);
+        clickRect(choice, 1, 0);
         return null;
       }
       return res.find(e => e.text.includes('确认'));
     }, 30, 1000));
     let roomCnt = 0;
     let testDone = ocrUntilFound(res => {
-      if (keywordType == 0 && res.text.includes('不选'))
+      if (keywordType == 0 && res.text.match(/不[选迷迭]/) != null)
         return null;
       if (res.text.match(/ON[\s\S]*ROOM[\s\S]*RESET/) != null)
         return roomCnt++ >= 3;
       let t = res.find(e => e.text.match(/不[选迭迷].$/) != null);
-        if (t != null)
-          clickRect(t);
+      if (t != null)
+        clickRect(t, 1, 0);
       if (res.text.includes('确认'))
-        clickRect(res.find(e => e.text.includes('确认')));
+        clickRect(res.find(e => e.text.includes('确认')), 1, t == null ? 0 : 200);
       sleep(1000);
       return false;
     }, 20, 500);

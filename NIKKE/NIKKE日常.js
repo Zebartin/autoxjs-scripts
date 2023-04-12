@@ -573,7 +573,7 @@ function 竞技场() {
     );
     if (ret == null) {
       let touch = res.find(e =>
-        e.text == 'TOUCH' && e.bounds != null &&
+        e.text.match(/^T.UCH/) != null && e.bounds != null &&
         e.bounds.bottom < atk.bounds.top &&
         e.bounds.left > atk.bounds.right
       );
@@ -683,7 +683,7 @@ function 单次咨询(advise) {
     ocrUntilFound(res => res.text.includes('可以'), 30, 3000);
     return ret || 'failed';
   };
-  const maxRetry = 3;
+  const maxRetry = 5;
   let nameRetry = 0;
   ocrUntilFound(res => res.text.includes('看花'), 30, 1000);
   let [adviseBtn, name, hasMax] = ocrUntilFound((res, img) => {
@@ -816,7 +816,7 @@ function 单次咨询(advise) {
       click(width / 2, adviseImage.getHeight() / 2 + optionBottom);
     adviseImage.recycle();
     ocrUntilFound(res => {
-      if (res.text.includes('咨询'))
+      if (res.find(e => e.text.endsWith('咨询')))
         return true;
       let skipBtn = res.find(e =>
         e.text.match(/[LAUTOG]/) == null && e.text.match(/SK.P/) != null

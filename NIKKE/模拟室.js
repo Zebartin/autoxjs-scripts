@@ -256,7 +256,10 @@ function quitPrevSim() {
     if (!pageState.startsWith('selectBuff'))
       clickRect(ocrUntilFound(res => res.find(e => e.text.match(/(確認|确认)/) != null), 10, 1000));
   }
-  let quitBtn = ocrUntilFound(res => res.find(e => e.text.match(/结.$/) != null), 20, 1000);
+  let quitBtn = ocrUntilFound((res, img) => res.find(e =>
+    e.text.match(/结[^果]$/) != null && e.bounds != null &&
+    e.bounds.bottom < img.height / 2 && e.bounds.left > img.width / 2
+  ), 20, 1000);
   clickRect(quitBtn);
   let [keepBuff, confirmBtn] = ocrUntilFound(res => {
     let btn = res.find(e => e.text.endsWith('确认'));

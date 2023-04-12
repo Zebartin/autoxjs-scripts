@@ -453,7 +453,7 @@ function doWithOption(option, status) {
       return res.find(e => e.text.includes('确认'));
     }, 30, 1000));
     let roomCnt = 0;
-    ocrUntilFound(res => {
+    let testDone = ocrUntilFound(res => {
       if (keywordType == 0 && res.text.includes('不选'))
         return null;
       if (res.text.match(/ON[\s\S]*ROOM[\s\S]*RESET/) != null)
@@ -465,7 +465,21 @@ function doWithOption(option, status) {
         clickRect(res.find(e => e.text.includes('确认')));
       sleep(1000);
       return false;
-    }, 30, 500);
+    }, 20, 500);
+    // 点了太多次确认
+    if (!testDone) {
+      let cancelBtn = ocrUntilFound(res => {
+        if (res.text.includes('确认') && res.text.includes('取消'))
+          return res.find(e => e.text.includes('取消'));
+        return null;
+      }, 2, 500);
+      log('无法处理当前情况，提前结束');
+      if (cancelBtn != null)
+        clickRect(cancelBtn);
+      else
+        back();
+      status.earlyStop = true;
+    }
     return;
   }
   if (option.type == 'ICU') {

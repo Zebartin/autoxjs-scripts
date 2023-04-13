@@ -508,7 +508,7 @@ function doWithOption(option, status) {
       let t3 = null;
       if (!t1 || !t2)
         return null;
-      if (!res.text.includes('条件')) {
+      if (res.text.match(/(条件|无法)/) == null) {
         let firstOption = res.find(e => e.text.endsWith('选项'));
         if (firstOption == null)
           return null;
@@ -862,7 +862,7 @@ function getAllBuff() {
     快速充电器: {
       forSomebody: true,
       buffType: '操作',
-      reg: /快[連適德逮遠速]+充电器?/
+      reg: /快[連適德達逮遠速]+充电器?/
     }
   };
 }

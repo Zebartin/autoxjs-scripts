@@ -662,6 +662,13 @@ function 咨询() {
     // 减少可点击范围，避免点到悬浮窗
     attrs[adviseTarget].bounds.left += attrs[adviseTarget].bounds.width() * 0.7;
     clickRect(attrs[adviseTarget]);
+    if (ocrUntilFound(res => {
+      if (res.text.includes('看花'))
+        return true;
+      clickRect(attrs[adviseTarget], 0, 0);
+      return null;
+    }, 20, 1000) != true)
+      throw new Error('无法进入单人咨询页面');
     let res = 单次咨询(advise);
     if (res == 'ok')
       cnt++;
@@ -685,7 +692,6 @@ function 单次咨询(advise) {
   };
   const maxRetry = 5;
   let nameRetry = 0;
-  ocrUntilFound(res => res.text.includes('看花'), 30, 1000);
   let [adviseBtn, name, hasMax] = ocrUntilFound((res, img) => {
     let btn = res.find(e =>
       e.text.includes('咨询') && e.bounds != null &&

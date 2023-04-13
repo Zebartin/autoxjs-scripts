@@ -204,7 +204,8 @@ function 等待每日签到() {
   // 检查是否有每天签到
   let today = NikkeToday();
   let lastChecked = NIKKEstorage.get('dailyLogin', null);
-  if (today == lastChecked) {
+  let alwaysCheck = NIKKEstorage.get('alwaysCheckDailyLogin', false);
+  if (!alwaysCheck && today == lastChecked) {
     log('今日已登录，不检查签到奖励');
     return;
   }

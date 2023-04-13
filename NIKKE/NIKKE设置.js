@@ -200,6 +200,10 @@ ui.layout(
           <checkbox id="exitGame" w="0" layout_weight="2" />
         </horizontal>
         <horizontal margin="10 2" gravity="center_vertical" weightSum="10" h="0" layout_weight="1">
+          <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">总是检查签到奖励</text>
+          <checkbox id="alwaysCheckDailyLogin" w="0" layout_weight="2" />
+        </horizontal>
+        <horizontal margin="10 2" gravity="center_vertical" weightSum="10" h="0" layout_weight="1">
           <text textSize="16sp" w="0" textColor="#222222" layout_weight="8">v2rayNG魔法</text>
           <checkbox id="v2rayNG" w="0" layout_weight="2" />
         </horizontal>
@@ -373,7 +377,7 @@ ui.equipEnhanceSlot.setProgress(dailyMission.equipEnhanceSlot || 0);
 
 for (let generalOption of [
   'mute', 'alreadyInGame', 'checkUpdateAuto',
-  'checkSale', 'exitGame', 'v2rayNG'
+  'checkSale', 'exitGame', 'alwaysCheckDailyLogin', 'v2rayNG'
 ])
   ui.findView(generalOption).setChecked(NIKKEstorage.get(generalOption, false));
 ui.checkDailyLogin.setOnSeekBarChangeListener({
@@ -469,7 +473,7 @@ ui.save.on("click", function () {
 
   for (let generalOption of [
     'mute', 'alreadyInGame', 'checkUpdateAuto',
-    'checkSale', 'exitGame', 'v2rayNG'
+    'checkSale', 'exitGame', 'alwaysCheckDailyLogin', 'v2rayNG'
   ])
     NIKKEstorage.put(generalOption, ui.findView(generalOption).isChecked());
   NIKKEstorage.put('checkDailyLogin', ui.checkDailyLogin.getProgress());

@@ -216,8 +216,10 @@ ui.layout(
           <seekbar id="maxRetry" w="0" layout_weight="4" />
         </horizontal>
       </vertical>
-      <button id="save" text="保存设置" />
-      <button id="update" text="更新脚本" />
+      <horizontal>
+        <button id="update" text="更新脚本" layout_weight="1"/>
+        <button id="save" text="保存设置" layout_weight="1"/>
+      </horizontal>
       <text id="updateText" text="" textColor="#999999" textSize="12sp" gravity="center" visibility="gone" />
     </vertical>
   </ScrollView>

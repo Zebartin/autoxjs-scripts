@@ -214,7 +214,6 @@ function oneSimulation(status) {
 }
 
 function quitPrevSim() {
-  sleep(5000);
   let pageState = ocrUntilFound(res => {
     if (res.text.includes('开始'))
       return 'beginSim';
@@ -240,7 +239,9 @@ function quitPrevSim() {
     if (ret == 'selectBuff' && res.text.includes('EP'))
       ret = 'selectBuffEPIC';
     return ret;
-  }, 10, 500);
+  }, 10, 1000);
+  if (pageState == null)
+    throw new Error('未知模拟室页面');
   log(`模拟室当前页面：${pageState}`);
   if (pageState == 'beginSim')
     return;

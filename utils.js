@@ -12,6 +12,7 @@ else {
     getOcrRes: getOcrRes,
     getDisplaySize: getDisplaySize,
     killApp: killApp,
+    rgbToGray: rgbToGray,
     buildRegion: buildRegion,
     findContoursRect: findContoursRect,
     findImageByFeature: findImageByFeature
@@ -109,6 +110,14 @@ function clickRect(rect, scale, delay) {
   let x = Math.round((random() - 0.5) * rect.bounds.width() * scale + rect.bounds.centerX());
   let y = Math.round((random() - 0.5) * rect.bounds.height() * scale + rect.bounds.centerY());
   click(x, y);
+}
+
+// 灰度公式：https://docs.opencv.org/3.4/de/d25/imgproc_color_conversions.html#color_convert_rgb_gray
+function rgbToGray(color) {
+  let ret = 0.299 * colors.red(color);
+  ret += 0.587 * colors.green(color);
+  ret += 0.114 * colors.blue(color);
+  return ret;
 }
 
 function imgToBounds(img, point) {
@@ -302,9 +311,11 @@ function findContoursRect(img, options) {
         rect.x + rect.width + x,
         rect.y + rect.height + y
       ));
-      // Imgproc.rectangle(threImgMat, Point(rect.x, rect.y), Point(rect.x + rect.width, rect.y + rect.height), Scalar(150), 3);
+      if (options.debug)
+        Imgproc.rectangle(threImgMat, Point(rect.x, rect.y), Point(rect.x + rect.width, rect.y + rect.height), Scalar(150), 3);
     }
-    // images.save(images.matToImage(threImgMat), `./images/nikkerror/${thresh}_${Date.now()}.jpg`);
+    if (options.debug)
+      images.save(images.matToImage(threImgMat), `./images/nikkerror/${thresh}_${Date.now()}.jpg`);
   }
   threImg.recycle();
   grayImg.recycle();

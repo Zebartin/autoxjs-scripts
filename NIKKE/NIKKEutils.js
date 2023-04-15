@@ -1,9 +1,11 @@
 var {
   ocrUntilFound, clickRect, unlockIfNeed,
   requestScreenCaptureAuto, getDisplaySize,
-  killApp, findImageByFeature, findContoursRect
+  killApp, findImageByFeature, findContoursRect,
+  rgbToGray
 } = require('./utils.js');
 var firstBoot = true;
+var firstCheckAuto = true;
 if (typeof module === 'undefined') {
   auto.waitFor();
   unlockIfNeed();
@@ -26,7 +28,8 @@ else {
     mostSimilar: mostSimilar,
     detectNikkes: detectNikkes,
     NikkeToday: NikkeToday,
-    关闭限时礼包: 关闭限时礼包
+    关闭限时礼包: 关闭限时礼包,
+    checkAuto: checkAuto,
   };
 }
 function 启动NIKKE() {
@@ -312,6 +315,7 @@ function 刷刷刷() {
           click(width / 2, height / 2);
         return null;
       }, 50, 1000);
+      checkAuto();
       let clickNext = ocrUntilFound(res => {
         if (!res.text.includes('REWARD')) {
           sleep(2000);
@@ -454,4 +458,84 @@ function detectNikkes(originalImg, options) {
   }
   console.info(`当前页面：${nikkes.map(x => x.name).join('、')}`);
   return nikkes;
+}
+
+function checkAuto() {
+  if (!firstCheckAuto) {
+    log('本次运行已检查自动瞄准&爆裂，不再检查');
+    return;
+  }
+  sleep(5000);
+  log('检查自动瞄准&爆裂…');
+  let autoBtn = ocrUntilFound((res, img) => res.find(e =>
+    e.text.includes('AUT') && e.bounds != null &&
+    e.bounds.left <= img.width / 2
+  ), 40, 1000);
+  if (autoBtn == null) {
+    log('未检测到AUTO按钮');
+    return;
+  }
+  let y = Math.max(autoBtn.bounds.top - autoBtn.bounds.height() * 2, 0);
+  let w = autoBtn.bounds.right + autoBtn.bounds.width();
+  let h = autoBtn.bounds.bottom + autoBtn.bounds.height() * 2 - y;
+  let res = null, img = null;
+  for (let i = 0; i < 20; ++i) {
+    img = captureScreen();
+    let c = img.pixel(autoBtn.bounds.right + 5, autoBtn.bounds.top);
+    let insideGray = Math.round(rgbToGray(c)), outsideGray = 0.0;
+    for (let tx of [0, w])
+      for (let ty of [0, h + y])
+        outsideGray += rgbToGray(img.pixel(tx, ty));
+    outsideGray = Math.round(outsideGray / 4);
+    res = findContoursRect(img, {
+      thresh: random(insideGray, outsideGray),
+      region: [0, y, w, h],
+      // debug: true
+    }).filter(x =>
+      x.height() >= autoBtn.bounds.height() * 2 &&
+      x.top < autoBtn.bounds.top &&
+      x.bottom > autoBtn.bounds.bottom &&
+      x.centerX() < autoBtn.bounds.centerX()
+    );
+    if (
+      res.length == 2 &&
+      res[0].right < res[1].left &&
+      Math.abs(res[0].top - res[1].top) < 10
+    )
+      break;
+    sleep(500);
+  }
+  if (res.length != 2) {
+    log('自动瞄准&爆裂检查失败');
+    log(res);
+    return;
+  }
+  let i = 0;
+  while (i < 2) {
+    let btn = res[i];
+    let name = '自动' + (i == 0 ? '瞄准' : '爆裂');
+    let region = [btn.left, btn.top, btn.width(), btn.height()];
+    let redColor = images.findColor(img, '#d65100', {
+      region: region,
+      threshold: 80
+    });
+    let grayColor = images.findColor(img, '#7d8789', {
+      region: region,
+      threshold: 50
+    });
+    i += 1;
+    if (redColor != null && grayColor == null)
+      log(`${name}已打开`);
+    else if (redColor == null && grayColor != null) {
+      log(`${name}未打开，点击打开`);
+      clickRect({ bounds: btn }, 0.8, 200);
+    } else {
+      log(`${name}状态不定，重试`);
+      sleep(500);
+      i -= 1;
+      img = captureScreen();
+      continue;
+    }
+  }
+  firstCheckAuto = false;
 }

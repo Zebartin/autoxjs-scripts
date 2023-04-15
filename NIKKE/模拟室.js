@@ -6,7 +6,8 @@ var {
 } = require('./utils.js');
 var {
   启动NIKKE, 等待NIKKE加载, 退出NIKKE,
-  返回首页, mostSimilar, detectNikkes
+  返回首页, mostSimilar, detectNikkes,
+  checkAuto
 } = require('./NIKKEutils.js');
 let width, height;
 let curPass = 0;
@@ -588,7 +589,8 @@ function doWithOption(option, status) {
     clickRect(quickFight);
   } else {
     clickRect(ocrUntilFound(res => res.find(e => e.text.startsWith('进入')), 10, 300));
-    sleep(20 * 1000);
+    checkAuto();
+    sleep(10 * 1000);
     let result = ocrUntilFound(res => {
       if (!res.text.includes('STATUS'))
         return null;

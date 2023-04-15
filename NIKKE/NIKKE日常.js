@@ -1,7 +1,7 @@
 var {
   启动NIKKE, 等待NIKKE加载, 退出NIKKE,
   mostSimilar, 返回首页, 关闭限时礼包,
-  detectNikkes, NikkeToday
+  detectNikkes, NikkeToday, checkAuto
 } = require('./NIKKEutils.js');
 var { 模拟室 } = require('./模拟室.js');
 var {
@@ -458,10 +458,8 @@ function 爬塔() {
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('入战')), 30, 1000));
     toast('进入战斗');
     for (let j = 0; j < cnt; ++j) {
-      sleep(9000);
-      if (ocrUntilFound(res => res.text.includes('AUT'), 10, 3000) == null)
-        break;
-      sleep(40 * 1000);
+      checkAuto();
+      sleep(20 * 1000);
       ocrUntilFound(res => {
         if (res.text.includes('AUT')) {
           sleep(4000);
@@ -469,7 +467,7 @@ function 爬塔() {
         }
         if (res.text.includes('REWARD') || res.text.includes('FAIL'))
           return true;
-      }, 30, 1000);
+      }, 30, 2000);
       sleep(1000);
       let endCombat = ocrUntilFound(res => res.find(
         e => e.text.match(/(下[^步方法]{2}|返回)/) != null

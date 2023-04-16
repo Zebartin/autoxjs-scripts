@@ -93,6 +93,52 @@ function checkConfig() {
   }
 }
 
+function cashShop() {
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('付')), 30, 1000));
+  let [upperBound, lowerBound] = ocrUntilFound(res => {
+      let ub = res.find(e => e.text.match(/[仅在指定的销售期间]{3,}/) != null);
+      let lb = res.find(e => e.text.includes('强化支'));
+      if (!ub || !lb)
+          return null;
+      return [ub.bounds.bottom, lb.bounds.top];
+  }, 20, 1000);
+  let img = captureScreen();
+  let cashShopImg = images.read('./images/cashShop.jpg');
+  let target = findImageByFeature(img, cashShopImg, {
+      region: [0, upperBound, img.width, lowerBound - upperBound]
+  });
+  clickRect(target);
+  cashShopImg.recycle();
+  let d = ocrUntilFound(res => res.find(e => e.text.endsWith('日')), 30, 600);
+  swipe(d.bounds.right, d.bounds.centerY(), 0, d.bounds.centerY(), 500);
+  let [daily, weekly, monthly] = ocrUntilFound(res => {
+      let d = res.find(e => e.text.endsWith('日'));
+      let w = res.find(e => e.text.endsWith('周'));
+      let m = res.find(e => e.text.endsWith('月'));
+      if (!d || !w || !m)
+          return null;
+      return [d, w, m];
+  }, 30, 700);
+  for (let btn of [daily, weekly, monthly]) {
+      let name = btn.text.substr(-1);
+      clickRect(btn);
+      let [free, color] = ocrUntilFound((res, img) => {
+          let t = res.find(e => e.text.includes(name + '免'));
+          return [t, img.pixel(t.bounds.left, t.bounds.bottom + 5)];
+      }, 20, 700);
+      if (rgbToGray(color) < 50)
+          log(`每${name}免费礼包已领取`);
+      else {
+          log(`领取每${name}免费礼包`);
+          clickRect(free, 1, 0);
+          clickRect(ocrUntilFound(res => res.find(
+              e => e.text.includes('点击')
+          ), 20, 600, { maxScale: 4 }));
+      }
+  }
+  返回首页();
+}
+
 function 商店() {
   let buyGood = (good) => {
     toastLog(`购买${good.text}`);
@@ -236,6 +282,7 @@ function 商店() {
     screenImg.recycle();
   }
   返回首页();
+  cashShop();
 }
 
 function collectDefense(outpostBtn, wipeOut) {

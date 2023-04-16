@@ -461,16 +461,17 @@ function detectNikkes(originalImg, options) {
 }
 
 function checkAuto() {
-  if (!firstCheckAuto) {
-    log('本次运行已检查自动瞄准&爆裂，不再检查');
-    return;
-  }
+  // 把这一部分放在前面，为了检测已进入战斗
   sleep(5000);
-  log('检查自动瞄准&爆裂…');
   let autoBtn = ocrUntilFound((res, img) => res.find(e =>
     e.text.includes('AUT') && e.bounds != null &&
     e.bounds.left <= img.width / 2
   ), 40, 1000);
+  if (!firstCheckAuto) {
+    log('本次运行已检查自动瞄准&爆裂，不再检查');
+    return;
+  }
+  log('检查自动瞄准&爆裂…');
   if (autoBtn == null) {
     log('未检测到AUTO按钮');
     return;
@@ -487,6 +488,12 @@ function checkAuto() {
       for (let ty of [0, h + y])
         outsideGray += rgbToGray(img.pixel(tx, ty));
     outsideGray = Math.round(outsideGray / 4);
+    if (insideGray >= outsideGray)
+      continue;
+    let grayScale = 0.4;
+    let grayDiff = Math.round(grayScale * 0.5 * (outsideGray - insideGray));
+    insideGray += grayDiff;
+    outsideGray -= grayDiff;
     res = findContoursRect(img, {
       thresh: random(insideGray, outsideGray),
       region: [0, y, w, h],

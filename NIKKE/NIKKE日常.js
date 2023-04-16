@@ -931,13 +931,14 @@ function listEquip() {
     let img = captureScreen();
     ret = findContoursRect(img, {
       thresh: 170 - i * 7,
-      region: [leftBound, equip, img.width - leftBound, equipHeight]
-    }).filter(rect => {
-      if (rect.height() < equipHeight / 4 || rect.height() > equipHeight / 2)
-        return false;
-      if (rect.width() < equipHeight / 4 || rect.width() > equipHeight / 2)
-        return false;
-      return true;
+      region: [leftBound, equip, img.width - leftBound, equipHeight],
+      rectFilter: rect => {
+        if (rect.height() < equipHeight / 4 || rect.height() > equipHeight / 2)
+          return false;
+        if (rect.width() < equipHeight / 4 || rect.width() > equipHeight / 2)
+          return false;
+        return true;
+      }
     });
     if (ret.length == 4)
       break;
@@ -1029,13 +1030,14 @@ function 强化装备() {
     let img = captureScreen();
     enhanceStuff = findContoursRect(img, {
       thresh: 180 - i * 8,
-      region: [0, equipUpperBound, img.width, enhanceConfirm.bounds.top - equipUpperBound]
-    }).filter(x => {
-      if (x.width() < 100)
-        return false;
-      if (Math.abs(x.width() - x.height()) > 20)
-        return false;
-      return true;
+      region: [0, equipUpperBound, img.width, enhanceConfirm.bounds.top - equipUpperBound],
+      rectFilter: rect => {
+        if (rect.width() < 100)
+          return false;
+        if (Math.abs(rect.width() - rect.height()) > 20)
+          return false;
+        return true;
+      }
     });
     if (enhanceStuff.length != 0)
       break;

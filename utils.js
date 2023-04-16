@@ -283,7 +283,7 @@ function findContoursRect(img, options) {
   let [x, y, w, h] = buildRegion(options.region, img);
   let clipImg = images.clip(img, x, y, w, h);
   let grayImg = images.cvtColor(clipImg, "BGR2GRAY");
-  let threImg = images.threshold(grayImg, thresh, 255, "BINARY_INV");
+  let threImg = images.threshold(grayImg, thresh, 255, options.type || "BINARY_INV");
   let ret = [];
   with (JavaImporter(
     org.opencv.imgproc.Imgproc,
@@ -305,17 +305,20 @@ function findContoursRect(img, options) {
       Imgproc.approxPolyDP(contour2f, approxCurve, epsilon, true);
       let pts = MatOfPoint(approxCurve.toArray());
       let rect = Imgproc.boundingRect(pts);
-      ret.push(android.graphics.Rect(
+      let newRect = android.graphics.Rect(
         rect.x + x,
         rect.y + y,
         rect.x + rect.width + x,
         rect.y + rect.height + y
-      ));
+      );
+      if (options.rectFilter && !options.rectFilter(newRect))
+        continue;
+      ret.push(newRect);
       if (options.debug)
         Imgproc.rectangle(threImgMat, Point(rect.x, rect.y), Point(rect.x + rect.width, rect.y + rect.height), Scalar(150), 3);
     }
     if (options.debug)
-      images.save(images.matToImage(threImgMat), `./images/nikkerror/${thresh}_${Date.now()}.jpg`);
+      images.save(images.matToImage(threImgMat), `./images/nikkerror/${thresh}_${new Date().toTimeString().split(' ')[0].replace(/:/g, '_')}.jpg`);
   }
   threImg.recycle();
   grayImg.recycle();

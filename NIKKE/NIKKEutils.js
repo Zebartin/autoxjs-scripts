@@ -408,15 +408,16 @@ function similarity(s1, s2) {
 function detectNikkes(originalImg, options) {
   let nikkeContours = findContoursRect(originalImg, {
     thresh: options.thresh || 200,
-    region: options.region
-  }).filter(rect => {
-    if (rect.width() < 100)
-      return false;
-    if (rect.width() * 2.5 < rect.height())
-      return false;
-    if (rect.width() * 1.5 > rect.height())
-      return false;
-    return true;
+    region: options.region,
+    rectFilter: rect => {
+      if (rect.width() < 100)
+        return false;
+      if (rect.width() * 2.5 < rect.height())
+        return false;
+      if (rect.width() * 1.5 > rect.height())
+        return false;
+      return true;
+    }
   });
   let nikkes = [];
   let specialNameReg = /[森杨]/;
@@ -497,13 +498,13 @@ function checkAuto() {
     res = findContoursRect(img, {
       thresh: random(insideGray, outsideGray),
       region: [0, y, w, h],
+      rectFilter: rect =>
+        rect.height() >= autoBtn.bounds.height() * 2 &&
+        rect.top < autoBtn.bounds.top &&
+        rect.bottom > autoBtn.bounds.bottom &&
+        rect.centerX() < autoBtn.bounds.centerX(),
       // debug: true
-    }).filter(x =>
-      x.height() >= autoBtn.bounds.height() * 2 &&
-      x.top < autoBtn.bounds.top &&
-      x.bottom > autoBtn.bounds.bottom &&
-      x.centerX() < autoBtn.bounds.centerX()
-    );
+    });
     if (
       res.length == 2 &&
       res[0].right < res[1].left &&

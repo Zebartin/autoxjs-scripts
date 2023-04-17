@@ -96,45 +96,49 @@ function checkConfig() {
 function cashShop() {
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('付')), 30, 1000));
   let [upperBound, lowerBound] = ocrUntilFound(res => {
-      let ub = res.find(e => e.text.match(/[仅在指定的销售期间从同时出现的礼包中]{3,}/) != null);
-      let lb = res.find(e => e.text.match(/(强化支|[指挥官成长纪念露菲的推荐商品]{3,})/) != null);
-      if (!ub || !lb)
-          return null;
-      return [ub.bounds.bottom, lb.bounds.top];
+    let ub = res.find(e => e.text.match(/([仅在指定的销售期间]{3,}|[从同时出现的礼包中]{3,})/) != null);
+    let lb = res.find(e => e.text.match(/(强化支|指挥官|成长纪念|推荐商品)/) != null);
+    if (!ub || !lb)
+      return null;
+    let ubb = ub.bounds.bottom;
+    let lbt = lb.bounds.top;
+    if (ubb >= lbt)
+      return null;
+    return [ubb, lbt];
   }, 20, 1000);
   let img = captureScreen();
   let cashShopImg = images.read('./images/cashShop.jpg');
   let target = findImageByFeature(img, cashShopImg, {
-      region: [0, upperBound, img.width, lowerBound - upperBound]
+    region: [0, upperBound, img.width, lowerBound - upperBound]
   });
   clickRect(target);
   cashShopImg.recycle();
   let d = ocrUntilFound(res => res.find(e => e.text.endsWith('日')), 30, 600);
   swipe(d.bounds.right, d.bounds.centerY(), 0, d.bounds.centerY(), 500);
   let [daily, weekly, monthly] = ocrUntilFound(res => {
-      let d = res.find(e => e.text.endsWith('日'));
-      let w = res.find(e => e.text.endsWith('周'));
-      let m = res.find(e => e.text.endsWith('月'));
-      if (!d || !w || !m)
-          return null;
-      return [d, w, m];
+    let d = res.find(e => e.text.endsWith('日'));
+    let w = res.find(e => e.text.endsWith('周'));
+    let m = res.find(e => e.text.endsWith('月'));
+    if (!d || !w || !m)
+      return null;
+    return [d, w, m];
   }, 30, 700);
   for (let btn of [daily, weekly, monthly]) {
-      let name = btn.text.substr(-1);
-      clickRect(btn);
-      let [free, color] = ocrUntilFound((res, img) => {
-          let t = res.find(e => e.text.includes(name + '免'));
-          return [t, img.pixel(t.bounds.left, t.bounds.bottom + 5)];
-      }, 20, 700);
-      if (rgbToGray(color) < 50)
-          log(`每${name}免费礼包已领取`);
-      else {
-          log(`领取每${name}免费礼包`);
-          clickRect(free, 1, 0);
-          clickRect(ocrUntilFound(res => res.find(
-              e => e.text.includes('点击')
-          ), 20, 600, { maxScale: 4 }));
-      }
+    let name = btn.text.substr(-1);
+    clickRect(btn);
+    let [free, color] = ocrUntilFound((res, img) => {
+      let t = res.find(e => e.text.includes(name + '免'));
+      return [t, img.pixel(t.bounds.left, t.bounds.bottom + 5)];
+    }, 20, 700);
+    if (rgbToGray(color) < 50)
+      log(`每${name}免费礼包已领取`);
+    else {
+      log(`领取每${name}免费礼包`);
+      clickRect(free, 1, 0);
+      clickRect(ocrUntilFound(res => res.find(
+        e => e.text.includes('点击')
+      ), 20, 600, { maxScale: 4 }));
+    }
   }
   返回首页();
 }

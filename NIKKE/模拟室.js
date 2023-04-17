@@ -471,8 +471,8 @@ function doWithOption(option, status) {
     // 点了太多次确认
     if (!testDone) {
       let cancelBtn = ocrUntilFound(res => {
-        if (res.text.includes('确认') && res.text.includes('取消'))
-          return res.find(e => e.text.includes('取消'));
+        if (res.text.includes('确认') && res.text.includes('取'))
+          return res.find(e => e.text.match(/取[消清]/) != null);
         return null;
       }, 2, 500);
       log('无法处理当前情况，提前结束');

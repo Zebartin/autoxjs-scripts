@@ -7,7 +7,7 @@ var { 模拟室 } = require('./模拟室.js');
 var {
   ocrUntilFound, clickRect, findImageByFeature,
   requestScreenCaptureAuto, getDisplaySize,
-  findContoursRect
+  findContoursRect, rgbToGray
 } = require('./utils.js');
 let width, height;
 let NIKKEstorage = storages.create("NIKKEconfig");
@@ -96,8 +96,8 @@ function checkConfig() {
 function cashShop() {
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('付')), 30, 1000));
   let [upperBound, lowerBound] = ocrUntilFound(res => {
-      let ub = res.find(e => e.text.match(/[仅在指定的销售期间]{3,}/) != null);
-      let lb = res.find(e => e.text.includes('强化支'));
+      let ub = res.find(e => e.text.match(/[仅在指定的销售期间从同时出现的礼包中]{3,}/) != null);
+      let lb = res.find(e => e.text.match(/(强化支|[指挥官成长纪念露菲的推荐商品]{3,})/) != null);
       if (!ub || !lb)
           return null;
       return [ub.bounds.bottom, lb.bounds.top];

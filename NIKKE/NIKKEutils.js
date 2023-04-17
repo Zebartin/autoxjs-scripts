@@ -185,8 +185,6 @@ function 返回首页(checkSale) {
   clickRect(result);
   sleep(5000);
   for (let i = 0; i < 10; ++i) {
-    clickRect(result, 0.8, 0);
-    sleep(1000);
     let hallBtn = ocrUntilFound(res => {
       if (res.text.match(/(大厅|基地|物品|方舟)/) == null)
         return null;
@@ -198,6 +196,8 @@ function 返回首页(checkSale) {
       clickRect(hallBtn, 1, 0);
       break;
     }
+    clickRect(result, 0.8, 0);
+    sleep(1000);
   }
   log('返回首页');
 }

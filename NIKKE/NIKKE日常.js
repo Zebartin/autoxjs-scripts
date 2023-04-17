@@ -94,6 +94,8 @@ function checkConfig() {
 }
 
 function cashShop() {
+  if (!NIKKEstorage.get('checkCashShopFree', false))
+    return;
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('付')), 30, 1000));
   let [upperBound, lowerBound] = ocrUntilFound(res => {
     let ub = res.find(e => e.text.match(/([仅在指定的销售期间]{3,}|[从同时出现的礼包中]{3,})/) != null);

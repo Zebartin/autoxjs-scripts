@@ -57,6 +57,10 @@ ui.layout(
         <vertical id="shopping" visibility="gone">
           <text textSize="16sp" margin="8">商店设置</text>
           <horizontal margin="10 2">
+            <text textSize="14sp" w="0" layout_weight="8" >领取付费商店免费礼包</text>
+            <checkbox id="checkCashShopFree" w="0" layout_weight="2" />
+          </horizontal>
+          <horizontal margin="10 2">
             <text textSize="14sp" w="0" layout_weight="8" >使用信用点购买芯尘盒</text>
             <checkbox id="buyCoreDust" w="0" layout_weight="2" />
           </horizontal>
@@ -217,8 +221,8 @@ ui.layout(
         </horizontal>
       </vertical>
       <horizontal>
-        <button id="update" text="更新脚本" layout_weight="1"/>
-        <button id="save" text="保存设置" layout_weight="1"/>
+        <button id="update" text="更新脚本" layout_weight="1" />
+        <button id="save" text="保存设置" layout_weight="1" />
       </horizontal>
       <text id="updateText" text="" textColor="#999999" textSize="12sp" gravity="center" visibility="gone" />
     </vertical>
@@ -295,6 +299,7 @@ ui.buyCodeManual.setOnSeekBarChangeListener({
       ui.buyCodeManualText.setText(`购买前${p}本代码手册`);
   }
 });
+ui.checkCashShopFree.setChecked(NIKKEstorage.get('checkCashShopFree', false));
 ui.buyCoreDust.setChecked(NIKKEstorage.get('buyCoreDust', false));
 ui.buyCodeManual.setProgress(NIKKEstorage.get('buyCodeManual', 3));
 
@@ -450,6 +455,7 @@ ui.save.on("click", function () {
       todoTask.push(task);
   NIKKEstorage.put('todoTask', JSON.stringify(todoTask));
 
+  NIKKEstorage.put('checkCashShopFree', ui.checkCashShopFree.isChecked());
   NIKKEstorage.put('buyCoreDust', ui.buyCoreDust.isChecked());
   NIKKEstorage.put('buyCodeManual', ui.buyCodeManual.getProgress());
   NIKKEstorage.put('rookieArenaTarget', ui.rookieArenaTarget.getProgress());

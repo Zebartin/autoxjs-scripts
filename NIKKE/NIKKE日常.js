@@ -145,6 +145,11 @@ function cashShop() {
 
 function 商店() {
   let buyGood = (good) => {
+    let c = captureScreen().pixel(good.bounds.right + 5, good.bounds.bottom);
+    if (good.text != '免费商品' && colors.isSimilar(c, colors.DKGRAY, 30)) {
+      log(`${good.text}已售`);
+      return;
+    }
     toastLog(`购买${good.text}`);
     clickRect(good, 0.5);
     let [buyBtn, costGem] = ocrUntilFound(res => {
@@ -271,19 +276,10 @@ function 商店() {
         return null;
       return ret;
     }, 30, 1000);
-    // 一一检查每个商品是否灰暗
-    let screenImg = images.copy(captureScreen());
     for (let i = 0; i < buyCodeManual; ++i) {
-      let m = manuals[i];
-      let c = screenImg.pixel(m.bounds.centerX(), m.bounds.top);
-      if (!colors.isSimilar(c, colors.DKGRAY, 30)) {
-        buyGood(m);
-        ocrUntilFound(res => res.text.includes('技场'), 30, 500);
-      }
-      else
-        log(`${m.text}已售`)
+      buyGood(manuals[i]);
+      ocrUntilFound(res => res.text.includes('技场'), 30, 500);
     }
-    screenImg.recycle();
   }
   返回首页();
   cashShop();

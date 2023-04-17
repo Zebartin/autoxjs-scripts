@@ -63,7 +63,7 @@ def getFromGoogleSheet(apiKey):
         answers = []
         for valueRange in valueRanges:
             content = valueRange.get('values', [])
-            content = [zhconv.convert(row[0], 'zh-sg') for row in content]
+            content = [zhconv.convert(row[0] if row else '', 'zh-sg') for row in content]
             if 'A2' in valueRange.get('range'):
                 nikke_names = content
             else:

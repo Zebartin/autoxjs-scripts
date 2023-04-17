@@ -167,7 +167,7 @@ function 退出NIKKE() {
 }
 
 
-function 返回首页() {
+function 返回首页(checkSale) {
   const homeImage = images.read('./images/home.jpg');
   var result = null;
   for (let i = 0; i < 10; ++i) {
@@ -182,17 +182,20 @@ function 返回首页() {
   }
   result.text = '首页图标';
   homeImage.recycle();
-  sleep(1000);
+  clickRect(result);
+  sleep(5000);
   for (let i = 0; i < 10; ++i) {
     clickRect(result, 0.8, 0);
-    sleep(4000);
+    sleep(1000);
     let hallBtn = ocrUntilFound(res => {
       if (res.text.match(/(大厅|基地|物品|方舟)/) == null)
         return null;
       return res.find(e => e.text == '大厅');
-    }, 3, 400)
+    }, 3, 400);
     if (hallBtn != null) {
-      clickRect(hallBtn);
+      if (checkSale)
+        关闭限时礼包();
+      clickRect(hallBtn, 1, 0);
       break;
     }
   }
@@ -267,15 +270,13 @@ function 关闭限时礼包() {
       return null;
     return res.find(e => e.text.includes('点击'));
   }, 3, 2000);
-  if (closeSale == null) {
+  if (closeSale == null)
     toastLog('没有出现限时礼包');
-    sleep(2000);
-  }
   else {
     toastLog('关闭礼包页面');
     clickRect(closeSale);
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('确认')), 20, 1000));
-    ocrUntilFound(res => !res.text.includes('点击'), 20, 1500);
+    ocrUntilFound(res => !res.text.includes('点击'), 20, 1000);
   }
 }
 

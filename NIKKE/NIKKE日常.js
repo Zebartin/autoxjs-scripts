@@ -290,6 +290,7 @@ function 商店() {
 }
 
 function collectDefense(outpostBtn, wipeOut) {
+  let levelUp = false;
   clickRect(outpostBtn);
   let wipeOutBtn = ocrUntilFound(res => {
     let t = res.find(e => e.text.endsWith('灭'));
@@ -329,10 +330,11 @@ function collectDefense(outpostBtn, wipeOut) {
     if (t != null) {
       clickRect(t);
       toastLog('升级了');
-      关闭限时礼包();
+      levelUp = true;
     }
     return false;
   }, 20, 600);
+  return levelUp;
 }
 
 function dispatch(bulletin) {
@@ -422,11 +424,11 @@ function 基地收菜(doDailyMission) {
     ret.bounds.top = headquarter.bounds.bottom;
     return [ret, outpost];
   }, 50, 1000);
-  collectDefense(outpostBtn, true);
+  let levelUp = collectDefense(outpostBtn, true);
   dispatch(bulletin);
   if (doDailyMission)
-    collectDefense(outpostBtn, false);
-  返回首页();
+    levelUp = levelUp || collectDefense(outpostBtn, false);
+  返回首页(levelUp);
 }
 function 好友() {
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('好友')), 30, 1000), 0.1);

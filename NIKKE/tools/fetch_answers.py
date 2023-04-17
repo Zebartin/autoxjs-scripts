@@ -8,6 +8,8 @@ from collections import defaultdict
 from bs4 import BeautifulSoup as bs
 
 punctuation_pattern = re.compile(r"[，…？?、!！「」～☆【】。.—{}'\"“”♪\s]")
+
+
 def getFromGamekee():
     r = requests.get('https://nikke.gamekee.com/v1/content/detail/575965', headers={
         'game-alias': 'nikke'
@@ -40,6 +42,7 @@ def getFromGamekee():
         ret[person] = answers
     return ret
 
+
 def getFromGoogleSheet(apiKey):
     ret = defaultdict(list)
     # 定义要访问的google表格的ID和范围
@@ -50,7 +53,7 @@ def getFromGoogleSheet(apiKey):
     # 发送GET请求，获取第一列和第三列的内容
     response = requests.get(url, params={
         'key': apiKey,
-        'ranges': ['角色排序查詢!A2:A','角色排序查詢!C2:C']
+        'ranges': ['角色排序查詢!A2:A', '角色排序查詢!C2:C']
     })
     result = response.json()
     valueRanges = result.get('valueRanges', [])
@@ -63,7 +66,8 @@ def getFromGoogleSheet(apiKey):
         answers = []
         for valueRange in valueRanges:
             content = valueRange.get('values', [])
-            content = [zhconv.convert(row[0] if row else '', 'zh-sg') for row in content]
+            content = [zhconv.convert(row[0] if row else '', 'zh-sg')
+                       for row in content]
             if 'A2' in valueRange.get('range'):
                 nikke_names = content
             else:
@@ -74,8 +78,11 @@ def getFromGoogleSheet(apiKey):
             cleaned_a = punctuation_pattern.sub('', a)
             if len(cleaned_a) == 0:
                 continue
+            if n == 'Ｄ':
+                n = 'D'
             ret[n].append(cleaned_a)
     return ret
+
 
 if __name__ == '__main__':
     zh_cn_data = getFromGamekee()
@@ -88,4 +95,3 @@ if __name__ == '__main__':
         zh_cn_data[k] = zh_tw_data[k]
     with open(os.path.join(os.path.dirname(__file__), '..', 'nikke.json'), 'w') as f:
         json.dump(zh_cn_data, f, ensure_ascii=False, indent=2)
-        

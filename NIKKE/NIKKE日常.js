@@ -642,9 +642,9 @@ function 竞技场() {
   if (specialRewardBtn != null && specialRewardBtn.text != '0%') {
     clickRect(specialRewardBtn);
     toastLog('领取竞技场奖励');
-    let clickReward = ocrUntilFound(res => res.find(e =>
+    let clickReward = ocrUntilFound((res, img) => res.find(e =>
       e.text.includes('点击') && e.bounds != null &&
-      e.bounds.top > specialRewardBtn.bounds.bottom
+      e.bounds.bottom > img.height * 0.4
     ), 10, 1000);
     if (clickReward != null)
       clickRect(clickReward);

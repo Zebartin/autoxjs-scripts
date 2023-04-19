@@ -16,27 +16,28 @@ AutoX.js在初版Auto.js（现为[Auto.js Pro](https://pro.autojs.org/)）的基
 - 应用启动相关权限（自启动、关联启动、后台启动等等）
 - 用电管理/电池管理
 
-## 复制脚本文件到设备中
+## 下载脚本文件
+
+### 直接通过脚本更新（推荐）
+
+可以只下载[最新release](https://github.com/Zebartin/autoxjs-scripts/releases/latest)中的`NIKKE.js`到AutoX.js的脚本目录下。将其重命名为`NIKKE设置.js`，运行该脚本，点击底部“更新脚本”按钮，等待片刻，即可将所有所需文件下载到当前目录下。打开软件右上角的日志，可以查看具体的更新内容。
+
+> ❗注意：这种方式会将原有同名文件全部覆盖，如果自行修改过某些文件，请谨慎使用该功能。
 
 ### 手动下载所有内容
 
 下载[最新release](https://github.com/Zebartin/autoxjs-scripts/releases/latest)中的压缩包，把其中的文件解压到AutoX.js的脚本目录下（一般在内部存储主目录下，名为`/脚本/`，如果没有，自行新建一个空脚本保存后就会出现）。
 
-如果想使用最新的commit版本，则将父目录的`utils.js`和本目录的文件都放到AutoX.js的脚本目录下。
+如果想使用最新的commit版本，则注意切换到dev分支，将父目录的`utils.js`和本目录的文件都放到AutoX.js的脚本目录下。
 
 其中以下文件不需要复制：
 
 - `NIKKE活动.js`;
 - `NIKKE12月活动.js`;
-- `README.md`
+- `*.md`
+- `tools`目录
 
 `images/`应保持文件夹结构，不要单独拿出来。
-
-### 直接通过脚本更新
-
-如果设备网络通畅，可以只下载[最新release](https://github.com/Zebartin/autoxjs-scripts/releases/latest)中的`NIKKE.js`到AutoX.js的脚本目录下。将其重命名为`NIKKE设置.js`，运行该脚本，点击底部“更新脚本”按钮，等待片刻，即可将所有所需文件下载到当前目录下。打开软件右上角的日志，可以查看具体的更新内容。
-
-> ❗注意：这种方式会将原有同名文件全部覆盖，如果自行修改过某些文件，请谨慎使用该功能。
 
 ## 修改脚本内容（可选）
 

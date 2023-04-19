@@ -113,9 +113,15 @@ function cashShop() {
   let target = findImageByFeature(img, cashShopImg, {
     region: [0, upperBound, img.width, lowerBound - upperBound]
   });
-  clickRect(target);
   cashShopImg.recycle();
-  let d = ocrUntilFound(res => res.find(e => e.text.endsWith('日')), 30, 600);
+  target.text = '礼包图标';
+  clickRect(target);
+  let d = ocrUntilFound(res => {
+    let t = res.find(e => e.text.endsWith('日'));
+    if (t == null)
+      clickRect(target, 1, 0);
+    return t;
+  }, 30, 600);
   swipe(d.bounds.right, d.bounds.centerY(), 0, d.bounds.centerY(), 500);
   let [daily, weekly, monthly] = ocrUntilFound(res => {
     let d = res.find(e => e.text.endsWith('日'));
@@ -239,7 +245,7 @@ function 商店() {
     ocrUntilFound(res => {
       if (res.text.match(/[竟竞]技场/) != null)
         return true;
-      clickRect(arenaShop);
+      clickRect(arenaShop, 0.8, 1);
       return false;
     }, 10, 1000);
     let manuals = ocrUntilFound(res => {
@@ -449,7 +455,7 @@ function 好友() {
   }, 30, 1000);
   clickRect(someFriend);
   ocrUntilFound(res => {
-    if (res.text.match(/(ID|日期|代表|进度)/) != null)
+    if (res.text.match(/(日期|代表|进度)/) != null)
       return true;
     clickRect(someFriend, 1, 0);
     return false;

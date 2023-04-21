@@ -136,6 +136,8 @@ function cashShop() {
     clickRect(btn);
     let [free, color] = ocrUntilFound((res, img) => {
       let t = res.find(e => e.text.includes(name + '免'));
+      if (!t)
+        return null;
       return [t, img.pixel(t.bounds.left, t.bounds.bottom + 5)];
     }, 20, 700);
     if (rgbToGray(color) < 50)

@@ -210,8 +210,10 @@ function 商店() {
           return null;
         return ret;
       }, 4, 300) || [];
-      for (let coreDust of coreDusts)
+      for (let coreDust of coreDusts) {
         buyGood(coreDust);
+        ocrUntilFound(res => res.text.match(/(距离|更新|还有)/) != null, 20, 600);
+      }
     }
     return hasFree;
   };

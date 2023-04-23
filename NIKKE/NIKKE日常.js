@@ -821,7 +821,7 @@ function 单次咨询(advise) {
     // 连点直到出现选项
     let adviseImage = images.read('./images/counsel.jpg');
     let result = null;
-    for (let j = 0; j < 15; ++j) {
+    for (let j = 0; j < 30; ++j) {
       result = images.matchTemplate(captureScreen(), adviseImage, {
         threshold: 0.7,
         max: 2,

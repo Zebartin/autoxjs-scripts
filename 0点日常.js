@@ -1,19 +1,20 @@
 auto.waitFor();
-var { unlockIfNeed } = require('./utils.js');
+var { unlockIfNeed, getDisplaySize } = require('./utils.js');
+const [width, height] = getDisplaySize();
 
 unlockIfNeed();
-饿了么签到();
+// 饿了么签到();
 米游社签到();
 
 function 饿了么签到() {
   app.launchApp("饿了么");
-  const threadClose = threads.start(()=>{
+  const threadClose = threads.start(() => {
     const adClose = className('ImageView').depth(7).drawingOrder(2);
     const negativeClose = id('negative_btn');
     const close = id('close_btn');
     const openNotify = textMatches(/(立即开启|放弃)/);
     const closeQueue = [adClose, negativeClose, close, openNotify];
-    while(true){
+    while (true) {
       for (let i of closeQueue) {
         let t = i.findOne(1000);
         if (t != null) {
@@ -64,17 +65,28 @@ function 饿了么签到() {
 function 米游社签到() {
   app.launchApp("米游社");
   log("打开米游社");
-  const threadClose = threads.start(()=>{
+  const threadClose = threads.start(() => {
     const btn = textMatches(/(我知道了|下次再说)/);
     btn.waitFor();
     btn.click();
   });
-  text('签到福利').findOne().parent().parent().click();
-  textEndsWith('天空岛').waitFor();
-  sleep(random(3000, 5000));
-  const days = className('TextView').textMatches(/.*第\d+天/).find();
-  days[days.length - 1].parent().click();
-  sleep(random(3000, 7000));
+  for (let name of ['原神', '崩坏：星穹铁道']) {
+    text(name).findOne().parent().click();
+    sleep(random(1000, 2000));
+    for (let i = 0; i < 10; ++i) {
+      text('签到福利').filter(w => w.bounds().right > w.bounds().left).findOne().parent().parent().click();
+      textMatches(/.*(天空岛|星穹列车)$/).waitFor();
+      sleep(random(1000, 2000));
+      let day = textMatches(/^.+第\d+天$/).findOne(2000);
+      if (day != null) {
+        day.click();
+        break;
+      }
+      back();
+      sleep(random(300, 1000));
+    }
+    back();
+  }
   log("米游社已签到");
   threadClose.interrupt();
   // 连按返回退出程序

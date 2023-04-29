@@ -344,7 +344,7 @@ function 刷刷刷() {
         if (restart != null && restart.bounds.left >= img.width / 2)
           return restart;
         return null;
-      }, 30, 500);
+      }, 30, 500, { maxScale: 8 });
       clickRect(target);
     }
     log('门票用完了');

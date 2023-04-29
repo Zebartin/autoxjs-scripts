@@ -97,21 +97,16 @@ function cashShop() {
   if (!NIKKEstorage.get('checkCashShopFree', false))
     return;
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('付')), 30, 1000));
-  let [upperBound, lowerBound] = ocrUntilFound(res => {
+  let upperBound = ocrUntilFound(res => {
     let ub = res.find(e => e.text.match(/([仅在指定的销售期间]{3,}|[从同时出现的礼包中]{3,})/) != null);
-    let lb = res.find(e => e.text.match(/(强化支|指挥官|成长纪念|推荐商品)/) != null);
-    if (!ub || !lb)
-      return null;
-    let ubb = ub.bounds.bottom;
-    let lbt = lb.bounds.top;
-    if (ubb >= lbt)
-      return null;
-    return [ubb, lbt];
+    if (ub)
+      return ub.bounds.bottom;
+    return null;
   }, 20, 1000);
   let img = captureScreen();
   let cashShopImg = images.read('./images/cashShop.jpg');
   let target = findImageByFeature(img, cashShopImg, {
-    region: [0, upperBound, img.width, lowerBound - upperBound]
+    region: [0, upperBound, img.width, cashShopImg.height * 5]
   });
   cashShopImg.recycle();
   target.text = '礼包图标';
@@ -583,7 +578,7 @@ function 新人竞技场(rookieTarget) {
   }, 30, 1000);
   while (true) {
     let hasFree = ocrUntilFound((res, img) => {
-      if (!res.text.includes('ROOKIE'))
+      if (!res.text.match(/R[OD][OD]K.E/))
         return null;
       let t = res.find(e =>
         e.text.includes('免') && e.bounds != null &&
@@ -641,11 +636,11 @@ function 竞技场() {
         e.bounds.bottom < atk.bounds.top &&
         e.bounds.left > atk.bounds.right
       );
-      if (ret != null) {
-        // 下移识别框
-        ret.bounds.top = touch.bounds.top;
-        ret.bounds.bottom = touch.bounds.bottom;
-      }
+      if (!ret || !touch)
+        return null;
+      // 下移识别框
+      ret.bounds.top = touch.bounds.top;
+      ret.bounds.bottom = touch.bounds.bottom;
     }
     return ret;
   }, 50, 1000);

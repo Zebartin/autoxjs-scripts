@@ -652,7 +652,15 @@ function 竞技场() {
   返回首页();
 }
 function 咨询() {
-  const advise = JSON.parse(files.read('./nikke.json'));
+  let advise = null;
+  if (NIKKEstorage.get('fetchLatestNikkeJson', false))
+    try {
+      advise = http.get('https://github.blindbuffalo.xyz/https://raw.githubusercontent.com/Zebartin/autoxjs-scripts/dev/NIKKE/nikke.json').body.json();
+    } catch (error) {
+      log(`获取最新咨询文本失败：${error.message}`);
+    }
+  if (advise == null)
+    advise = JSON.parse(files.read('./nikke.json'));
   clickRect(ocrUntilFound(res => res.find(e => e.text == '妮姬'), 40, 1000));
   clickRect(ocrUntilFound(res => res.find(e => e.text == '咨询'), 40, 1000));
   toastLog('开始咨询');

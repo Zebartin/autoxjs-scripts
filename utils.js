@@ -252,7 +252,7 @@ function findImageByFeature(trainImg, queryImg, options) {
     ptsArr.sort((a, b) => a.y - b.y);
     bounds.top = Math.round((ptsArr[0].y + ptsArr[1].y) / 2);
     bounds.bottom = Math.round((ptsArr[2].y + ptsArr[3].y) / 2);
-    if (storages.create("NIKKEconfig").get('debug', false)) {
+    if (options.debug) {
       with (JavaImporter(org.opencv.imgproc.Imgproc)) {
         Imgproc.polylines(img2, pts, true, Scalar(0), 3, Imgproc.LINE_AA);
         ptsArr[0] = Point(bounds.left, bounds.top);

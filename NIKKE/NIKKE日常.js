@@ -97,16 +97,11 @@ function cashShop() {
   if (!NIKKEstorage.get('checkCashShopFree', false))
     return;
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('付')), 30, 1000));
-  let upperBound = ocrUntilFound(res => {
-    let ub = res.find(e => e.text.match(/([仅在指定的销售期间]{3,}|[从同时出现的礼包中]{3,})/) != null);
-    if (ub)
-      return ub.bounds.bottom;
-    return null;
-  }, 20, 1000);
+  ocrUntilFound(res => res.text.includes('礼包'), 30, 700);
   let img = captureScreen();
   let cashShopImg = images.read('./images/cashShop.jpg');
   let target = findImageByFeature(img, cashShopImg, {
-    region: [0, upperBound, img.width, cashShopImg.height * 5]
+    region: [0, 0, img.width, img.height * 0.5]
   });
   cashShopImg.recycle();
   target.text = '礼包图标';

@@ -355,39 +355,23 @@ function dispatch(bulletin) {
       toastLog('全部领取');
       clickRect(receive);
       clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 10, 3000));
-      ocrUntilFound(res => res.text.includes('全'), 30, 1000);
-      sleep(600);
-      back();
-      ocrUntilFound(res => {
-        if (res.text.match(/(时间|完成|目前)/) != null)
-          return true;
-        if (res.text.includes('中心')) {
-          clickRect(bulletin, 0.3);
-          sleep(500);
-        }
-        return false;
-      }, 30, 500);
+      ocrUntilFound(res => res.text.match(/(时间|目前)/), 20, 500);
     }
-    // 重新进入公告栏时需要硬等派遣列表的加载
-    for (let i = 0; i < 6; ++i) {
-      if (colors.red(images.pixel(captureScreen(), send.bounds.right, send.bounds.top)) > 240) {
-        clickRect(send);
-        sleep(1000);
-        target = ocrUntilFound(res => {
-          let cancel = res.find(e => e.text.match(/取[消清]/) != null);
-          if (!cancel)
-            return null;
-          let ret = res.find(e =>
-            e.text.includes('派') && e.bounds != null &&
-            e.bounds.bottom > cancel.bounds.top
-          )
-          return ret;
-        }, 30, 600, { maxScale: 8, gray: true });
-        clickRect(target);
-        ocrUntilFound(res => res.text.includes('全'), 30, 1000);
-        break;
-      }
-      sleep(500);
+    if (colors.red(images.pixel(captureScreen(), send.bounds.right, send.bounds.top)) > 240) {
+      clickRect(send);
+      sleep(1000);
+      target = ocrUntilFound(res => {
+        let cancel = res.find(e => e.text.match(/取[消清]/) != null);
+        if (!cancel)
+          return null;
+        let ret = res.find(e =>
+          e.text.includes('派') && e.bounds != null &&
+          e.bounds.bottom > cancel.bounds.top
+        )
+        return ret;
+      }, 30, 600, { maxScale: 8, gray: true });
+      clickRect(target);
+      ocrUntilFound(res => res.text.includes('全'), 30, 1000);
     }
   }
   clickRect(bulletin, 1, 0);

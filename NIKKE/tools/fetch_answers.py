@@ -7,7 +7,9 @@ import requests
 from collections import defaultdict
 from bs4 import BeautifulSoup as bs
 
-punctuation_pattern = re.compile(r"[，…？?、!！「」～☆【】。.—{}'\"“”♪\s]")
+# ord('⋯') = 8943
+# ord('…') = 8230
+punctuation_pattern = re.compile(r"[，⋯…？?、!！「」～☆【】。.—{}'\"“”♪\s]")
 
 
 def getFromGamekee():

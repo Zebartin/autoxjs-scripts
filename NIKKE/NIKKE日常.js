@@ -644,7 +644,7 @@ function 竞技场() {
 }
 function 咨询() {
   let advise = null;
-  if (NIKKEstorage.get('fetchLatestNikkeJson', false))
+  if (NIKKEstorage.get('fetchLatestNikkeJson', true))
     try {
       advise = http.get('https://github.blindbuffalo.xyz/https://raw.githubusercontent.com/Zebartin/autoxjs-scripts/dev/NIKKE/nikke.json').body.json();
     } catch (error) {
@@ -1115,10 +1115,10 @@ function dailyMissionCompleted() {
 }
 
 function 每日任务() {
-  if (dailyMissionCompleted())
-    return;
-  社交点数招募();
-  强化装备();
+  // if (dailyMissionCompleted())
+  //   return;
+  // 社交点数招募();
+  // 强化装备();
   let season = ocrUntilFound(res => res.find(e => e.text.includes('SEASON')), 30, 500);
   let i;
   for (i = 0; i < 10; ++i) {
@@ -1146,7 +1146,7 @@ function 每日任务() {
   let getAllBtn = ocrUntilFound(res => {
     if (!res.text.includes('DA'))
       return null;
-    return res.find(e => e.text.startsWith('全'));
+    return res.find(e => e.text.match(/.{0,2}全/) != null);
   }, 30, 500);
   let confirmReceived = 3;
   ocrUntilFound((res, img) => {

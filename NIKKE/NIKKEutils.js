@@ -103,7 +103,6 @@ function 等待NIKKE加载() {
   let [width, height] = getDisplaySize();
   let manuallyEnter = true;
   if (ocrUntilFound(res => {
-    toast('等待加载……');
     if (res.text.match(/(密|验证)码/) != null) {
       toastLog('未登录游戏，停止运行脚本');
       退出NIKKE();
@@ -129,6 +128,7 @@ function 等待NIKKE加载() {
       click(width / 2, height * 0.8);
     else if (res.text.match(/(大厅|员招|物品栏)/) != null)
       return true;
+    toast('等待加载……');
     return false;
   }, 60, 5000) == null)
     throw new Error('游戏似乎一直在加载');

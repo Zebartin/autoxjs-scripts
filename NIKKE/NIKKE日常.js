@@ -1115,10 +1115,10 @@ function dailyMissionCompleted() {
 }
 
 function 每日任务() {
-  // if (dailyMissionCompleted())
-  //   return;
-  // 社交点数招募();
-  // 强化装备();
+  if (dailyMissionCompleted())
+    return;
+  社交点数招募();
+  强化装备();
   let season = ocrUntilFound(res => res.find(e => e.text.includes('SEASON')), 30, 500);
   let i;
   for (i = 0; i < 10; ++i) {

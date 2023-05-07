@@ -124,10 +124,11 @@ function 等待NIKKE加载() {
       click(width / 2, height / 2);
       manuallyEnter = false;
     }
-    else if (res.text.match(/(REWARD|点击|每日|补给)/) != null)
-      click(width / 2, height * 0.8);
     else if (res.text.match(/(大厅|员招|物品栏)/) != null)
       return true;
+    // 月卡检查要放在这里之后
+    else if (res.text.match(/(REWARD|点击|每日|补给)/) != null)
+      click(width / 2, height * 0.8);
     toast('等待加载……');
     return false;
   }, 60, 5000) == null)

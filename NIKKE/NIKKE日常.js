@@ -61,6 +61,7 @@ function 日常() {
           let filename = files.path(`./images/nikkerror/${Date.now()}.jpg`);
           images.save(captureScreen(), filename);
           log(`出错截图已保存到${filename}`);
+          log(`当前脚本版本：${NIKKEstorage.get('tagName', '无记录')}`)
           if (alreadyRetry != maxRetry) {
             toastLog(`脚本出错，即将重试(${alreadyRetry + 1}/${maxRetry})`);
             sleep(3000);

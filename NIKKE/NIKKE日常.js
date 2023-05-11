@@ -178,16 +178,16 @@ function 商店() {
         affordable = false;
         return true;
       }
-      let receiveBtn = res.find(e => e.text.includes('点击'));
-      if (receiveBtn != null) {
-        clickRect(receiveBtn);
+      let reward = res.find(e => e.text.includes('REW'));
+      if (reward != null) {
+        click(width / 2, height * 0.8);
         return true;
       }
       let buyBtn = res.find(e => e.text == '购买');
       if (buyBtn != null)
         clickRect(buyBtn, 1, 0);
       return null;
-    }, 20, 1000);
+    }, 20, 1000, { gray: true, maxScale: 4 });
     if (!affordable) {
       log('资金不足');
       back();

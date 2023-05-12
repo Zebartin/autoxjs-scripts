@@ -178,11 +178,11 @@ function 商店() {
         affordable = false;
         return true;
       }
-      let reward = res.find(e => e.text.includes('REW'));
-      if (reward != null) {
-        click(width / 2, height * 0.8);
+      if (res.text.match(/(距离|更新|还有)/) != null)
         return true;
-      }
+      let reward = res.find(e => e.text.includes('REW'));
+      if (reward != null)
+        click(width / 2, height * 0.8);
       let buyBtn = res.find(e => e.text == '购买');
       if (buyBtn != null)
         clickRect(buyBtn, 1, 0);

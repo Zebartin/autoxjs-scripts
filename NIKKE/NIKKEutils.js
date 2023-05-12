@@ -294,7 +294,7 @@ function NikkeToday() {
 function 刷刷刷() {
   let [width, height] = getDisplaySize();
   clickRect(ocrUntilFound(res => res.find(
-    e => e.text.endsWith('战斗')
+    e => e.text.includes('入战')
   ), 20, 3000));
   log('进入战斗');
   sleep(2000);

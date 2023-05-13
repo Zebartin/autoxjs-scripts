@@ -106,21 +106,35 @@ function cashShop() {
       prev.bounds.top < curr.bounds.top ? prev : curr
     ).bounds.bottom;
   }, 20, 1000);
-  let img = captureScreen();
   let cashShopImg = images.read('./images/cashShop.jpg');
-  let target = findImageByFeature(img, cashShopImg, {
-    region: [0, upperBound, img.width, cashShopImg.height * 5]
-  });
+  for (let i = 0; i < 10; ++i) {
+    let img = captureScreen();
+    let target = findImageByFeature(img, cashShopImg, {
+      region: [0, upperBound, img.width, cashShopImg.height * 5]
+    });
+    if (target == null){
+      sleep(1000);
+      continue;
+    }
+    target.text = '礼包图标';
+    let targetColor = img.pixel(target.bounds.left, target.bounds.centerY());
+    if (rgbToGray(targetColor) >= 70){
+      sleep(1000);
+      continue;
+    }
+    clickRect(target);
+    let d = ocrUntilFound(res => {
+      let t = res.find(e => e.text.endsWith('日'));
+      if (t == null)
+        clickRect(target, 1, 0);
+      return t;
+    }, 10, 600);
+    if (d != null) {
+      swipe(d.bounds.right, d.bounds.centerY(), 0, d.bounds.centerY(), 500);
+      break;
+    }
+  }
   cashShopImg.recycle();
-  target.text = '礼包图标';
-  clickRect(target);
-  let d = ocrUntilFound(res => {
-    let t = res.find(e => e.text.endsWith('日'));
-    if (t == null)
-      clickRect(target, 1, 0);
-    return t;
-  }, 30, 600);
-  swipe(d.bounds.right, d.bounds.centerY(), 0, d.bounds.centerY(), 500);
   let [daily, weekly, monthly] = ocrUntilFound(res => {
     let d = res.find(e => e.text.endsWith('日'));
     let w = res.find(e => e.text.endsWith('周'));
@@ -143,9 +157,11 @@ function cashShop() {
     else {
       log(`领取每${name}免费礼包`);
       clickRect(free, 1, 0);
-      clickRect(ocrUntilFound(res => res.find(
+      let clickOut = ocrUntilFound(res => res.find(
         e => e.text.includes('点击')
-      ), 20, 600, { maxScale: 4 }));
+      ), 10, 800, { maxScale: 4 });
+      if (clickOut != null)
+        clickRect(clickOut);
     }
   }
   返回首页();

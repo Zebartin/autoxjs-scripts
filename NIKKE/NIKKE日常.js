@@ -601,8 +601,12 @@ function 新人竞技场(rookieTarget) {
     sleep(5000);
     ocrUntilFound(res => res.text.includes('RANK'), 20, 3000);
     toastLog('结算界面');
-    sleep(1000);
-    click(width / 2, height * 0.2);
+    ocrUntilFound((res, img) => {
+      if (res.text.includes('返回'))
+        return true;
+      click(img.width * 0.5, img.height * 0.8);
+      return false;
+    }, 30, 1000)
   }
   back();
 }

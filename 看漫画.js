@@ -38,64 +38,81 @@ let giftCenter = ocrUntilFound(res => {
 }, 20, 1000);
 // 先进一次消除签到板
 clickRect(giftCenter);
-sleep(2000);
-back();
+text('去阅读').waitFor();
 sleep(1000);
-clickRect(giftCenter);
-// 等待加载，随机找一个漫画
-text('阅读漫画赚赛季积分').waitFor(); // 可能会弹出签到板
-className("android.view.View").depth(12)
-  .indexInParent(random(14, 16))
-  .click();
-// 等待加载，点击屏幕中央消去头尾的导航栏
-ocrUntilFound(res => {
-  if (res.text.match(/弹[慕幕]见/) != null) {
-    click(width / 2, height / 2);
-    sleep(1000);
-    return true;
-  } else if (res.text.includes("重试")) {
-    clickRect(res.find(e => e.text == '重试'));
-  } else if (res.text.match(/(该话.有.容|不支持|视频|免费|购买)/) != null) {
-    back();
-    className("android.view.View").depth(12)
-      .indexInParent(random(14, 16))
-      .click();
+let order = [0,1,2,3,4];
+shuffle(order);
+for (let index of order) {
+  let allBooks = text('去阅读').find().map(x=>x.parent());
+  let book = allBooks[index];
+  log(book.child(1).text())
+  if (book.findOne(textContains('已获得')) != null){
+    log('已读');
+    continue;
   }
-  return false;
-}, 50, 1000);
-
-var timeEnough = false;
-var threadRead = threads.start(() => {
-  log("看漫画开始");
-  while (!timeEnough) {
-    click(width * 0.2, height * 0.8);
-    sleep(random(6000, 9000));
-    click(width * 0.8, height * 0.2);
-    sleep(random(6000, 9000));
-  }
-  log("看漫画结束");
-  // 连按退出程序
-  while (true) {
-    back();
-    sleep(500);
-    if (text('阅读漫画赚赛季积分').exists())
-      break;
-  }
+  book.child(3).click();
+  readBook();
+}
+for (let i = 0;i<4;i++){
   back();
-  sleep(1000);
-  clickRect(giftCenter);
-  text('阅读漫画赚赛季积分').waitFor();
-  sleep(5000);
-  for (let i = 0; i < 3; ++i) {
-    back();
-    sleep(500);
-  }
-})
-// 30分钟后终止threadRead
-threads.start(() => {
-  setTimeout(() => {
-    timeEnough = true;
-  }, 30 * 60 * 1000 + 1000);
-});
-threadRead.join();
+  sleep(500);
+}
 exit();
+
+function shuffle(array) {
+    let currentIndex = array.length, temporaryValue, randomIndex;
+
+    while (currentIndex !== 0) {
+        // 选择一个剩余元素（currentIndex减小）
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex--;
+
+        // 将选中的元素与当前元素交换
+        temporaryValue = array[currentIndex];
+        array[currentIndex] = array[randomIndex];
+        array[randomIndex] = temporaryValue;
+    }
+
+    return array;
+}
+
+function readBook(){
+  // 等待加载，点击屏幕中央消去头尾的导航栏
+  ocrUntilFound(res => {
+    if (res.text.match(/弹[慕幕募]见/) != null) {
+      click(width / 2, height / 2);
+      sleep(1000);
+      return true;
+    } else if (res.text.includes("重试")) {
+      clickRect(res.find(e => e.text == '重试'));
+    // } else if (res.text.match(/(该话.有.容|不支持|视频|免费|购买)/) != null) {
+    //   back();
+    }
+    return false;
+  }, 50, 1000);
+
+  var timeEnough = false;
+  var threadRead = threads.start(() => {
+    log("看漫画开始");
+    while (!timeEnough) {
+      click(width * 0.2, height * 0.8);
+      sleep(random(6000, 9000));
+      click(width * 0.8, height * 0.2);
+      sleep(random(6000, 9000));
+    }
+    log("看漫画结束");
+    // 连按退出
+    while (true) {
+      back();
+      if (text('去阅读').findOne(2000) != null)
+        break;
+    }
+  });
+  // 5分钟后终止threadRead
+  threads.start(() => {
+    setTimeout(() => {
+      timeEnough = true;
+    }, 5 * 60 * 1000 + 1000);
+  });
+  threadRead.join();
+}

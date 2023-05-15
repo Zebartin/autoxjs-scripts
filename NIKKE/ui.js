@@ -167,7 +167,7 @@ ui.layout(
         <vertical margin="16 8">
           <Switch id="每日任务TAB" text="未启用" textSize="16sp" />
           <text text="完成其他每日任务：强化装备、社交点数招募" textColor="#999999" textSize="14sp" />
-          <vertical id="dailyMission" visibility="visible" margin="0 20">
+          <vertical id="dailyMission" margin="0 20">
             <horizontal>
               <text textSize="16sp" textColor="#222222" w="0" layout_weight="5">强化装备指定妮姬：</text>
               <input textSize="16sp" id="equipEnhanceNikke" w="0" layout_weight="5" hint="妮姬名/正则表达式" />
@@ -182,10 +182,30 @@ ui.layout(
     </viewpager >
   </vertical >
 );
+const NIKKEstorage = storages.create("NIKKEconfig");
 const todoTaskDefault = [
   "基地收菜", "好友", "竞技场", "商店",
   "爬塔", "咨询", "模拟室", "每日任务"
 ];
+const simulationRoomDefault = {
+  maxPass: 20,
+  maxSsrNumber: 4,
+  tryDiffArea: 0,
+  preferredBuff: [
+    "引流转换器", "高品质粉末",
+    "冲击引流器", "控制引导器"
+  ]
+};
+let todoTask = NIKKEstorage.get('todoTask', null);
+if (todoTask == null)
+  todoTask = todoTaskDefault;
+if (typeof todoTask == 'string')
+  todoTask = JSON.parse(todoTask);
+let simulationRoom = NIKKEstorage.get('simulationRoom', null);
+if (simulationRoom == null)
+  simulationRoom = simulationRoomDefault;
+if (typeof simulationRoom == 'string')
+  simulationRoom = JSON.parse(simulationRoom);
 //设置滑动页面的标题
 ui.viewpager.setTitles(["通用设置"].concat([
   "基地收菜 & 好友 & 竞技场", "商店",
@@ -208,3 +228,82 @@ for (let i = 0; i < todoTaskDefault.length; ++i) {
     tabSwitch.setText(checked ? '已启用' : '未启用');
   });
 }
+ui.buyCodeManual.setMin(0);
+ui.buyCodeManual.setMax(4);
+ui.buyCodeManual.setOnSeekBarChangeListener({
+  onProgressChanged: function (seekbar, p, fromUser) {
+    if (p == 0)
+      ui.buyCodeManualText.setText('不购买代码手册');
+    else if (p == 4)
+      ui.buyCodeManualText.setText('购买所有代码手册和自选宝箱');
+    else
+      ui.buyCodeManualText.setText(`购买前${p}本代码手册`);
+  }
+});
+ui.checkCashShopFree.setChecked(NIKKEstorage.get('checkCashShopFree', false));
+ui.buyCoreDust.setChecked(NIKKEstorage.get('buyCoreDust', false));
+ui.buyCodeManual.setProgress(NIKKEstorage.get('buyCodeManual', 3));
+
+ui.rookieArenaTarget.setMin(0);
+ui.rookieArenaTarget.setMax(3);
+ui.rookieArenaTarget.setOnSeekBarChangeListener({
+  onProgressChanged: function (seekbar, p, fromUser) {
+    if (p == 0)
+      ui.rookieArenaTargetText.setText('不打新人竞技场');
+    else
+      ui.rookieArenaTargetText.setText(`新人竞技场选择第${p}位对手`);
+  }
+});
+ui.rookieArenaTarget.setProgress(NIKKEstorage.get('rookieArenaTarget', 1));
+
+ui.maxPass.setMin(0);
+ui.maxPass.setMax(50);
+ui.maxPass.setOnSeekBarChangeListener({
+  onProgressChanged: function (seekbar, p, fromUser) {
+    if (p == 0) {
+      ui.maxPassText.setText('不刷buff');
+      ui.maxSsrNumber.setProgress(0);
+    } else {
+      ui.maxPassText.setText(`重复${p}轮后停止`);
+      if (ui.maxSsrNumber.getProgress() == 0)
+        ui.maxSsrNumber.setProgress(1);
+    }
+  }
+});
+
+ui.maxSsrNumber.setMin(0);
+ui.maxSsrNumber.setMax(7);
+ui.maxSsrNumber.setOnSeekBarChangeListener({
+  onProgressChanged: function (seekbar, p, fromUser) {
+    if (p == 0) {
+      ui.maxSsrText.setText('不刷buff');
+      ui.maxPass.setProgress(0);
+    } else {
+      ui.maxSsrText.setText(`刷到${p}个SSR后停止`);
+      if (ui.maxPass.getProgress() == 0)
+        ui.maxPass.setProgress(1);
+    }
+  }
+});
+
+ui.tryDiffArea.setMin(0);
+ui.tryDiffArea.setMax(8);
+ui.tryDiffArea.setOnSeekBarChangeListener({
+  onProgressChanged: function (seekbar, p, fromUser) {
+    if (p == 0)
+      ui.tryDiffAreaText.setText('刷完buff后不尝试更高难度');
+    else {
+      let diff = Math.floor(p / 3) + 3;
+      let area = String.fromCharCode('A'.charCodeAt(0) + p % 3);
+      ui.tryDiffAreaText.setText(`刷完buff后尝试${diff}${area}`);
+    }
+  }
+});
+
+ui.simTeam.setText((() => {
+  let team = simulationRoom.team || ['长发公主', '桑迪', '神罚', '红莲', '丽塔'];
+  return team.join('，');
+})());
+ui.maxPass.setProgress(simulationRoom.maxPass);
+ui.maxSsrNumber.setProgress(simulationRoom.maxSsrNumber);
+ui.tryDiffArea.setProgress(simulationRoom.tryDiffArea || 0);

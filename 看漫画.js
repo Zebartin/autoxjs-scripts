@@ -34,7 +34,7 @@ clickRect(myBtn);
 let giftCenter = ocrUntilFound(res => {
   if (!res.text.includes('活动中心'))
     return null;
-  return res.find(e => e.text.includes('福利'));
+  return res.find(e => e.text.includes('福'));
 }, 20, 1000);
 // 先进一次消除签到板
 clickRect(giftCenter);
@@ -79,7 +79,7 @@ function shuffle(array) {
 function readBook(){
   // 等待加载，点击屏幕中央消去头尾的导航栏
   ocrUntilFound(res => {
-    if (res.text.match(/弹[慕幕募]见/) != null) {
+    if (res.text.match(/[送条]弹[慕幕募]/) != null) {
       click(width / 2, height / 2);
       sleep(1000);
       return true;

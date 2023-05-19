@@ -3,7 +3,7 @@
 ui.layout(
   <vertical>
     <appbar>
-      <toolbar id="toolbar" title="示例" />
+      <toolbar id="toolbar" title="NIKKE Scripts 设置" />
       <tabs id="tabs" layout_width="match_parent" tabMode="scrollable" />
     </appbar>
     <viewpager id="viewpager">

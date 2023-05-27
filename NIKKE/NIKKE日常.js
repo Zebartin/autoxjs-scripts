@@ -217,15 +217,28 @@ function 商店() {
       buyGood(freeGood);
     } else
       toastLog('免费商品已售');
-    if (NIKKEstorage.get('buyCoreDust', false)) {
-      let coreDusts = ocrUntilFound(res => {
-        let ret = res.toArray(3).toArray().filter(e => e.text.match(/芯尘盒/) != null);
+    let otherItemNames = [];
+    if (NIKKEstorage.get('buyCoreDust', false))
+      otherItemNames.push('芯尘盒');
+    if (NIKKEstorage.get('buyBondItem', false)) {
+      otherItemNames.push('券');
+      otherItemNames.push('米.*卡$');
+    }
+    if (otherItemNames.length > 0) {
+      let pattern = null;
+      if (otherItemNames.length == 1)
+        pattern = otherItemNames[0]
+      else
+        pattern = '(' + otherItemNames.join('|') + ')';
+      pattern = new RegExp(pattern);
+      let otherItems = ocrUntilFound(res => {
+        let ret = res.toArray(3).toArray().filter(e => e.text.match(pattern) != null);
         if (ret.length == 0)
           return null;
         return ret;
       }, 4, 300) || [];
-      for (let coreDust of coreDusts) {
-        buyGood(coreDust);
+      for (let item of otherItems) {
+        buyGood(item);
         ocrUntilFound(res => res.text.match(/(距离|更新|还有)/) != null, 20, 600);
       }
     }

@@ -36,7 +36,7 @@ function getOcrRes() {
 function getDisplaySize(doNotForcePortrait) {
   let { width, height } = device;
   if (width == 0) {
-    console.warn('AutoX.js获取到的设备尺寸为0，可能会影响正常运行，可以尝试重启设备');
+    // console.warn('AutoX.js获取到的设备尺寸为0，可能会影响正常运行，可以尝试重启设备');
     let metrics = context.getResources().getDisplayMetrics();
     width = metrics.widthPixels;
     height = metrics.heightPixels;

@@ -130,7 +130,7 @@ function 模拟室(fromIndex) {
     status.mode = '尽力而为';
     toastLog(`尝试${diffAreaName}`);
     log('已有BUFF：', Object.keys(status.loaded));
-    let maxRetry = team.length > 0 ? 15 : 1;
+    let maxRetry = team.length > 0 ? 15 : 3;
     for (let retry = 0; retry < maxRetry; ++retry) {
       status.earlyStop = false;
       status.team = team;

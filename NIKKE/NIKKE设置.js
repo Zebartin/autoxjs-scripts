@@ -80,6 +80,7 @@ ui.layout(
           <vertical id="shopping" margin="0 20">
             <Switch id="checkCashShopFree" margin="0 4" textColor="#222222" text="领取付费商店免费礼包" textSize="16sp" />
             <Switch id="buyCoreDust" margin="0 4" textColor="#222222" text="使用信用点购买芯尘盒" textSize="16sp" />
+            <Switch id="buyBondItem" margin="0 4" textColor="#222222" text="使用信用点购买好感券" textSize="16sp" />
             <horizontal margin="0 4">
               <text id="buyCodeManualText" textSize="16sp" textColor="#222222" w="0" layout_weight="4" >不购买代码手册</text>
               <seekbar id="buyCodeManual" w="0" layout_weight="6" layout_gravity="center" />
@@ -108,7 +109,7 @@ ui.layout(
               <text textSize="16sp" textColor="#222222">出战队伍</text>
               <text textSize="12sp">格式：一，二，三，四，五（按照顺序）</text>
               <text textSize="12sp">须确保队伍练度足够通关</text>
-              <text textSize="12sp">留空表示不自动编队，此时只会尝试一次高难</text>
+              <text textSize="12sp">留空表示不自动编队，此时只会尝试3次高难</text>
               <input textSize="14sp" id="simTeam" />
             </vertical>
             <horizontal margin="0 4">
@@ -267,6 +268,7 @@ ui.buyCodeManual.setOnSeekBarChangeListener({
 });
 ui.checkCashShopFree.setChecked(NIKKEstorage.get('checkCashShopFree', false));
 ui.buyCoreDust.setChecked(NIKKEstorage.get('buyCoreDust', false));
+ui.buyBondItem.setChecked(NIKKEstorage.get('buyBondItem', false));
 ui.buyCodeManual.setProgress(NIKKEstorage.get('buyCodeManual', 3));
 
 ui.rookieArenaTarget.setMin(0);
@@ -424,6 +426,7 @@ ui.save.on("click", function () {
 
   NIKKEstorage.put('checkCashShopFree', ui.checkCashShopFree.isChecked());
   NIKKEstorage.put('buyCoreDust', ui.buyCoreDust.isChecked());
+  NIKKEstorage.put('buyBondItem', ui.buyBondItem.isChecked());
   NIKKEstorage.put('buyCodeManual', ui.buyCodeManual.getProgress());
   NIKKEstorage.put('rookieArenaTarget', ui.rookieArenaTarget.getProgress());
 

@@ -112,13 +112,13 @@ function cashShop() {
     let target = findImageByFeature(img, cashShopImg, {
       region: [0, upperBound, img.width, cashShopImg.height * 5]
     });
-    if (target == null){
+    if (target == null) {
       sleep(1000);
       continue;
     }
     target.text = '礼包图标';
     let targetColor = img.pixel(target.bounds.left, target.bounds.centerY());
-    if (rgbToGray(targetColor) >= 70){
+    if (rgbToGray(targetColor) >= 70) {
       sleep(1000);
       continue;
     }
@@ -433,7 +433,7 @@ function 基地收菜(doDailyMission) {
   let levelUp = collectDefense(outpostBtn, true);
   dispatch(bulletin);
   if (doDailyMission)
-    levelUp = levelUp || collectDefense(outpostBtn, false);
+    levelUp = collectDefense(outpostBtn, false) || levelUp;
   返回首页(levelUp);
 }
 function 好友() {

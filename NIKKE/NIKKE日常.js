@@ -942,6 +942,9 @@ function 单次咨询(advise) {
 function 社交点数招募() {
   if (NikkeToday() == NIKKEstorage.get('dailyMissionRecruit', null))
     return;
+  let dailyMission = NIKKEstorage.get('dailyMission', {});
+  if (dailyMission.socialPointRecruit != true)
+    return;
   clickRect(ocrUntilFound(res => res.find(e =>
     e.text.includes('员招') && e.text.match(/[物品栏]/) == null
   ), 40, 1000));

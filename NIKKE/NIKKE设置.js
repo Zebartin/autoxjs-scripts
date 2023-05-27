@@ -170,6 +170,7 @@ ui.layout(
           <Switch id="每日任务TAB" text="未启用" textSize="16sp" />
           <text text="完成其他每日任务：强化装备、社交点数招募" textColor="#999999" textSize="14sp" />
           <vertical id="dailyMission" margin="0 20">
+            <Switch id="socialPointRecruit" margin="0 4" textColor="#222222" text="社交点数招募" textSize="16sp" />
             <horizontal>
               <text textSize="16sp" textColor="#222222" w="0" layout_weight="5">强化装备指定妮姬：</text>
               <input textSize="16sp" id="equipEnhanceNikke" w="0" layout_weight="5" hint="妮姬名/正则表达式" />
@@ -343,6 +344,10 @@ ui.equipEnhanceSlot.setOnSeekBarChangeListener({
   }
 });
 let dailyMission = NIKKEstorage.get('dailyMission', {});
+let socialPointRecruit = dailyMission.socialPointRecruit;
+if (socialPointRecruit === null || socialPointRecruit === undefined)
+  socialPointRecruit = true;
+ui.socialPointRecruit.setChecked(socialPointRecruit);
 ui.equipEnhanceNikke.setText(dailyMission.equipEnhanceNikke || '');
 ui.equipEnhanceSlot.setProgress(dailyMission.equipEnhanceSlot || 0);
 
@@ -445,6 +450,7 @@ ui.save.on("click", function () {
   NIKKEstorage.put('simulationRoom', JSON.stringify(simulationRoom));
 
   let dailyMission = {};
+  dailyMission.socialPointRecruit = ui.socialPointRecruit.isChecked();
   dailyMission.equipEnhanceNikke = ui.equipEnhanceNikke.text().trim();
   dailyMission.equipEnhanceSlot = ui.equipEnhanceSlot.getProgress();
   NIKKEstorage.put('dailyMission', dailyMission);

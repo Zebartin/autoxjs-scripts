@@ -25,9 +25,16 @@ back();
 clickRect(myBtn);
 
 ocrUntilFound(res => res.text.includes('活动中心'), 20, 1000);
-clickRect(ocrUntilFound(res => res.find(e => e.text.includes('分商')), 20, 1000));
+// 点击“福利中心”
+let giftCenter = ocrUntilFound(res => {
+  if (!res.text.includes('活动中心'))
+    return null;
+  return res.find(e => e.text.includes('前') && e.bounds != null && e.bounds.bottom > height * 0.4);
+}, 20, 1000);
 
-const firstSelector = className("android.view.View").text("积分兑换");
+clickRect(giftCenter);
+clickRect(ocrUntilFound(res=>res.find(e=>e.text.includes('分商')), 10, 700));
+const firstSelector = className("android.view.View").textContains("超特惠");
 const confirmSelector = className("android.view.View").textEndsWith("100 积分兑换").depth(13);
 firstSelector.waitFor();
 
@@ -72,7 +79,7 @@ if (remainPoint >= 100) {
   }
   threadClose.interrupt();
 }
-for (let i = 0; i < 3; ++i) {
+for (let i = 0; i < 4; ++i) {
   back();
   sleep(500);
 }

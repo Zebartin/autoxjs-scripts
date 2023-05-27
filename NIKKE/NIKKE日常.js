@@ -667,7 +667,7 @@ function 咨询() {
   let advise = null;
   if (NIKKEstorage.get('fetchLatestNikkeJson', true))
     try {
-      advise = http.get('https://github.blindbuffalo.xyz/https://raw.githubusercontent.com/Zebartin/autoxjs-scripts/dev/NIKKE/nikke.json').body.json();
+      advise = http.get('https://github.blindfirefly.top/https://raw.githubusercontent.com/Zebartin/autoxjs-scripts/dev/NIKKE/nikke.json').body.json();
     } catch (error) {
       log(`获取最新咨询文本失败：${error.message}`);
     }

@@ -490,7 +490,7 @@ ui.update.on("click", function () {
     // AutoX.js的解压不能替换原文件，只能先放到tmp目录下
     let fileName = `NIKKE-scripts-${newTagName}.7z`;
     let filePath = files.path(`./tmp/${fileName}`);
-    let fileResp = http.get(`https://github.blindbuffalo.xyz/https://github.com/Zebartin/autoxjs-scripts/releases/download/${newTagName}/${fileName}`);
+    let fileResp = http.get(`https://github.blindfirefly.top/https://github.com/Zebartin/autoxjs-scripts/releases/download/${newTagName}/${fileName}`);
     if (fileResp.statusCode != 200) {
       log(`下载${fileName}失败: ` + fileResp.statusCode + " " + fileResp.statusMessage);
       beforeReturn();

@@ -877,7 +877,7 @@ function 单次咨询(advise) {
     }, 10, 300);
     let whichOne = null, similarOne = -1;
     for (let k = 0; k < 2; ++k) {
-      options[k] = options[k].replace(/[,，\.。…\?\!？！、「」～☆【】♪\s\—]/g, '');
+      options[k] = options[k].replace(/[,，\.。…\?\!？！、「」～~☆【】♪\s\—]/g, '');
       let t = mostSimilar(options[k], advise[name]);
       log(`选项${k + 1}："${options[k]}"`);
       log(`匹配："${t.result}"，相似度${t.similarity.toFixed(2)}`);

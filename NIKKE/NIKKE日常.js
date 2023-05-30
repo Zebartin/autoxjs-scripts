@@ -842,39 +842,33 @@ function 单次咨询(advise) {
       return failFunc();
     }
     // 连点直到出现选项
-    let adviseImage = images.read('./images/counsel.jpg');
     let result = null;
     for (let j = 0; j < 30; ++j) {
-      result = images.matchTemplate(captureScreen(), adviseImage, {
-        threshold: 0.7,
-        max: 2,
-        region: [0, height / 2, width / 2, height / 2]
-      });
-      if (result.matches.length == 2)
+      result = findContoursRect(captureScreen(), {
+        thresh: 50,
+        type: "BINARY",
+        // debug: true,
+        region: [0, height / 2],
+        rectFilter: rect => rect.width() > width * 0.7 && rect.left < width * 0.5 && rect.right > width * 0.5
+      })
+      if (result.length == 2)
         break;
       click(width / 2, height / 2);
       sleep(1000);
     }
-    let optionTop = result.topmost().point.y;
-    let optionBottom = result.bottommost().point.y;
     let options = ocrUntilFound(res => {
-      let t = res.filter(
-        e => e.level == 1 && e.bounds.top >= optionTop &&
-          e.bounds.bottom <= optionBottom + adviseImage.getHeight()
-      );
-      let t1 = null, t2 = null;
-      for (let i of t) {
-        if (i.bounds.top < optionBottom)
-          t1 = i;
-        else
-          t2 = i;
+      let ret = [];
+      for (let optionRect of result) {
+        let t = res.find(e =>
+          e.level == 1 && e.bounds.top >= optionRect.top &&
+          e.bounds.bottom <= optionRect.bottom
+        );
+        ret.push(t || "");
       }
-      if (t1 == null && t2 == null)
+      if (ret.every(x => x == ""))
         return null;
-      t1 = t1 == null ? "" : t1.text;
-      t2 = t2 == null ? "" : t2.text;
-      return [t1, t2];
-    }, 10, 300);
+      return ret;
+    }, 10, 300) || ["", ""];
     let whichOne = null, similarOne = -1;
     for (let k = 0; k < 2; ++k) {
       options[k] = options[k].replace(/[,，\.。…\?\!？！、「」～~☆【】♪\s\—]/g, '');
@@ -898,11 +892,7 @@ function 单次咨询(advise) {
     if (similarOne < thresh && i == maxRetry)
       log(`已达最大尝试次数${maxRetry}，无视低相似度`);
     log(`咨询选择："${options[whichOne]}"`);
-    if (whichOne == 0)
-      click(width / 2, adviseImage.getHeight() / 2 + optionTop);
-    else
-      click(width / 2, adviseImage.getHeight() / 2 + optionBottom);
-    adviseImage.recycle();
+    clickRect(result[whichOne], 0.8, 0);
     ocrUntilFound(res => {
       if (res.find(e => e.text.endsWith('咨询')))
         return true;

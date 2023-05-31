@@ -849,7 +849,7 @@ function 单次咨询(advise) {
         type: "BINARY",
         // debug: true,
         region: [0, height / 2],
-        rectFilter: rect => rect.width() > width * 0.7 && rect.left < width * 0.5 && rect.right > width * 0.5
+        rectFilter: rect => rect.width() > width * 0.7 && rect.left < width * 0.5 && rect.right > width * 0.5 && rect.height() < 200
       })
       if (result.length == 2)
         break;
@@ -863,7 +863,7 @@ function 单次咨询(advise) {
           e.level == 1 && e.bounds.top >= optionRect.top &&
           e.bounds.bottom <= optionRect.bottom
         );
-        ret.push(t || "");
+        ret.push(t ? t.text : "");
       }
       if (ret.every(x => x == ""))
         return null;
@@ -892,7 +892,7 @@ function 单次咨询(advise) {
     if (similarOne < thresh && i == maxRetry)
       log(`已达最大尝试次数${maxRetry}，无视低相似度`);
     log(`咨询选择："${options[whichOne]}"`);
-    clickRect(result[whichOne], 0.8, 0);
+    clickRect({ bounds: result[whichOne] }, 0.8, 0);
     ocrUntilFound(res => {
       if (res.find(e => e.text.endsWith('咨询')))
         return true;

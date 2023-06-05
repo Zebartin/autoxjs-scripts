@@ -33,9 +33,17 @@ let giftCenter = ocrUntilFound(res => {
 }, 20, 1000);
 
 clickRect(giftCenter);
-clickRect(ocrUntilFound(res=>res.find(e=>e.text.includes('分商')), 10, 700));
-const firstSelector = className("android.view.View").textContains("超特惠");
-const confirmSelector = className("android.view.View").textEndsWith("100 积分兑换").depth(13);
+clickRect(ocrUntilFound(res => res.find(e => e.text.includes('分商')), 10, 700));
+
+let targetName = '【超特惠】';
+let costPoint = 100;
+let hourNow = new Date().getHours();
+if (hourNow == 9 || hourNow == 10) {
+  targetName = '【特惠】';
+  costPoint = 300;
+}
+const firstSelector = className("android.view.View").textContains(targetName);
+const confirmSelector = className("android.view.View").textEndsWith(`${costPoint} 积分兑换`).depth(13);
 firstSelector.waitFor();
 
 let remainPoint = ocrUntilFound(res => {
@@ -46,7 +54,7 @@ let remainPoint = ocrUntilFound(res => {
 }, 10, 1000);
 let firstButton = null;
 log(`赛季积分：${remainPoint}`);
-if (remainPoint >= 100) {
+if (remainPoint >= costPoint) {
   for (let i = 0; i < 100; ++i) {
     firstButton = firstSelector.findOne().parent().child(2);
     if (firstButton.text() != '抢光了')
@@ -60,13 +68,13 @@ if (remainPoint >= 100) {
     const closeSelector = text("关闭").depth(12);
     while (true) {
       closeSelector.waitFor();
-      remainPoint -= 100;
+      remainPoint -= costPoint;
       closeSelector.click();
       while (closeSelector.exists())
-        sleep(300);
+        sleep(100);
     }
   });
-  while (remainPoint >= 100) {
+  while (remainPoint >= costPoint) {
     firstButton = firstSelector.findOne().parent().child(2);
     if (firstButton.text() == '抢光了') {
       log('抢光了');
@@ -75,7 +83,7 @@ if (remainPoint >= 100) {
     firstButton.click();
     confirmSelector.click();
     while (confirmSelector.exists())
-      sleep(300);
+      sleep(100);
   }
   threadClose.interrupt();
 }

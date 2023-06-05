@@ -109,5 +109,7 @@ if __name__ == '__main__':
             continue
         print(f'补充：{k}')
         zh_cn_data[k] = zh_tw_data[k]
+    for k in zh_cn_data:
+        zh_cn_data[k] = sorted(zh_cn_data[k])
     with open(os.path.join(os.path.dirname(__file__), '..', 'nikke.json'), 'w') as f:
         json.dump(zh_cn_data, f, ensure_ascii=False, indent=2)

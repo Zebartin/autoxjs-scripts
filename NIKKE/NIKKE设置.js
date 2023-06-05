@@ -267,7 +267,7 @@ for (let i = 0; i < todoTaskDefault.length; ++i) {
     tabSwitch.setText(checked ? '已启用' : '未启用');
   });
 }
-ui.buyCodeManual.setMin(0);
+
 ui.buyCodeManual.setMax(4);
 ui.buyCodeManual.setOnSeekBarChangeListener({
   onProgressChanged: function (seekbar, p, fromUser) {
@@ -284,7 +284,7 @@ ui.buyCoreDust.setChecked(NIKKEstorage.get('buyCoreDust', false));
 ui.buyBondItem.setChecked(NIKKEstorage.get('buyBondItem', false));
 ui.buyCodeManual.setProgress(NIKKEstorage.get('buyCodeManual', 3));
 
-ui.rookieArenaTarget.setMin(0);
+
 ui.rookieArenaTarget.setMax(3);
 ui.rookieArenaTarget.setOnSeekBarChangeListener({
   onProgressChanged: function (seekbar, p, fromUser) {
@@ -296,7 +296,7 @@ ui.rookieArenaTarget.setOnSeekBarChangeListener({
 });
 ui.rookieArenaTarget.setProgress(NIKKEstorage.get('rookieArenaTarget', 1));
 
-ui.maxPass.setMin(0);
+
 ui.maxPass.setMax(50);
 ui.maxPass.setOnSeekBarChangeListener({
   onProgressChanged: function (seekbar, p, fromUser) {
@@ -311,7 +311,7 @@ ui.maxPass.setOnSeekBarChangeListener({
   }
 });
 
-ui.maxSsrNumber.setMin(0);
+
 ui.maxSsrNumber.setMax(7);
 ui.maxSsrNumber.setOnSeekBarChangeListener({
   onProgressChanged: function (seekbar, p, fromUser) {
@@ -326,7 +326,7 @@ ui.maxSsrNumber.setOnSeekBarChangeListener({
   }
 });
 
-ui.tryDiffArea.setMin(0);
+
 ui.tryDiffArea.setMax(8);
 ui.tryDiffArea.setOnSeekBarChangeListener({
   onProgressChanged: function (seekbar, p, fromUser) {
@@ -348,7 +348,7 @@ ui.maxPass.setProgress(simulationRoom.maxPass);
 ui.maxSsrNumber.setProgress(simulationRoom.maxSsrNumber);
 ui.tryDiffArea.setProgress(simulationRoom.tryDiffArea || 0);
 
-ui.equipEnhanceSlot.setMin(0);
+
 ui.equipEnhanceSlot.setMax(3);
 ui.equipEnhanceSlot.setOnSeekBarChangeListener({
   onProgressChanged: function (seekbar, p, fromUser) {
@@ -376,7 +376,7 @@ ui.checkDailyLogin.setOnSeekBarChangeListener({
       ui.checkDailyLoginText.setText(`检查${p}次每日签到`);
   }
 });
-ui.checkDailyLogin.setMin(0);
+
 ui.checkDailyLogin.setMax(2);
 // 兼容老版本，+号将boolean转为整数值
 ui.checkDailyLogin.setProgress(+NIKKEstorage.get('checkDailyLogin', 1));
@@ -389,7 +389,7 @@ ui.maxRetry.setOnSeekBarChangeListener({
       ui.maxRetryText.setText(s + `重试${p}次`);
   }
 });
-ui.maxRetry.setMin(0);
+
 ui.maxRetry.setMax(5);
 ui.maxRetry.setProgress(NIKKEstorage.get('maxRetry', 1));
 for (let generalOption of [

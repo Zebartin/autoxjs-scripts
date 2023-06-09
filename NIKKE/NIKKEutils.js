@@ -487,7 +487,7 @@ function checkAuto() {
   let res = [], img = null;
   for (let i = 0; i < 20; ++i) {
     img = captureScreen();
-    let c = img.pixel(autoBtn.bounds.right + 5, autoBtn.bounds.top);
+    let c = img.pixel(autoBtn.bounds.left, autoBtn.bounds.top);
     let insideGray = Math.round(rgbToGray(c)), outsideGray = 0.0;
     for (let tx of [0, w])
       for (let ty of [0, h + y])

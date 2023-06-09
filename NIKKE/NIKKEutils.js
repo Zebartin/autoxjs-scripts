@@ -484,7 +484,7 @@ function checkAuto() {
   let y = Math.max(autoBtn.bounds.top - autoBtn.bounds.height() * 2, 0);
   let w = autoBtn.bounds.right + autoBtn.bounds.width();
   let h = autoBtn.bounds.bottom + autoBtn.bounds.height() * 2 - y;
-  let res = null, img = null;
+  let res = [], img = null;
   for (let i = 0; i < 20; ++i) {
     img = captureScreen();
     let c = img.pixel(autoBtn.bounds.right + 5, autoBtn.bounds.top);
@@ -493,6 +493,7 @@ function checkAuto() {
       for (let ty of [0, h + y])
         outsideGray += rgbToGray(img.pixel(tx, ty));
     outsideGray = Math.round(outsideGray / 4);
+    // 有可能无法通过这一步检查
     if (insideGray >= outsideGray)
       continue;
     let grayScale = 0.4;

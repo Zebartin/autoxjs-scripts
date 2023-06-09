@@ -638,8 +638,12 @@ function 竞技场() {
   // 没有就点上方中央“特殊竞技场”下方位置，可能能点到
   let specialRewardBtn = ocrUntilFound(res => {
     let atk = res.find(e => e.text.includes('ATK'));
-    if (!atk)
+    if (!atk) {
+      let enterSpecial = res.find(e => e.text.includes('SPECIAL'));
+      if (enterSpecial != null)
+        clickRect(enterSpecial, 1, 0);
       return null;
+    }
     let ret = res.find(e =>
       e.text.includes('%') && e.bounds != null &&
       e.bounds.bottom < atk.bounds.top &&

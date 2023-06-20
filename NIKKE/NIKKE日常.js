@@ -671,12 +671,28 @@ function 竞技场() {
   if (specialRewardBtn != null && specialRewardBtn.text != '0%') {
     clickRect(specialRewardBtn);
     toastLog('领取竞技场奖励');
-    let clickReward = ocrUntilFound((res, img) => res.find(e =>
+    ocrUntilFound((res, img) => {
+      if (!res.text.includes('取'))
+        return null;
+      let confirm = res.find(e =>
+        e.text.match(/[领領邻]取/) != null && e.bounds != null &&
+        e.bounds.top > img.height * 0.6 &&
+        e.bounds.right > img.width * 0.5
+      );
+      if (confirm != null) {
+        clickRect(confirm, 1, 0);
+        return null;
+      }
+      let clickReward = res.find(e =>
       e.text.includes('点击') && e.bounds != null &&
       e.bounds.bottom > img.height * 0.4
-    ), 10, 1000);
-    if (clickReward != null)
-      clickRect(clickReward);
+      );
+      if (clickReward != null) {
+        clickRect(clickReward, 1, 0);
+        return true;
+      }
+      return null;
+    }, 20, 600);
   }
   返回首页();
 }

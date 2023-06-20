@@ -873,7 +873,11 @@ function 单次咨询(advise) {
       })
       if (result.length == 2)
         break;
-      click(width / 2, height / 2);
+      if (result.length == 1) {
+        log('识别到单选选项，点击消除');
+        clickRect({ bounds: result[0] }, 0.8, 0);
+      } else
+        click(width / 2, height / 2);
       sleep(1000);
     }
     let options = ocrUntilFound(res => {

@@ -909,8 +909,13 @@ function 单次咨询(advise) {
       ocrUntilFound(res => res.text.includes('看花'), 20, 2000);
       continue;
     }
-    if (similarOne < thresh && i == maxRetry)
+    if (similarOne < thresh && i == maxRetry) {
       log(`已达最大尝试次数${maxRetry}，无视低相似度`);
+      if (options[1 - whichOne] == "") {
+        log('优先选择空选项（可能是省略号之类）');
+        whichOne = 1 - whichOne;
+      }
+    }
     log(`咨询选择："${options[whichOne]}"`);
     clickRect({ bounds: result[whichOne] }, 0.8, 0);
     ocrUntilFound(res => {

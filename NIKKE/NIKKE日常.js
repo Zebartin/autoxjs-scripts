@@ -684,8 +684,8 @@ function 竞技场() {
         return null;
       }
       let clickReward = res.find(e =>
-      e.text.includes('点击') && e.bounds != null &&
-      e.bounds.bottom > img.height * 0.4
+        e.text.includes('点击') && e.bounds != null &&
+        e.bounds.bottom > img.height * 0.4
       );
       if (clickReward != null) {
         clickRect(clickReward, 1, 0);
@@ -1171,7 +1171,7 @@ function 每日任务() {
   for (i = 0; i < 10; ++i) {
     let img = captureScreen();
     let point = images.findColor(img, '#119dea', {
-      region: [img.width / 2, 0, img.width - season.bounds.left, season.bounds.top],
+      region: [img.width / 2, 0, season.bounds.left - img.width / 2, season.bounds.top],
       threshold: 75 - i * 4
     });
     if (point != null) {

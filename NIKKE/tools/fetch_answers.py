@@ -3,8 +3,9 @@ import sys
 import re
 import zhconv
 import json
+import codecs
 import requests
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from bs4 import BeautifulSoup as bs
 
 session = requests.Session()
@@ -13,49 +14,39 @@ session = requests.Session()
 # ord('…') = 8230
 punctuation_pattern = re.compile(r"[，⋯…？?、!！「」～☆【】。.—{}'\"“”♪\s]")
 
+
 def get_from_gamekee():
-    detail_url = 'https://nikke.gamekee.com/v1/content/detail/{detail_id}'
-    detail_ids = ['575965']
-    page = 0
-    ret = {}
-    while page < len(detail_ids):
-        print(f'https://nikke.gamekee.com/{detail_ids[page]}.html')
-        r = session.get(detail_url.format(detail_id=detail_ids[page]), headers={
-            'game-alias': 'nikke'
-        })
-        soup = bs(r.json()['data']['content'], 'html.parser')
-        result = {}
-        person = None
-        answers = []
-        # 需要获取其他分页
-        if len(detail_ids) == 1:
-            detail_ids.extend(re.findall('nikke.gamekee.com/(\d+).html', str(soup)))
-        for content in soup.contents:
-            for div in content.find_all('div'):
-                if div.find('div') != None:
-                    continue
-                line = div.text.strip()
-                if len(line) == 0:
-                    continue
-                if line.startswith('50') or 'question' in line:
-                    continue
-                if line.startswith('100'):
-                    if line.find('AccountData') != -1:
-                        continue
-                    a = punctuation_pattern.sub('', line[5:])
-                    if len(a) == 0:
-                        continue
-                    answers.append(a)
-                else:
-                    if person is not None and '角色名' not in person and len(answers) > 0:
-                        result[person] = answers
-                    person = line[:-1]
-                    answers = []
-        if len(answers) > 0:
-            result[person] = answers
-        print(', '.join(list(result.keys())))
-        ret.update(result)
-        page += 1
+    netcut_url = 'https://netcut.cn/p/38b3472ea9d95306'
+    resp = session.get(netcut_url)
+    soup = bs(resp.text, 'html.parser')
+    content_pattern = re.compile('"note_content":\s*"(?P<content>[^"]+)"')
+    note_content = None
+    for script_node in soup.find_all('script'):
+        matched = content_pattern.search(script_node.text)
+        if matched:
+            note_content = matched.group("content")
+            break
+    note_content = note_content.replace('\\n', '\n').replace('\\t', '\t')
+    ret = defaultdict(list)
+    person = None
+    for line in note_content.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        if line.startswith('50') or 'question' in line:
+            continue
+        if line.startswith('100'):
+            if 'AccountData' in line:
+                continue
+            a = punctuation_pattern.sub('', line[5:])
+            if not a:
+                continue
+            ret[person].append(a)
+        else:
+            person = line[:-1]
+    keys = list(ret.keys())
+    for i in range(0, len(keys), 5):
+        print(', '.join(keys[i:i+5]))
     return ret
 
 
@@ -102,14 +93,15 @@ def get_from_google_sheet(apiKey):
 
 if __name__ == '__main__':
     zh_cn_data = get_from_gamekee()
-    zh_tw_data = get_from_google_sheet(sys.argv[1])
-    # 在gamekee数据基础上，补充繁中服的数据
-    for k in zh_tw_data:
-        if k in zh_cn_data:
-            continue
-        print(f'补充：{k}')
-        zh_cn_data[k] = zh_tw_data[k]
+    # zh_tw_data = get_from_google_sheet(sys.argv[1])
+    # # 在gamekee数据基础上，补充繁中服的数据
+    # for k in zh_tw_data:
+    #     if k in zh_cn_data:
+    #         continue
+    #     print(f'补充：{k}')
+    #     zh_cn_data[k] = zh_tw_data[k]
     for k in zh_cn_data:
         zh_cn_data[k] = sorted(zh_cn_data[k])
-    with open(os.path.join(os.path.dirname(__file__), '..', 'nikke.json'), 'w') as f:
-        json.dump(zh_cn_data, f, ensure_ascii=False, indent=2)
+    with open(os.path.join(os.path.dirname(__file__), '..', 'nikke.json'), 'w', encoding='utf-8') as f:
+        json.dump(OrderedDict(sorted(zh_cn_data.items())),
+                  f, ensure_ascii=False, indent=2)

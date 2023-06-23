@@ -1,11 +1,11 @@
-import os
-import sys
-import re
-import zhconv
 import json
-import codecs
+import os
+import re
+import sys
+from collections import OrderedDict, defaultdict
+
 import requests
-from collections import defaultdict, OrderedDict
+import zhconv
 from bs4 import BeautifulSoup as bs
 
 session = requests.Session()
@@ -93,13 +93,13 @@ def get_from_google_sheet(apiKey):
 
 if __name__ == '__main__':
     zh_cn_data = get_from_gamekee()
-    # zh_tw_data = get_from_google_sheet(sys.argv[1])
-    # # 在gamekee数据基础上，补充繁中服的数据
-    # for k in zh_tw_data:
-    #     if k in zh_cn_data:
-    #         continue
-    #     print(f'补充：{k}')
-    #     zh_cn_data[k] = zh_tw_data[k]
+    zh_tw_data = get_from_google_sheet(sys.argv[1])
+    # 在gamekee数据基础上，补充繁中服的数据
+    for k in zh_tw_data:
+        if k in zh_cn_data:
+            continue
+        print(f'补充：{k}')
+        zh_cn_data[k] = zh_tw_data[k]
     for k in zh_cn_data:
         zh_cn_data[k] = sorted(zh_cn_data[k])
     with open(os.path.join(os.path.dirname(__file__), '..', 'nikke.json'), 'w', encoding='utf-8') as f:

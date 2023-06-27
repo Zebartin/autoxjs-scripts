@@ -670,7 +670,7 @@ function 竞技场() {
   }, 50, 1000);
   if (specialRewardBtn != null && specialRewardBtn.text != '0%') {
     clickRect(specialRewardBtn);
-    toastLog('领取竞技场奖励');
+    log('领取竞技场奖励');
     ocrUntilFound((res, img) => {
       if (!res.text.includes('取'))
         return null;

@@ -318,7 +318,7 @@ function findContoursRect(img, options) {
         Imgproc.rectangle(threImgMat, Point(rect.x, rect.y), Point(rect.x + rect.width, rect.y + rect.height), Scalar(150), 3);
     }
     if (options.debug)
-      images.save(images.matToImage(threImgMat), `./images/nikkerror/${thresh}_${new Date().toTimeString().split(' ')[0].replace(/:/g, '_')}.jpg`);
+      images.save(images.matToImage(threImgMat), `./images/nikkerror/${thresh}_${options.type}_${new Date().toTimeString().split(' ')[0].replace(/:/g, '_')}.jpg`);
   }
   threImg.recycle();
   grayImg.recycle();

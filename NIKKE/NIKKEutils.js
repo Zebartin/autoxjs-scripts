@@ -112,10 +112,10 @@ function 等待NIKKE加载() {
       var target = res.find(e => e.text.match(/.{0,4}今日不再/) != null);
       clickRect(target);
       sleep(500);
-      back();
+      click(width / 2, height * 0.85); 
     }
     else if (res.text.match(/[確确][認认]/) != null) {
-      clickRect(res.find(e => e.text.match(/[確确][認认]/) != null));
+      clickRect(res.find(e => e.text.match(/[確确][認认]$/) != null));
     }
     else if (res.text.includes('正在下载')) {
       sleep(20000);

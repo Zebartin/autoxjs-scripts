@@ -591,7 +591,11 @@ function 新人竞技场(rookieTarget) {
       return null;
     t.sort((a, b) => a.bounds.top - b.bounds.top);
     return t[rookieTarget - 1];
-  }, 30, 1000);
+  }, 10, 700);
+  if (targetFight == null){
+    log('无法进入新人竞技场');
+    return;
+  }
   while (true) {
     let hasFree = ocrUntilFound((res, img) => {
       if (!res.text.match(/R[OD][OD]K.E/))
@@ -864,18 +868,27 @@ function 单次咨询(advise) {
     // 连点直到出现选项
     let result = null;
     for (let j = 0; j < 30; ++j) {
-      result = findContoursRect(captureScreen(), {
-        thresh: 50,
+      img = captureScreen();
+      rectFilter = (rect) => rect.width() > width * 0.7 && rect.left < width * 0.5 && rect.right > width * 0.5 && rect.height() < 200
+      result = findContoursRect(img, {
+        thresh: 35,
         type: "BINARY",
         // debug: true,
         region: [0, height / 2],
-        rectFilter: rect => rect.width() > width * 0.7 && rect.left < width * 0.5 && rect.right > width * 0.5 && rect.height() < 200
+        rectFilter: rectFilter
       })
       if (result.length == 2)
         break;
-      if (result.length == 1) {
+      resultSingle = findContoursRect(img, {
+        thresh: 35,
+        type: "BINARY_INV",
+        // debug: true,
+        region: [0, height / 2],
+        rectFilter: rectFilter
+      })
+      if (resultSingle.length == 1) {
         log('识别到单选选项，点击消除');
-        clickRect({ bounds: result[0] }, 0.8, 0);
+        clickRect({ bounds: resultSingle[0] }, 0.8, 0);
       } else
         click(width / 2, height / 2);
       sleep(1000);
@@ -895,7 +908,7 @@ function 单次咨询(advise) {
     }, 10, 300) || ["", ""];
     let whichOne = null, similarOne = -1;
     for (let k = 0; k < 2; ++k) {
-      options[k] = options[k].replace(/[,，\.。…\?\!？！、「」～~☆【】♪\s\—]/g, '');
+      options[k] = options[k].replace(/[,，:：\.。…\?\!？！、「」～~☆【】♪\s-\—]/g, '');
       let t = mostSimilar(options[k], advise[name]);
       log(`选项${k + 1}："${options[k]}"`);
       log(`匹配："${t.result}"，相似度${t.similarity.toFixed(2)}`);

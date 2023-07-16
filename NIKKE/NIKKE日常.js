@@ -869,9 +869,10 @@ function 单次咨询(advise) {
     let result = null;
     for (let j = 0; j < 30; ++j) {
       img = captureScreen();
+      thresh  = random(35, 55)
       rectFilter = (rect) => rect.width() > width * 0.7 && rect.left < width * 0.5 && rect.right > width * 0.5 && rect.height() < 200
       result = findContoursRect(img, {
-        thresh: 35,
+        thresh: thresh,
         type: "BINARY",
         // debug: true,
         region: [0, height / 2],
@@ -880,7 +881,7 @@ function 单次咨询(advise) {
       if (result.length == 2)
         break;
       resultSingle = findContoursRect(img, {
-        thresh: 35,
+        thresh: thresh,
         type: "BINARY_INV",
         // debug: true,
         region: [0, height / 2],

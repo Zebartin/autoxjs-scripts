@@ -592,7 +592,7 @@ function 新人竞技场(rookieTarget) {
     t.sort((a, b) => a.bounds.top - b.bounds.top);
     return t[rookieTarget - 1];
   }, 10, 700);
-  if (targetFight == null){
+  if (targetFight == null) {
     log('无法进入新人竞技场');
     return;
   }
@@ -628,14 +628,11 @@ function 新人竞技场(rookieTarget) {
   back();
 }
 
-function 竞技场() {
-  clickRect(ocrUntilFound((res, img) => res.find(e =>
-    e.text.includes('方舟') && e.bounds != null &&
-    e.bounds.bottom > img.height / 2
-  ), 30, 1000));
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('技场')), 30, 1000));
-  新人竞技场(NIKKEstorage.get('rookieArenaTarget', 1));
-
+function 特殊竞技场() {
+  if (NIKKEstorage.get('specialArenaClaim', true) != true) {
+    log('已设置不领取特殊竞技场奖励');
+    return;
+  }
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('SPECIAL')), 30, 1000));
   toastLog('进入特殊竞技场');
   // 如果识别出了百分号，直接点百分号
@@ -646,6 +643,13 @@ function 竞技场() {
       let enterSpecial = res.find(e => e.text.includes('SPECIAL'));
       if (enterSpecial != null)
         clickRect(enterSpecial, 1, 0);
+      let teamUpPage = res.find(e => e.text.match(/[攻击防御自动下一步]{2,}/) != null);
+      if (teamUpPage != null) {
+        log('误入编队界面，返回');
+        back();
+        sleep(600);
+        return null;
+      }
       return null;
     }
     let ret = res.find(e =>
@@ -671,8 +675,12 @@ function 竞技场() {
       ret.bounds.bottom = touch.bounds.bottom;
     }
     return ret;
-  }, 50, 1000);
-  if (specialRewardBtn != null && specialRewardBtn.text != '0%') {
+  }, 10, 1000);
+  if (specialRewardBtn != null) {
+    if (specialRewardBtn.text == '0%') {
+      log('奖励进度0%，跳过');
+      return;
+    }
     clickRect(specialRewardBtn);
     log('领取竞技场奖励');
     ocrUntilFound((res, img) => {
@@ -698,6 +706,16 @@ function 竞技场() {
       return null;
     }, 20, 600);
   }
+}
+
+function 竞技场() {
+  clickRect(ocrUntilFound((res, img) => res.find(e =>
+    e.text.includes('方舟') && e.bounds != null &&
+    e.bounds.bottom > img.height / 2
+  ), 30, 1000));
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('技场')), 30, 1000));
+  新人竞技场(NIKKEstorage.get('rookieArenaTarget', 1));
+  特殊竞技场();
   返回首页();
 }
 function 咨询() {
@@ -731,6 +749,11 @@ function 咨询() {
   }, 50, 1000);
   let cnt = 0;
   log(`咨询次数：${adviseCnt}`);
+  let adviseLimit = NIKKEstorage.get('adviseLimit', 0);
+  if (adviseLimit > 0 && adviseCnt > adviseLimit) {
+    adviseCnt = adviseLimit;
+    log(`咨询次数限制：${adviseLimit}`);
+  }
   while (cnt < adviseCnt) {
     let adviseTarget = null;
     let cases, attrs;
@@ -869,7 +892,7 @@ function 单次咨询(advise) {
     let result = null;
     for (let j = 0; j < 30; ++j) {
       img = captureScreen();
-      thresh  = random(35, 55)
+      thresh = random(35, 55);
       rectFilter = (rect) => rect.width() > width * 0.7 && rect.left < width * 0.5 && rect.right > width * 0.5 && rect.height() < 200
       result = findContoursRect(img, {
         thresh: thresh,

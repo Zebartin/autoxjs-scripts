@@ -148,7 +148,18 @@ function buildRegion(region, img) {
 function findImageByFeature(trainImg, queryImg, options) {
   options = options || {};
   // 先尝试一次模板匹配
-  let ret = images.findImage(trainImg, queryImg, options);
+  let ret = null;
+  try {
+    ret = images.findImage(trainImg, queryImg, options);
+  } catch (e) {
+    if (e.message.includes('template')) {
+      let logText = '模板图片文件缺失，请尝试强制更新后重启脚本'
+      toast(logText);
+      console.error(logText);
+      exit();
+    }
+    throw e;
+  }
   if (ret != null)
     return imgToBounds(queryImg, ret);
   log('模板匹配失败，开始进行特征匹配');

@@ -68,6 +68,7 @@ ui.layout(
               <Switch id="竞技场TAB" text="未启用" textSize="16sp" />
               <text text="刷完新人竞技场免费次数，领取特殊竞技场奖励" textColor="#999999" textSize="14sp" />
               <vertical id="arena" margin="0 20">
+                <Switch id="specialArenaClaim" margin="0 4" textColor="#222222" text="领取特殊竞技场奖励" textSize="16sp" />
                 <horizontal>
                   <text id="rookieArenaTargetText" textColor="#222222" textSize="16sp" w="0" layout_weight="4" >不打新人竞技场</text>
                   <seekbar id="rookieArenaTarget" w="0" layout_weight="6" layout_gravity="center" />
@@ -104,6 +105,12 @@ ui.layout(
             <vertical margin="0 20">
               <Switch id="咨询TAB" text="未启用" textSize="16sp" />
               <text text="完成日常咨询，建议事先设置好特别关注" textColor="#999999" textSize="14sp" />
+              <vertical margin="0 20">
+                <horizontal margin="0 4">
+                  <text id="adviseLimitText" textColor="#222222" textSize="16sp" w="0" layout_weight="4">不限制咨询次数</text>
+                  <seekbar id="adviseLimit" w="0" layout_weight="6" layout_gravity="center" />
+                </horizontal>
+              </vertical>
             </vertical>
           </vertical>
         </vertical>
@@ -284,7 +291,18 @@ ui.buyCoreDust.setChecked(NIKKEstorage.get('buyCoreDust', false));
 ui.buyBondItem.setChecked(NIKKEstorage.get('buyBondItem', false));
 ui.buyCodeManual.setProgress(NIKKEstorage.get('buyCodeManual', 3));
 
+ui.adviseLimit.setMax(10);
+ui.adviseLimit.setOnSeekBarChangeListener({
+  onProgressChanged: function (seekbar, p, fromUser) {
+    if (p == 0)
+      ui.adviseLimitText.setText('不限制咨询次数');
+    else
+      ui.adviseLimitText.setText(`限制咨询${p}次`);
+  }
+});
+ui.adviseLimit.setProgress(NIKKEstorage.get('adviseLimit', 0));
 
+ui.specialArenaClaim.setChecked(NIKKEstorage.get('specialArenaClaim', true));
 ui.rookieArenaTarget.setMax(3);
 ui.rookieArenaTarget.setOnSeekBarChangeListener({
   onProgressChanged: function (seekbar, p, fromUser) {
@@ -445,6 +463,8 @@ ui.save.on("click", function () {
   NIKKEstorage.put('buyCoreDust', ui.buyCoreDust.isChecked());
   NIKKEstorage.put('buyBondItem', ui.buyBondItem.isChecked());
   NIKKEstorage.put('buyCodeManual', ui.buyCodeManual.getProgress());
+  NIKKEstorage.put('adviseLimit', ui.adviseLimit.getProgress());
+  NIKKEstorage.put('specialArenaClaim', ui.specialArenaClaim.isChecked());
   NIKKEstorage.put('rookieArenaTarget', ui.rookieArenaTarget.getProgress());
 
   let simulationRoom = {};

@@ -196,7 +196,7 @@ function 商店() {
       }
       if (res.text.match(/(距离|更新|还有)/) != null)
         return true;
-      let reward = res.find(e => e.text.includes('REW'));
+      let reward = res.find(e => e.text.match(/(REW|点击|奖励)/) != null);
       if (reward != null)
         click(width / 2, height * 0.8);
       let buyBtn = res.find(e => e.text == '购买');

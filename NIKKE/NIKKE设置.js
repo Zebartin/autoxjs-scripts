@@ -92,6 +92,33 @@ ui.layout(
                 <seekbar id="buyCodeManual" w="0" layout_weight="6" layout_gravity="center" />
               </horizontal>
             </vertical>
+            <vertical margin="0 10">
+              <text text="购买以下废铁商店物品（每隔3天检查一次）" textColor="#222222" textSize="16sp" />
+              <horizontal>
+                <checkbox text="珠宝" id="废铁商店.珠宝" textSize="14sp" margin="8 0" w="0" layout_weight="1" />
+                <checkbox text="成长套组" id="废铁商店.成长套组" textSize="14sp" margin="8 0" w="0" layout_weight="1" />
+              </horizontal>
+              <horizontal>
+                <checkbox text="好感券-通用" id="废铁商店.好感券-通用" textSize="14sp" margin="8 0" w="0" layout_weight="1" />
+                <checkbox text="好感券-极乐净土" id="废铁商店.好感券-极乐净土" textSize="14sp" margin="8 0" w="0" layout_weight="1" />
+              </horizontal>
+              <horizontal>
+                <checkbox text="好感券-米西利斯" id="废铁商店.好感券-米西利斯" textSize="14sp" margin="8 0" w="0" layout_weight="1" />
+                <checkbox text="好感券-泰特拉" id="废铁商店.好感券-泰特拉" textSize="14sp" margin="8 0" w="0" layout_weight="1" />
+              </horizontal>
+              <horizontal>
+                <checkbox text="好感券-朝圣者" id="废铁商店.好感券-朝圣者" textSize="14sp" margin="8 0" w="0" layout_weight="1" />
+                <checkbox text="好感券-反常" id="废铁商店.好感券-反常" textSize="14sp" margin="8 0" w="0" layout_weight="1" />
+              </horizontal>
+              <horizontal>
+                <checkbox text="芯尘盒" id="废铁商店.芯尘盒" textSize="14sp" margin="8 0" w="0" layout_weight="1" />
+                <checkbox text="信用点盒" id="废铁商店.信用点盒" textSize="14sp" margin="8 0" w="0" layout_weight="1" />
+              </horizontal>
+              <horizontal>
+                <checkbox text="战斗数据辑盒" id="废铁商店.战斗数据辑盒" textSize="14sp" margin="8 0" w="0" layout_weight="1" />
+                <checkbox text="信用点" id="废铁商店.信用点" textSize="14sp" margin="8 0" w="0" layout_weight="1" />
+              </horizontal>
+            </vertical>
           </vertical>
         </vertical>
       </ScrollView>
@@ -290,6 +317,8 @@ ui.checkCashShopFree.setChecked(NIKKEstorage.get('checkCashShopFree', false));
 ui.buyCoreDust.setChecked(NIKKEstorage.get('buyCoreDust', false));
 ui.buyBondItem.setChecked(NIKKEstorage.get('buyBondItem', false));
 ui.buyCodeManual.setProgress(NIKKEstorage.get('buyCodeManual', 3));
+for (let recyclingGood of NIKKEstorage.get('recyclingShopList', ['珠宝', '芯尘盒']))
+  ui.findView(`废铁商店.${recyclingGood}`).setChecked(true);
 
 ui.adviseLimit.setMax(10);
 ui.adviseLimit.setOnSeekBarChangeListener({
@@ -459,6 +488,15 @@ ui.save.on("click", function () {
       todoTask.push(task);
   NIKKEstorage.put('todoTask', JSON.stringify(todoTask));
 
+  let recyclingShopList = [];
+  for (let good of [
+    '珠宝', '成长套组', '好感券-通用', '好感券-极乐净土',
+    '好感券-米西利斯', '好感券-泰特拉', '好感券-朝圣者', '好感券-反常',
+    '芯尘盒', '信用点盒', '战斗数据辑盒', '信用点'
+  ])
+    if (ui.findView(`废铁商店.${good}`).isChecked())
+      recyclingShopList.push(good);
+  NIKKEstorage.put('recyclingShopList', recyclingShopList);
   NIKKEstorage.put('checkCashShopFree', ui.checkCashShopFree.isChecked());
   NIKKEstorage.put('buyCoreDust', ui.buyCoreDust.isChecked());
   NIKKEstorage.put('buyBondItem', ui.buyBondItem.isChecked());

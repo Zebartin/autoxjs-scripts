@@ -94,6 +94,85 @@ function checkConfig() {
   }
 }
 
+function 废铁商店() {
+  const GOODS = {
+    "珠宝": /珠宝/,
+    "成长套组": /成长套组/,
+    "好感券-通用": /[通逼]/,
+    "好感券-极乐净土": /极/,
+    "好感券-米西利斯": /米/,
+    "好感券-泰特拉": /特/,
+    "好感券-朝圣者": /朝/,
+    "好感券-反常": /反/,
+    "芯尘盒": /尘盒$/,
+    "信用点盒": /点盒$/,
+    "战斗数据辑盒": /辑盒$/,
+    "信用点": /点$/
+  };
+  const PATTERN = new RegExp(`(${Object.values(GOODS).map(x => x.source).join('|')})`);
+  const LAST_GOOD = GOODS['信用点'];
+  const userSetting = NIKKEstorage.get('recyclingShopList', ['珠宝', '芯尘盒']);
+  const userPattern = new RegExp(`(${userSetting.map(x => GOODS[x].source).join('|')})`);
+  if (userSetting.length == 0)
+    return;
+  const checkInterval = NIKKEstorage.get('recyclingShopInterval', 3);
+  const lastChecked = NIKKEstorage.get('recyclingShopLastChecked', null);
+  let diffMillSec = new Date(NikkeToday()) - new Date(lastChecked);
+  let diffDay = Math.round(diffMillSec / 1000 / 60 / 60 / 24);
+  log(`距离上次检查废铁商店${diffDay}天`);
+  if (!isNaN(diffDay) && diffDay < checkInterval)
+    return;
+  const recyclingShopImage = images.read("./images/recyclingShop.jpg");
+  let recyclingShop = null;
+  for (let i = 0; i < 10; ++i) {
+    recyclingShop = findImageByFeature(captureScreen(), recyclingShopImage, {
+      threshold: 0.7,
+      region: [0, height * 0.3, width / 2, height * 0.6]
+    });
+    if (recyclingShop != null)
+      break;
+    sleep(300);
+  }
+  // 减少可点击范围，避免点到悬浮窗
+  recyclingShop.bounds.left += recyclingShop.bounds.width() * 0.7;
+  recyclingShop.text = '废铁商店图标';
+  recyclingShopImage.recycle();
+  clickRect(recyclingShop);
+  const upperBound = ocrUntilFound(res => {
+    let t = res.find(e => e.text.match(/(废铁|[破玻][碎码])/) != null);
+    if (t == null) {
+      clickRect(recyclingShop, 1, 0);
+      return null;
+    }
+    return res.find(e => e.text.match(/(距离|更新|还有)/) != null);
+  }, 20, 600).bounds.bottom;
+  for (let i = 0; i < 10; ++i) {
+    let goods = ocrUntilFound(res => {
+      let ret = res.filter(e =>
+        PATTERN.test(e.text) && e.level == 3 && e.bounds.bottom > upperBound
+      ).toArray();
+      if (ret.length == 0)
+        return null;
+      ret.sort((a, b) => {
+        let t = a.bounds.bottom - b.bounds.bottom;
+        if (Math.abs(t) < 10)
+          return a.bounds.left - b.bounds.left;
+        return t;
+      });
+      return ret;
+    }, 20, 600);
+    let firstGood = goods[0], lastGood = goods[goods.length - 1];
+    let wantedGoods = goods.filter(e => userPattern.test(e.text));
+    console.info(`当前页面商品：${goods.map(e => e.text).join(', ')}`);
+    for (let good of wantedGoods)
+      buyGood(good, true);
+    if (LAST_GOOD.test(lastGood.text))
+      break
+    swipe(width / 2, lastGood.bounds.top, width / 2, firstGood.bounds.top, 1000);
+    swipe(firstGood.bounds.left, firstGood.bounds.top, lastGood.bounds.right, firstGood.bounds.top, 500);
+  }
+  NIKKEstorage.put('recyclingShopLastChecked', NikkeToday());
+}
 function cashShop() {
   if (!NIKKEstorage.get('checkCashShopFree', false))
     return;
@@ -167,48 +246,62 @@ function cashShop() {
   返回首页();
 }
 
-function 商店() {
-  let buyGood = (good) => {
-    let c = captureScreen().pixel(good.bounds.right + 5, good.bounds.bottom);
-    if (good.text != '免费商品' && colors.isSimilar(c, colors.DKGRAY, 30)) {
-      log(`${good.text}已售`);
-      return;
-    }
-    toastLog(`购买${good.text}`);
-    clickRect(good, 0.5);
-    let [buyBtn, costGem] = ocrUntilFound(res => {
-      let t = res.find(e => e.text == '购买');
-      if (!t)
-        return null;
-      return [t, res.text.match(/(珠宝|招募|优先|扣除)/) != null];
-    }, 30, 1000);
-    if (costGem && good.text != '免费商品') {
-      log('消耗珠宝，放弃购买');
-      back();
-      return;
-    }
-    clickRect(buyBtn);
-    let affordable = true;
-    ocrUntilFound(res => {
-      if (res.find(e => e.text.match(/不足.?$/) != null)) {
-        affordable = false;
-        return true;
-      }
-      if (res.text.match(/(距离|更新|还有)/) != null)
-        return true;
-      let reward = res.find(e => e.text.match(/(REW|点击|奖励)/) != null);
-      if (reward != null)
-        click(width / 2, height * 0.8);
-      let buyBtn = res.find(e => e.text == '购买');
-      if (buyBtn != null)
-        clickRect(buyBtn, 1, 0);
+function buyGood(good, doMax) {
+  let c = captureScreen().pixel(good.bounds.right + 5, good.bounds.bottom);
+  if (good.text != '免费商品' && rgbToGray(c) < 100) {
+    log(`${good.text}已售`);
+    return;
+  }
+  log(`购买${good.text}`);
+  clickRect(good, 0.5);
+  let [costGem] = ocrUntilFound(res => {
+    let t = res.find(e => e.text == '购买');
+    if (!t) {
+      clickRect(good, 0.5, 0);
       return null;
-    }, 20, 1000, { gray: true, maxScale: 4 });
-    if (!affordable) {
-      log('资金不足');
-      back();
     }
-  };
+    return [res.text.match(/(珠宝|招募|优先|扣除)/) != null];
+  }, 15, 600) || [null];
+  if (costGem === null) {
+    log('无法进入购买页面');
+    return;
+  }
+  if (costGem && good.text != '免费商品') {
+    log('消耗珠宝，放弃购买');
+    back();
+    return;
+  }
+  let affordable = true;
+  ocrUntilFound(res => {
+    if (res.find(e => e.text.match(/不足.?$/) != null)) {
+      affordable = false;
+      return true;
+    }
+    if (res.text.match(/(距离|更新|还有)/) != null)
+      return true;
+    let reward = res.find(e => e.text.match(/(REW|点击|奖励)/) != null);
+    if (reward != null)
+      click(width / 2, height * 0.8);
+    let buyBtn = res.find(e => e.text == '购买');
+    if (buyBtn != null) {
+      if (doMax) {
+        let maxBtn = res.find(e => e.text == 'MAX');
+        if (maxBtn != null) {
+          clickRect(maxBtn, 0.3, 0);
+          sleep(400);
+        }
+      }
+      clickRect(buyBtn, 1, 0);
+    }
+    return null;
+  }, 20, 600, { gray: true, maxScale: 4 });
+  if (!affordable) {
+    log('资金不足');
+    back();
+  }
+}
+
+function 商店() {
   let buyFree = () => {
     let freeGood = ocrUntilFound(res => res.find(e => e.text.match(/(100%|s[oq0]l[od0] [oq0]ut)/i) != null), 10, 300);
     let hasFree = (freeGood != null && freeGood.text.includes('100%'));
@@ -320,6 +413,7 @@ function 商店() {
       ocrUntilFound(res => res.text.includes('技场'), 30, 500);
     }
   }
+  废铁商店();
   返回首页();
   cashShop();
 }

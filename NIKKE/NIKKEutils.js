@@ -112,7 +112,7 @@ function 等待NIKKE加载() {
       var target = res.find(e => e.text.match(/.{0,4}今日不再/) != null);
       clickRect(target);
       sleep(500);
-      click(width / 2, height * 0.85); 
+      click(width / 2, height * 0.85);
     }
     else if (res.text.match(/[確确][認认]/) != null) {
       clickRect(res.find(e => e.text.match(/[確确][認认]$/) != null));
@@ -288,7 +288,11 @@ function 关闭限时礼包() {
 function NikkeToday() {
   let today = new Date();
   today.setTime(today.getTime() + 4 * 60 * 60 * 1000);
-  return today.getUTCMonth() + '-' + today.getUTCDate();
+  let month = today.getUTCMonth() + 1;
+  let day = today.getUTCDate();
+  month = month < 10 ? '0' + month : month;
+  day = day < 10 ? '0' + day : day;
+  return today.getUTCFullYear() + '-' + month + '-' + day;
 }
 
 function 刷刷刷() {

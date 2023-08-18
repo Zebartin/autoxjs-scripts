@@ -77,6 +77,8 @@ function 日常() {
     retryFunc(taskFunc[task]);
   if (NIKKEstorage.get('exitGame', false))
     退出NIKKE();
+  else
+    console.show();
   toastLog('NIKKE脚本结束运行');
 }
 

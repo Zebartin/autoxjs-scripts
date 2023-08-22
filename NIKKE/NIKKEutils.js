@@ -302,7 +302,7 @@ function 刷刷刷() {
   ), 20, 3000));
   log('进入战斗');
   sleep(2000);
-  if (ocrUntilFound(res => res.text.includes('AUT'), 20, 1000) != null) {
+  if (ocrUntilFound(res => res.text.includes('AUT'), 20, 3000) != null) {
     while (true) {
       ocrUntilFound((res, img) => {
         if (!res.text.includes('AUT')) {

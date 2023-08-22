@@ -262,13 +262,17 @@ function buyGood(good, doMax) {
       clickRect(good, 0.5, 0);
       return null;
     }
-    return [res.text.match(/(珠宝|招募|优先|扣除)/) != null];
+    let gem = res.find(e =>
+      e.text.match(/(珠宝|招募|优先|扣除)/) != null &&
+      e.bounds != null && e.bounds.bottom < t.bounds.top
+    );
+    return [gem != null];
   }, 15, 600) || [null];
   if (costGem === null) {
     log('无法进入购买页面');
     return;
   }
-  if (costGem && good.text != '免费商品') {
+  if (costGem && good.text != '免费商品' && !good.text.includes('珠宝')) {
     log('消耗珠宝，放弃购买');
     back();
     return;
@@ -284,14 +288,14 @@ function buyGood(good, doMax) {
     let reward = res.find(e => e.text.match(/(REW|点击|奖励)/) != null);
     if (reward != null)
       click(width / 2, height * 0.8);
-    let buyBtn = res.find(e => e.text == '购买');
+    let buyBtn = res.find(e => e.text.endsWith('购买'));
     if (buyBtn != null) {
       if (doMax) {
         let maxBtn = res.find(e => e.text == 'MAX');
-        if (maxBtn != null) {
-          clickRect(maxBtn, 0.3, 0);
-          sleep(400);
-        }
+        if (maxBtn == null)
+          return null;
+        clickRect(maxBtn, 0.3, 0);
+        sleep(400);
       }
       clickRect(buyBtn, 1, 0);
     }

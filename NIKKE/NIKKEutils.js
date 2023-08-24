@@ -418,7 +418,7 @@ function detectNikkes(originalImg, options) {
     thresh: options.thresh || 200,
     region: options.region,
     rectFilter: rect => {
-      if (rect.width() < 100)
+      if (rect.width() < 200)
         return false;
       if (rect.width() * 2.5 < rect.height())
         return false;
@@ -428,7 +428,7 @@ function detectNikkes(originalImg, options) {
     }
   });
   let nikkes = [];
-  let specialNameReg = /[森杨]/;
+  let specialNameReg = /[森杨D]/;
   for (let con of nikkeContours) {
     let w = Math.floor(con.width() / 4);
     let h = Math.floor(con.height() / 5);
@@ -443,6 +443,8 @@ function detectNikkes(originalImg, options) {
         ocr = gmlkit.ocr(scaleimg, 'zh');
         scaleimg.recycle();
       }
+      if (ocr == null)
+        continue;
       ocr = ocr.toArray(3).toArray();
       if (ocr.length == 0)
         continue;

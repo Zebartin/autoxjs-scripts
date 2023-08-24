@@ -1339,8 +1339,8 @@ function 每日任务() {
   let getAllBtn = ocrUntilFound(res => {
     if (!res.text.includes('DA'))
       return null;
-    return res.find(e => e.text.match(/.{0,2}全/) != null);
-  }, 30, 500);
+    return res.find(e => e.text.match(/.{0,2}全[^\d]+取/) != null);
+  }, 15, 500);
   let confirmReceived = 3;
   ocrUntilFound((res, img) => {
     if (res.text.includes('全')) {

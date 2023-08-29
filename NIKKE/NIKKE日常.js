@@ -169,9 +169,10 @@ function 废铁商店() {
     for (let good of wantedGoods)
       buyGood(good, true);
     if (LAST_GOOD.test(lastGood.text))
-      break
-    swipe(width / 2, lastGood.bounds.top, width / 2, firstGood.bounds.top, 1000);
-    swipe(firstGood.bounds.left, firstGood.bounds.top, lastGood.bounds.right, firstGood.bounds.top, 500);
+      break;
+    let middleLine = (lastGood.bounds.top + firstGood.bounds.top) / 2;
+    swipe(width / 2, lastGood.bounds.top, width / 2, upperBound, 1000);
+    swipe(firstGood.bounds.left, middleLine, lastGood.bounds.right, middleLine, 500);
   }
   NIKKEstorage.put('recyclingShopLastChecked', NikkeToday());
 }

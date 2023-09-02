@@ -651,8 +651,7 @@ function 爬塔() {
         break;
       }
       if (colors.blue(captureScreen().pixel(endCombat.bounds.left, endCombat.bounds.top)) < 200) {
-        sleep(1000);
-        click(width / 2, height / 2);
+        clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 10, 600));
         toastLog('每日次数已用完');
         break;
       }

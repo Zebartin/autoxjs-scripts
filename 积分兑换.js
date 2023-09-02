@@ -23,16 +23,6 @@ let myBtn = ocrUntilFound(res => {
 sleep(2000);
 back();
 clickRect(myBtn);
-
-ocrUntilFound(res => res.text.includes('活动中心'), 20, 1000);
-// 点击“福利中心”
-let giftCenter = ocrUntilFound(res => {
-  if (!res.text.includes('活动中心'))
-    return null;
-  return res.find(e => e.text.includes('前') && e.bounds != null && e.bounds.bottom > height * 0.4);
-}, 20, 1000);
-
-clickRect(giftCenter);
 clickRect(ocrUntilFound(res => res.find(e => e.text.includes('分商')), 10, 700));
 
 let targetName = '【超特惠】';
@@ -43,7 +33,7 @@ if (hourNow == 9 || hourNow == 10) {
   costPoint = 300;
 }
 const firstSelector = className("android.view.View").textContains(targetName);
-const confirmSelector = className("android.view.View").textEndsWith(`${costPoint} 积分兑换`).depth(13);
+const confirmSelector = className("android.view.View").textEndsWith(`${costPoint} 积分兑换`).depth(14);
 firstSelector.waitFor();
 
 let remainPoint = ocrUntilFound(res => {
@@ -65,7 +55,7 @@ if (remainPoint >= costPoint) {
   if (firstButton.text() == '抢光了')
     exit();
   var threadClose = threads.start(() => {
-    const closeSelector = text("关闭").depth(12);
+    const closeSelector = text("关闭").depth(13);
     while (true) {
       closeSelector.waitFor();
       remainPoint -= costPoint;

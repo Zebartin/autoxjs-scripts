@@ -258,15 +258,19 @@ function quitPrevSim() {
     if (!pageState.startsWith('selectBuff'))
       clickRect(ocrUntilFound(res => res.find(e => e.text.match(/(確認|确认)/) != null), 10, 1000));
   }
-  let quitBtn = ocrUntilFound((res, img) => res.find(e =>
-    e.text.match(/结[^果]$/) != null && e.bounds != null &&
-    e.bounds.bottom < img.height / 2 && e.bounds.left > img.width / 2
-  ), 20, 1000);
-  clickRect(quitBtn);
-  let [keepBuff, confirmBtn] = ocrUntilFound(res => {
+  let [keepBuff, confirmBtn] = ocrUntilFound((res, img) => {
     let btn = res.find(e => e.text.endsWith('确认'));
     if (!btn) {
-      clickRect(quitBtn);
+      let quitBtn = res.find(e =>
+        e.text.match(/结[^果]$/) != null && e.bounds != null &&
+        e.bounds.bottom > img.height / 2
+      );
+      if (quitBtn === null)
+        quitBtn = res.find(e =>
+          e.text.match(/结[^果]$/) != null && e.bounds != null &&
+          e.bounds.bottom < img.height / 2 && e.bounds.left > img.width / 2
+        );
+      clickRect(quitBtn, 1, 0);
       return null;
     }
     if (res.text.match(/(成功|可保)/) != null)
@@ -595,17 +599,13 @@ function doWithOption(option, status) {
       if (!res.text.includes('STATUS'))
         return null;
       if (res.text.includes('点击'))
-        return 'success';
+        return res.find(e => e.text.includes('点击'));
       if (res.text.includes('FAIL'))
-        return 'fail';
+        return res.find(e => e.text.includes('返回'));
       return null;
     }, 60, 2000);
-    if (result == 'success') {
-      sleep(1000);
-      click(width / 2, height / 2);
-    }
-    else {
-      clickRect(ocrUntilFound(res => res.find(e => e.text.includes('返回')), 20, 500));
+    clickRect(result);
+    if (result.text.includes('返回')) {
       ocrUntilFound(res => res.text.includes('入战'), 30, 1000);
       sleep(500);
       click(width / 2, height / 2);

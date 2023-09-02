@@ -108,14 +108,14 @@ function 等待NIKKE加载() {
       退出NIKKE();
       exit();
     }
-    else if (res.text.includes('今日不再')) {
-      var target = res.find(e => e.text.match(/.{0,4}今日不再/) != null);
+    else if (res.text.includes('不再显')) {
+      var target = res.find(e => e.text.match(/.{0,4}不再显/) != null);
       clickRect(target);
       sleep(500);
       click(width / 2, height * 0.85);
     }
     else if (res.text.match(/[確确][認认]/) != null) {
-      clickRect(res.find(e => e.text.match(/[確确][認认]$/) != null));
+      clickRect(res.find(e => e.text.match(/[確确][認认]/) != null));
     }
     else if (res.text.includes('正在下载')) {
       sleep(20000);

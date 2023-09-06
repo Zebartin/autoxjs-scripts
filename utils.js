@@ -159,6 +159,7 @@ function findImageByFeature(trainImg, queryImg, options) {
       let logText = '模板图片文件缺失，请尝试强制更新后重启脚本'
       toast(logText);
       console.error(logText);
+      console.show();
       exit();
     }
     throw e;

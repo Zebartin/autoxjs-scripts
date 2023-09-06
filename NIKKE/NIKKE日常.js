@@ -1202,18 +1202,14 @@ function 强化装备() {
   let targetNikkeReg = new RegExp(targetNikke);
   let target = null;
   clickRect(ocrUntilFound(res => res.find(e => e.text == '妮姬'), 40, 1000));
-  let upperBound = ocrUntilFound(res => {
-    let upper = res.find(e => e.text == 'ALL');
-    if (!upper)
-      return null;
-    return upper.bounds.bottom;
-  }, 30, 600);
+  let allBtn = ocrUntilFound(res => res.find(e => e.text == 'ALL'), 30, 600);
+  let upperBound = allBtn.bounds.bottom;
   // 找到指定妮姬
   for (let retry = 0; target == null && retry < 3; ++retry) {
-    if (retry > 0)
-      for (let i = 0; i < 7; ++i)
-        swipe(width / 2, (upperBound + height) / 2, width / 2, height, 300);
-    sleep(1000);
+    if (retry > 0) {
+      clickRect(allBtn, 0.6, 300);
+      sleep(1000);
+    }
     let lastNikke = null;
     for (let page = 0; page < 10; ++page) {
       let nikkes = detectNikkes(captureScreen(), {

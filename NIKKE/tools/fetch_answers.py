@@ -2,11 +2,10 @@ import json
 import os
 import re
 import sys
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 
 import requests
 import zhconv
-from bs4 import BeautifulSoup as bs
 
 session = requests.Session()
 
@@ -16,16 +15,12 @@ punctuation_pattern = re.compile(r"[，⋯…？?、!！「」～☆【】。.�
 
 
 def get_from_gamekee():
-    netcut_url = 'https://netcut.cn/p/38b3472ea9d95306'
-    resp = session.get(netcut_url)
-    soup = bs(resp.text, 'html.parser')
-    content_pattern = re.compile('"note_content":\s*"(?P<content>[^"]+)"')
-    note_content = None
-    for script_node in soup.find_all('script'):
-        matched = content_pattern.search(script_node.text)
-        if matched:
-            note_content = matched.group("content")
-            break
+    note_id = '38b3472ea9d95306'
+    resp = session.get(
+        'https://netcut.cn/api/note2/info/',
+        params={'note_id': note_id}
+    )
+    note_content = resp.json()['data']['note_content']
     note_content = note_content.replace('\\n', '\n').replace('\\t', '\t')
     ret = defaultdict(list)
     person = None
@@ -103,5 +98,7 @@ if __name__ == '__main__':
     for k in zh_cn_data:
         zh_cn_data[k] = sorted(zh_cn_data[k])
     with open(os.path.join(os.path.dirname(__file__), '..', 'nikke.json'), 'w', encoding='utf-8') as f:
-        json.dump(OrderedDict(sorted(zh_cn_data.items())),
-                  f, ensure_ascii=False, indent=2)
+        json.dump(
+            dict(sorted(zh_cn_data.items())),
+            f, ensure_ascii=False, indent=2
+        )

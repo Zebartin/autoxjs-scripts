@@ -355,7 +355,7 @@ function 刷刷刷() {
       clickRect(target);
     }
     log('门票用完了');
-    click(width / 2, height / 2);
+    click(width / 3, height / 3);
     ocrUntilFound(res => {
       if (res.text.includes('返回'))
         return true;

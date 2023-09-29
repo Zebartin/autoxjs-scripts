@@ -16,9 +16,9 @@ punctuation_pattern = re.compile(r"[，⋯…？?、!！「」～☆【】。.�
 
 def get_from_gamekee():
     note_id = '38b3472ea9d95306'
-    resp = session.get(
+    resp = session.post(
         'https://netcut.cn/api/note2/info/',
-        params={'note_id': note_id}
+        data={'note_id': note_id}
     )
     note_content = resp.json()['data']['note_content']
     note_content = note_content.replace('\\n', '\n').replace('\\t', '\t')
@@ -88,7 +88,11 @@ def get_from_google_sheet(apiKey):
 
 if __name__ == '__main__':
     zh_cn_data = get_from_gamekee()
-    zh_tw_data = get_from_google_sheet(sys.argv[1])
+    if len(sys.argv) > 1:
+        zh_tw_data = get_from_google_sheet(sys.argv[1])
+    else:
+        print('No google api provided')
+        zh_tw_data = dict()
     # 在gamekee数据基础上，补充繁中服的数据
     for k in zh_tw_data:
         if k in zh_cn_data:

@@ -102,6 +102,7 @@ function ocrUntilFound(found, retry, interval, options) {
 }
 
 function clickRect(rect, scale, delay) {
+  // delay可能是0
   if (delay === undefined)
     delay = 1000;
   sleep(delay);

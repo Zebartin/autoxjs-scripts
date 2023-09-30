@@ -1095,9 +1095,10 @@ function 单次咨询(advise) {
   return 'ok';
 }
 
-function 社交点数招募() {
+function 社交点数招募(repeatCnt) {
   if (NikkeToday() == NIKKEstorage.get('dailyMissionRecruit', null))
     return;
+  repeatCnt = repeatCnt || 1;
   let dailyMission = NIKKEstorage.get('dailyMission', {});
   if (dailyMission.socialPointRecruit != true)
     return;
@@ -1110,53 +1111,85 @@ function 社交点数招募() {
       return true;
     swipe(width * 0.3, height / 2, width * 0.7, height / 2, 500);
     return false;
-  }, 30, 1000);
+  }, 20, 1000);
   if (socialPage != true) {
     toastLog('没能找到社交点数招募页面，放弃招募');
     return;
   }
-  clickRect(ocrUntilFound((res, img) => res.find(e =>
-    e.text.includes('1名') && e.bounds != null && e.bounds.right <= img.width / 2
-  ), 20, 300, { maxScale: 4 }));
-  NIKKEstorage.put('dailyMissionRecruit', NikkeToday());
-  sleep(2000);
-  ocrUntilFound(res => {
-    let skipBtn = res.find(e => e.text.match(/SK.P/) != null);
-    if (skipBtn) {
+  for (let i = 0; i < repeatCnt; ++i) {
+    let [skipBtn] = ocrUntilFound((res, img) => {
+      let doRecruit = res.find(e =>
+        e.bounds != null && (
+          (e.text.includes('1名') && e.bounds.right <= img.width / 2) ||
+          (e.text.includes('再招') && e.bounds.right >= img.width / 2)
+        )
+      );
+      if (doRecruit != null) {
+        clickRect(doRecruit, 1, 0);
+        sleep(5000);
+        return null;
+      }
+      let confirmInsufficient = res.find(e => e.text.match(/(确认|不足)/) != null);
+      if (confirmInsufficient != null)
+        return [null];
+      let skipBtn = res.find(e => e.text.match(/SK.P/) != null);
+      if (skipBtn != null)
+        return [skipBtn];
+    }, 30, 500, { maxScale: 4 });
+    if (skipBtn === null) {
+      log('友情点不足，无法招募');
+      back();
+      clickRect(ocrUntilFound(res => res.find(e => e.text == '大厅'), 30, 1000));
+      return;
+    }
+    NIKKEstorage.put('dailyMissionRecruit', NikkeToday());
+    ocrUntilFound(res => {
+      if (res.text.includes('再') && res.text.includes('确认'))
+        return true;
       clickRect(skipBtn, 1, 0);
-      return null;
-    }
-    return res.find(e => e.text == '确认');
-  }, 50, 1000);
-  click(width / 2, height / 2);
-  let nikkeName = ocrUntilFound(res => {
-    if (!res.text.includes('返回'))
-      return false;
-    let upper = res.find(e => e.text.endsWith('资讯'));
-    let lower = res.find(e => e.text.endsWith('介绍'));
-    if (!upper || !lower) {
-      click(width / 2, height / 2);
-      return null;
-    }
-    let ret = res.filter(e =>
-      e.bounds != null && e.level == 3 &&
-      e.bounds.right < upper.bounds.left &&
-      e.bounds.bottom > upper.bounds.top &&
-      e.bounds.bottom < lower.bounds.top
-    ).toArray();
-    if (ret.length == 0)
-      return null;
-    return ret.map(x => x.text).join('，');
-  }, 20, 1000);
-  log(`招募结果：${nikkeName}`);
-  back();
+    }, 50, 1000);
+    click(width / 2, height / 2);
+    let nikkeName = ocrUntilFound(res => {
+      if (!res.text.includes('返回'))
+        return false;
+      let upper = res.find(e => e.text.endsWith('资讯'));
+      let lower = res.find(e => e.text.endsWith('介绍'));
+      if (!upper || !lower) {
+        click(width / 2, height / 2);
+        return null;
+      }
+      let ret = res.filter(e =>
+        e.bounds != null && e.level == 3 &&
+        e.bounds.right < upper.bounds.left &&
+        e.bounds.bottom > upper.bounds.top &&
+        e.bounds.bottom < lower.bounds.top
+      ).toArray();
+      if (ret.length == 0)
+        return null;
+      return ret.map(x => x.text).join('，');
+    }, 20, 1000);
+    log(`招募结果：${nikkeName}`);
+    ocrUntilFound(res => {
+      if (res.text.includes('再') && res.text.includes('确认'))
+        return true;
+      back();
+    }, 20, 1000);
+  }
   clickRect(ocrUntilFound(res => {
     let t = res.find(e => e.text == '确认');
     if (!t)
       back();
     return t;
   }, 30, 1000));
-  ocrUntilFound(res => res.text.includes('大厅'), 30, 1000);
+  ocrUntilFound(res => {
+    if (res.text.match(/(方舟|商店|基地)/) != null)
+      return true;
+    let hall = res.find(e => e.text == '大厅');
+    if (hall != null) {
+      clickRect(hall, 0.5, 0);
+      return null;
+    }
+  }, 30, 1000);
 }
 
 function listEquip() {
@@ -1189,7 +1222,7 @@ function listEquip() {
   return ret;
 }
 
-function 强化装备() {
+function 强化装备(repeatCnt) {
   if (NikkeToday() == NIKKEstorage.get('dailyMissionEquip', null))
     return;
   let dailyMission = NIKKEstorage.get('dailyMission', {});
@@ -1199,6 +1232,7 @@ function 强化装备() {
     toastLog('未指定强化装备妮姬');
     return;
   }
+  repeatCnt = repeatCnt || 1;
   let targetNikkeReg = new RegExp(targetNikke);
   let target = null;
   clickRect(ocrUntilFound(res => res.find(e => e.text == '妮姬'), 40, 1000));
@@ -1284,15 +1318,17 @@ function 强化装备() {
   if (enhanceStuff.length == 0) {
     toastLog('没有强化材料');
   } else {
-    clickRect({ bounds: enhanceStuff[0] });
-    log('点击第一个强化材料');
-    clickRect(enhanceConfirm);
-    sleep(1000);
-    while (colors.blue(captureScreen().pixel(
-      enhanceConfirm.bounds.left,
-      enhanceConfirm.bounds.top
-    )) > 220)
-      sleep(300);
+    for (let i = 0; i < repeatCnt; ++i) {
+      clickRect({ bounds: enhanceStuff[0] }, 0.8, 500);
+      log('点击第一个强化材料');
+      clickRect(enhanceConfirm);
+      sleep(1000);
+      while (colors.blue(captureScreen().pixel(
+        enhanceConfirm.bounds.left,
+        enhanceConfirm.bounds.top
+      )) > 220)
+        sleep(300);
+    }
   }
   NIKKEstorage.put('dailyMissionEquip', NikkeToday());
   back();

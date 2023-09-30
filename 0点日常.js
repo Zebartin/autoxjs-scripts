@@ -79,7 +79,7 @@ function 米游社签到() {
       sleep(random(1000, 2000));
       let day = textMatches(/^.+第\d+天$/).findOne(2000);
       if (day != null) {
-        day.click();
+        textMatches(/.*第\d+天$/).click();
         break;
       }
       back();

@@ -34,6 +34,8 @@ else {
 }
 function 日常() {
   [width, height] = getDisplaySize();
+  解放();
+  exit();
   const todoTask = JSON.parse(NIKKEstorage.get('todoTask', null));
   const taskFunc = {
     商店: 商店,
@@ -1093,6 +1095,80 @@ function 单次咨询(advise) {
   }
   toast('回到咨询首页');
   return 'ok';
+}
+
+function 解放() {
+  const TASK_LIST = [
+    {
+      name: '送礼',
+      regStr: /[送迷迭][礼扎札][^\d]*([123])次$/,
+    },
+    {
+      name: '装备强化',
+      regStr: /升[級级]([123])次$/,
+    },
+    {
+      name: '招募',
+      regStr: /招募([123])次$/,
+    }
+  ];
+  const PATTERN = new RegExp(TASK_LIST.map(({ regStr }) => regStr.source).join('|'));
+  let inPage = ocrUntilFound((res, img) => {
+    if (res.text.includes('返回'))
+      return true;
+    let liberateBtn = res.find(e => e.text == '解放');
+    if (liberateBtn != null) {
+      clickRect(liberateBtn, 1, 0);
+      sleep(1000);
+      return null;
+    }
+    let nikkeBtn = res.find(e =>
+      e.text == '妮姬' && e.bounds != null &&
+      e.bounds.top >= img.height * 0.7
+    );
+    if (nikkeBtn != null)
+      clickRect(nikkeBtn, 1, 0);
+    return null;
+  }, 40, 700);
+  if (inPage != true) {
+    console.error('无法进入解放页面，放弃');
+    return {};
+  }
+  let tasks = ocrUntilFound((res, img) => {
+    let skipBtn = res.find(e =>
+      e.text.match(/SK.P/) != null && e.bounds != null &&
+      e.bounds.left >= img.width * 0.5 &&
+      e.bounds.bottom < img.height * 0.3
+    );
+    if (skipBtn != null) {
+      clickRect(skipBtn, 1, 0);
+      sleep(1000);
+      return false;
+    }
+    if (res.text.match(/(今日|代理|小时|分钟)/) == null) {
+      sleep(1000);
+      return false;
+    }
+    let completeBtns = res.toArray(3).toArray().filter(e => e.text.endsWith('完成'));
+    for (let btn of completeBtns)
+      clickRect(btn, 1, 200);
+    if (completeBtns.length != 0)
+      return false;
+    let ret = {};
+    let tasks = res.toArray(3).toArray().filter(e => e.text.match(PATTERN) != null);
+    for (let e of tasks) {
+      for (let task of TASK_LIST) {
+        let cnt = e.text.match(task.regStr);
+        if (cnt == null)
+          continue;
+        ret[task.name] = parseInt(cnt[1]);
+        break;
+      }
+    }
+    return ret;
+  }, 40, 1000);
+  返回首页();
+  return tasks;
 }
 
 function 社交点数招募(repeatCnt) {

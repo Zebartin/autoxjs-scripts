@@ -106,13 +106,16 @@ function clickRect(rect, scale, delay) {
   if (delay === undefined)
     delay = 1000;
   sleep(delay);
+  let logText = '';
   if (rect.text)
-    log(`点击"${rect.text}"`);
+    logText += `"${rect.text}" @ `;
   // 按一定比例将范围缩小在中央位置
   // 0 < scale <= 1, 越小表示越集中于中间
   scale = scale || 0.8;
   let x = Math.round((random() - 0.5) * rect.bounds.width() * scale + rect.bounds.centerX());
   let y = Math.round((random() - 0.5) * rect.bounds.height() * scale + rect.bounds.centerY());
+  logText +=`(${x}, ${y})`;
+  log(`点击${logText}`);
   click(x, y);
 }
 

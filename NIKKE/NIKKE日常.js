@@ -1136,6 +1136,9 @@ function 单次咨询() {
 }
 
 function 解放() {
+  let dailyMission = NIKKEstorage.get('dailyMission', {});
+  if (dailyMission.liberate === false)
+    return {};
   const TASK_LIST = [
     {
       name: '送礼',

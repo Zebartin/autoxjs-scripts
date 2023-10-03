@@ -213,8 +213,9 @@ ui.layout(
         <vertical>
           <vertical margin="16 8">
             <Switch id="每日任务TAB" text="未启用" textSize="16sp" />
-            <text text="完成其他每日任务：强化装备、社交点数招募" textColor="#999999" textSize="14sp" />
+            <text text="强化装备、社交点数招募、送礼、领取100P" textColor="#999999" textSize="14sp" />
             <vertical id="dailyMission" margin="0 20">
+              <Switch id="liberate" margin="0 4" textColor="#222222" text="解放" textSize="16sp" />
               <Switch id="socialPointRecruit" margin="0 4" textColor="#222222" text="社交点数招募" textSize="16sp" />
               <horizontal>
                 <text textSize="16sp" textColor="#222222" w="0" layout_weight="5">强化装备指定妮姬：</text>
@@ -224,6 +225,11 @@ ui.layout(
                 <text id="equipEnhanceSlotText" textColor="#222222" textSize="16sp" w="0" layout_weight="5">强化装备部位：头</text>
                 <seekbar id="equipEnhanceSlot" w="0" layout_weight="5" layout_gravity="center" />
               </horizontal>
+            </vertical>
+            <vertical margin="0 20">
+              <text text="说明：" textColor="#999999" textSize="14sp" margin="0 4" />
+              <text text="送礼时会在咨询首页随机挑选妮姬，送出稀有度最低的好感券" textColor="#999999" textSize="14sp" margin="0 2" />
+              <text text="如果开启解放功能，需尽量保证装备强化材料足够、友情点足够、好感券足够" textColor="#999999" textSize="14sp" margin="0 2" />
             </vertical>
           </vertical>
         </vertical>
@@ -403,9 +409,13 @@ ui.equipEnhanceSlot.setOnSeekBarChangeListener({
   }
 });
 let dailyMission = NIKKEstorage.get('dailyMission', {});
+let liberate = dailyMission.liberate;
+if (liberate === null || liberate === undefined)
+  liberate = true;
 let socialPointRecruit = dailyMission.socialPointRecruit;
 if (socialPointRecruit === null || socialPointRecruit === undefined)
   socialPointRecruit = true;
+ui.liberate.setChecked(liberate);
 ui.socialPointRecruit.setChecked(socialPointRecruit);
 ui.equipEnhanceNikke.setText(dailyMission.equipEnhanceNikke || '');
 ui.equipEnhanceSlot.setProgress(dailyMission.equipEnhanceSlot || 0);
@@ -520,6 +530,7 @@ ui.save.on("click", function () {
   NIKKEstorage.put('simulationRoom', JSON.stringify(simulationRoom));
 
   let dailyMission = {};
+  dailyMission.liberate = ui.liberate.isChecked();
   dailyMission.socialPointRecruit = ui.socialPointRecruit.isChecked();
   dailyMission.equipEnhanceNikke = ui.equipEnhanceNikke.text().trim();
   dailyMission.equipEnhanceSlot = ui.equipEnhanceSlot.getProgress();

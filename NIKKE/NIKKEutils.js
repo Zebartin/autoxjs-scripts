@@ -193,7 +193,7 @@ function 返回首页(checkSale) {
     if (res.text.match(/(大厅|基地|物品|方舟)/) != null)
       return res.find(e => e.text == '大厅');
     clickRect(result, 0.8, 0);
-    sleep(1000);
+    sleep(2000);
     return null;
   }, 10, 1000);
   // hallBtn should not be null

@@ -293,7 +293,7 @@ function buyGood(good, doMax) {
     let buyBtn = res.find(e => e.text.endsWith('购买'));
     if (buyBtn != null) {
       if (doMax) {
-        let maxBtn = res.find(e => e.text == 'MAX');
+        let maxBtn = res.find(e => e.text.match(/[Mm].[Xx]/) != null);
         if (maxBtn == null)
           return null;
         clickRect(maxBtn, 0.3, 0);
@@ -956,7 +956,8 @@ function 咨询页面识别(btnText, maxRetry) {
         log(`妮姬名字识别相似度过低，重试(${nameRetry}/${maxRetry})`);
       return null;
     }
-    return [btn, nameResult.result, value.text.includes('MAX')];
+    let hasMax = res.find(e => e.text.match(/[Mm].[Xx]/) != null);
+    return [btn, nameResult.result, hasMax];
   }, 30, 1000, { maxScale: 8 }) || [null, null, null];
 }
 
@@ -1476,8 +1477,8 @@ function 送礼(repeatCnt) {
     attrs.splice(randomIndex, 1);
     // 减少可点击范围，避免点到悬浮窗
     someNikke.bounds.left += someNikke.bounds.width() * 0.7;
-    ocrUntilFound(res=>{
-      if(res.text.includes('看花'))
+    ocrUntilFound(res => {
+      if (res.text.includes('看花'))
         return true;
       clickRect(someNikke, 1, 0);
       return false;

@@ -929,8 +929,7 @@ function 咨询页面识别(btnText, maxRetry) {
   下载咨询文本();
   btnText = btnText || '咨询$';
   maxRetry = maxRetry || 5;
-  let nameRetry = 0;
-  return ocrUntilFound((res, img) => {
+  let [btn, upper, lower, hasMax] = ocrUntilFound((res, img) => {
     let btn = res.find(e =>
       e.text.match(btnText) != null && e.level == 3 &&
       e.bounds != null && e.bounds.top > img.height / 2
@@ -939,29 +938,46 @@ function 咨询页面识别(btnText, maxRetry) {
     let lower = res.find(e => e.text.includes('下') && e.bounds != null);
     if (!btn || !upper || !lower)
       return null;
-    let nameArea = res.find(e =>
-      e.bounds != null && e.bounds.top > upper.bounds.top &&
-      e.bounds.bottom < lower.bounds.top && e.bounds.right < upper.bounds.left
-    );
     let value = res.find(e =>
       e.bounds != null && e.bounds.top > upper.bounds.top &&
       e.bounds.bottom < lower.bounds.top && e.bounds.right > upper.bounds.left
     );
-    if (!nameArea || !value)
+    if (!value)
       return null;
-    let nameResult = mostSimilar(nameArea.text, Object.keys(advise));
-    if (nameResult.similarity < 0.5) {
-      log(`妮姬名OCR结果：${nameArea.text}，匹配：${nameResult.result}，相似度${nameResult.similarity.toFixed(2)}`);
-      nameRetry++;
-      if (nameRetry >= maxRetry) {
-        return [btn, '', false];
-      } else
-        log(`妮姬名字识别相似度过低，重试(${nameRetry}/${maxRetry})`);
-      return null;
+    return [btn, upper, lower, value.text.match(/[Mm].[Xx]/) != null];
+  }, 20, 1000, { maxScale: 4, gray: true });
+  let name = '';
+  let img = images.clip(
+    captureScreen(), 0, upper.bounds.top,
+    upper.bounds.left, lower.bounds.top - upper.bounds.top
+  );
+  let gray = images.grayscale(img);
+  img && img.recycle();
+  img = gray;
+  for (let scale = 1; scale <= maxRetry; ++scale) {
+    let newImg = img;
+    if (scale > 1)
+      newImg = images.scale(img, scale, scale, 'CUBIC');
+    let nameText = gmlkit.ocr(newImg, 'zh').text;
+    if (scale > 1)
+      newImg && newImg.recycle();
+    if (nameText.length == 0)
+      continue;
+    let result = mostSimilar(nameText, Object.keys(advise));
+    if (result.similarity >= 0.5) {
+      name = result.result;
+      break;
     }
-    let hasMax = res.find(e => e.text.match(/[Mm].[Xx]/) != null);
-    return [btn, nameResult.result, hasMax];
-  }, 30, 1000, { maxScale: 8 }) || [null, null, null];
+    log(`妮姬名OCR结果：${nameText}，匹配：${result.result}，相似度${result.similarity.toFixed(2)}`);
+    if (scale < maxRetry)
+      log(`妮姬名字识别相似度过低，重试(${scale}/${maxRetry})`);
+    else {
+      log(`已达最大尝试次数。可能原因：\n1.不支持反常\n2.不支持新版本妮姬`);
+      toast('妮姬名字识别失败');
+    }
+  }
+  img && img.recycle();
+  return [btn, name, hasMax];
 }
 
 function 返回咨询首页() {
@@ -987,8 +1003,7 @@ function 返回咨询首页() {
 
 function 单次咨询() {
   let failFunc = (ret) => {
-    back();
-    ocrUntilFound(res => res.text.includes('可以'), 30, 3000);
+    返回咨询首页();
     return ret || 'failed';
   };
   const maxRetry = 5;
@@ -998,8 +1013,6 @@ function 单次咨询() {
     return failFunc('retry');
   }
   if (name == '') {
-    log(`已达最大尝试次数。可能原因：暂不支持新版本妮姬的咨询`);
-    toast('妮姬名字识别失败');
     return failFunc();
   }
   log(`咨询对象：${name}`);

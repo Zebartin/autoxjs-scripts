@@ -10,6 +10,7 @@ var {
   findContoursRect, rgbToGray
 } = require('./utils.js');
 let width, height;
+let advise = null;
 let NIKKEstorage = storages.create("NIKKEconfig");
 if (typeof module === 'undefined') {
   auto.waitFor();
@@ -34,8 +35,6 @@ else {
 }
 function 日常() {
   [width, height] = getDisplaySize();
-  解放();
-  exit();
   const todoTask = JSON.parse(NIKKEstorage.get('todoTask', null));
   const taskFunc = {
     商店: 商店,
@@ -820,16 +819,23 @@ function 竞技场() {
   特殊竞技场();
   返回首页();
 }
-function 咨询() {
-  let advise = null;
+
+function 下载咨询文本() {
+  if (advise != null)
+    return;
   if (NIKKEstorage.get('fetchLatestNikkeJson', true))
     try {
+      log('正在下载最新咨询文本');
       advise = http.get('https://github.blindfirefly.top/https://raw.githubusercontent.com/Zebartin/autoxjs-scripts/dev/NIKKE/nikke.json').body.json();
+      log('下载完成');
     } catch (error) {
       log(`获取最新咨询文本失败：${error.message}`);
     }
   if (advise == null)
     advise = JSON.parse(files.read('./nikke.json'));
+}
+
+function 咨询() {
   clickRect(ocrUntilFound(res => res.find(e => e.text == '妮姬'), 40, 1000));
   clickRect(ocrUntilFound(res => res.find(e => e.text == '咨询'), 40, 1000));
   toastLog('开始咨询');
@@ -900,7 +906,7 @@ function 咨询() {
       return null;
     }, 20, 1000) != true)
       throw new Error('无法进入单人咨询页面');
-    let res = 单次咨询(advise);
+    let res = 单次咨询();
     if (res == 'ok')
       cnt++;
     else if (res == 'failed') {
@@ -915,18 +921,16 @@ function 咨询() {
   toastLog('完成咨询');
   返回首页();
 }
-function 单次咨询(advise) {
-  let failFunc = (ret) => {
-    back();
-    ocrUntilFound(res => res.text.includes('可以'), 30, 3000);
-    return ret || 'failed';
-  };
-  const maxRetry = 5;
+
+function 咨询页面识别(btnText, maxRetry) {
+  下载咨询文本();
+  btnText = btnText || '咨询$';
+  maxRetry = maxRetry || 5;
   let nameRetry = 0;
-  let [adviseBtn, name, hasMax] = ocrUntilFound((res, img) => {
+  return ocrUntilFound((res, img) => {
     let btn = res.find(e =>
-      e.text.includes('咨询') && e.bounds != null &&
-      e.bounds.top > img.height / 2 && e.bounds.left > img.width / 2
+      e.text.match(btnText) != null && e.level == 3 &&
+      e.bounds != null && e.bounds.top > img.height / 2
     );
     let upper = res.find(e => e.text.includes('看花') && e.bounds != null);
     let lower = res.find(e => e.text.includes('下') && e.bounds != null);
@@ -954,12 +958,43 @@ function 单次咨询(advise) {
     }
     return [btn, nameResult.result, value.text.includes('MAX')];
   }, 30, 1000, { maxScale: 8 }) || [null, null, null];
+}
+
+function 返回咨询首页() {
+  back();
+  if (ocrUntilFound(res => {
+    if (res.text.includes('可以'))
+      return true;
+    back();
+    return false;
+  }, 10, 3000) == null) {
+    ocrUntilFound(res => {
+      if (res.text.includes('大厅'))
+        return true;
+      back();
+      return false;
+    }, 20, 1000);
+    clickRect(ocrUntilFound(res => res.find(e => e.text == '大厅'), 30, 1000));
+    clickRect(ocrUntilFound(res => res.find(e => e.text == '妮姬'), 30, 1000));
+    clickRect(ocrUntilFound(res => res.find(e => e.text == '咨询'), 30, 1000));
+  }
+  toast('回到咨询首页');
+}
+
+function 单次咨询() {
+  let failFunc = (ret) => {
+    back();
+    ocrUntilFound(res => res.text.includes('可以'), 30, 3000);
+    return ret || 'failed';
+  };
+  const maxRetry = 5;
+  let [adviseBtn, name, hasMax] = 咨询页面识别('咨询$', maxRetry);
   if (adviseBtn == null) {
     toastLog('咨询页面解析失败');
     return failFunc('retry');
   }
-  if (nameRetry == maxRetry) {
-    log(`已达最大尝试次数${maxRetry}。可能原因：暂不支持新版本妮姬的咨询`);
+  if (name == '') {
+    log(`已达最大尝试次数。可能原因：暂不支持新版本妮姬的咨询`);
     toast('妮姬名字识别失败');
     return failFunc();
   }
@@ -1022,11 +1057,14 @@ function 单次咨询(advise) {
     let options = ocrUntilFound(res => {
       let ret = [];
       for (let optionRect of result) {
-        let t = res.find(e =>
-          e.level == 1 && e.bounds.top >= optionRect.top &&
+        let t = res.toArray(3).toArray().filter(e =>
+          e.bounds.top >= optionRect.top &&
           e.bounds.bottom <= optionRect.bottom
         );
-        ret.push(t ? t.text : "");
+        if (t.length != 0)
+          ret.push(t.map(x => x.text).join(''))
+        else
+          ret.push('')
       }
       if (ret.every(x => x == ""))
         return null;
@@ -1076,24 +1114,7 @@ function 单次咨询(advise) {
   }
   ocrUntilFound(res => res.text.includes('咨询'), 20, 3000);
   sleep(1000);
-  back();
-  if (ocrUntilFound(res => {
-    if (res.text.includes('可以'))
-      return true;
-    back();
-    return false;
-  }, 10, 3000) == null) {
-    ocrUntilFound(res => {
-      if (res.text.includes('大厅'))
-        return true;
-      back();
-      return false;
-    }, 20, 1000);
-    clickRect(ocrUntilFound(res => res.find(e => e.text == '大厅'), 30, 1000));
-    clickRect(ocrUntilFound(res => res.find(e => e.text == '妮姬'), 30, 1000));
-    clickRect(ocrUntilFound(res => res.find(e => e.text == '咨询'), 30, 1000));
-  }
-  toast('回到咨询首页');
+  返回咨询首页();
   return 'ok';
 }
 
@@ -1134,6 +1155,7 @@ function 解放() {
     console.error('无法进入解放页面，放弃');
     return {};
   }
+  sleep(1000);  // 等待动画
   let tasks = ocrUntilFound((res, img) => {
     let skipBtn = res.find(e =>
       e.text.match(/SK.P/) != null && e.bounds != null &&
@@ -1146,6 +1168,7 @@ function 解放() {
       return false;
     }
     if (res.text.match(/(今日|代理|小时|分钟)/) == null) {
+      click(width / 2, height / 2);
       sleep(1000);
       return false;
     }
@@ -1178,6 +1201,7 @@ function 社交点数招募(repeatCnt) {
   let dailyMission = NIKKEstorage.get('dailyMission', {});
   if (dailyMission.socialPointRecruit != true)
     return;
+  log(`社交点数招募：${repeatCnt}次`);
   clickRect(ocrUntilFound(res => res.find(e =>
     e.text.includes('员招') && e.text.match(/[物品栏]/) == null
   ), 40, 1000));
@@ -1202,7 +1226,7 @@ function 社交点数招募(repeatCnt) {
       );
       if (doRecruit != null) {
         clickRect(doRecruit, 1, 0);
-        sleep(5000);
+        sleep(8000);
         return null;
       }
       let confirmInsufficient = res.find(e => e.text.match(/(确认|不足)/) != null);
@@ -1309,6 +1333,7 @@ function 强化装备(repeatCnt) {
     return;
   }
   repeatCnt = repeatCnt || 1;
+  log(`强化装备：${repeatCnt}次`);
   let targetNikkeReg = new RegExp(targetNikke);
   let target = null;
   clickRect(ocrUntilFound(res => res.find(e => e.text == '妮姬'), 40, 1000));
@@ -1352,8 +1377,10 @@ function 强化装备(repeatCnt) {
   clickRect(target, 0.5);
   ocrUntilFound(res => res.text.match(/(STATUS|体力|攻击|返回)/), 30, 1000);
   // 点击指定装备
-  clickRect({ bounds: listEquip()[targetEquip] }, 0.5);
-  log('点击指定装备');
+  clickRect({
+    bounds: listEquip()[targetEquip],
+    text: '指定装备'
+  }, 0.5);
   ocrUntilFound(res => res.find(e => e.text.match(/^(升级|穿戴|交换|改造)/) != null), 20, 1000);
   // 检查是否可以升级
   let enhanceBtn = ocrUntilFound(res => res.find(e => e.text.endsWith('升级')), 3, 1000);
@@ -1411,6 +1438,151 @@ function 强化装备(repeatCnt) {
   返回首页();
 }
 
+function 送礼(repeatCnt) {
+  repeatCnt = repeatCnt || 0;
+  if (repeatCnt == 0)
+    return;
+  log(`送礼：${repeatCnt}次`);
+  let attrs = ocrUntilFound((res, img) => {
+    if (res.text.includes('返回')) {
+      let ret = res.toArray(3).toArray().filter(e => e.text.includes('Attr'));
+      if (ret.length == 0)
+        return null;
+      return ret;
+    }
+    let adviseBtn = res.find(e => e.text == '咨询');
+    if (adviseBtn != null) {
+      clickRect(adviseBtn, 1, 0);
+      sleep(1000);
+      return null;
+    }
+    let nikkeBtn = res.find(e =>
+      e.text == '妮姬' && e.bounds != null &&
+      e.bounds.top >= img.height * 0.7
+    );
+    if (nikkeBtn != null)
+      clickRect(nikkeBtn, 1, 0);
+    return null;
+  }, 40, 700) || [];
+  if (attrs.length == 0) {
+    console.error('无法进入咨询页面，放弃');
+    return;
+  }
+  let curRepeat = 0;
+  // 每次循环从首页选择一个，尝试送礼
+  for (let retry = 0; retry < 5 && curRepeat < repeatCnt; ++retry) {
+    let randomIndex = Math.floor(Math.random() * attrs.length);
+    let someNikke = attrs[randomIndex];
+    attrs.splice(randomIndex, 1);
+    // 减少可点击范围，避免点到悬浮窗
+    someNikke.bounds.left += someNikke.bounds.width() * 0.7;
+    ocrUntilFound(res=>{
+      if(res.text.includes('看花'))
+        return true;
+      clickRect(someNikke, 1, 0);
+      return false;
+    }, 10, 500);
+    let [giftBtnOutside, name, hasMax] = 咨询页面识别('[送迷迭][礼扎札]');
+    log(`送礼对象：${name}`);
+    if (hasMax) {
+      log('已达好感度上限');
+      返回咨询首页();
+      continue;
+    }
+    clickRect(giftBtnOutside, 1, 200);
+    let [generalBtn, giftBtnInside] = ocrUntilFound((res, img) => {
+      let generalBtn = res.find(e =>
+        e.text.match(/[通逼]用/) != null
+      );
+      let giftBtn = res.find(e =>
+        e.text.match(/[送迷迭][礼扎札]/) != null &&
+        e.bounds != null && e.bounds.bottom >= img.height * 0.5 &&
+        e.bounds.right > img.width * 0.5
+      );
+      if (!generalBtn || !giftBtn) {
+        clickRect(giftBtnOutside, 1, 0);
+        return null;
+      }
+      let btnColor = img.pixel(generalBtn.bounds.right + 3, generalBtn.bounds.top);
+      if (!colors.isSimilar('#1aaff7', btnColor, 75)) {
+        clickRect(generalBtn, 1, 0);
+        return null;
+      }
+      return [generalBtn, giftBtn];
+    }, 30, 800);
+    let gifts = [];
+    while (curRepeat < repeatCnt) {
+      gifts = [];
+      for (let i = 0; i < 10; ++i) {
+        let img = captureScreen();
+        let thresh = random(150, 200);
+        gifts = findContoursRect(img, {
+          thresh: thresh,
+          region: [
+            0, generalBtn.bounds.bottom, img.width,
+            giftBtnInside.bounds.top - generalBtn.bounds.bottom
+          ],
+          // debug: true,
+          rectFilter: rect => {
+            if (rect.width() < 100)
+              return false;
+            if (Math.abs(rect.width() - rect.height()) > 20)
+              return false;
+            return true;
+          }
+        });
+        if (gifts.length > 0 && gifts.length < 4)
+          break;
+        clickRect(generalBtn, 1, 200);  // 再点一次，以消去可能弹出的rank increase
+        sleep(800);   // 等待动画
+      }
+      if (gifts.length == 0) {
+        console.warn('没有好感券，放弃送礼');
+        break;
+      }
+      let lastGift = {
+        bounds: gifts[gifts.length - 1],
+        text: '最后一个礼物'
+      };
+      let [upToMax] = ocrUntilFound((res, img) => {
+        if (res.text.match(/(无法|上限|确认|取消)/) != null)
+          return [true];
+        if (colors.blue(img.pixel(
+          giftBtnInside.bounds.right,
+          giftBtnInside.bounds.top
+        )) <= 220) {
+          clickRect(lastGift, 0.8, 500);
+          return null;
+        }
+        return [false];
+      }, 10, 800) || [true];
+      if (upToMax) {
+        log('已达好感度上限');
+        back();
+        break;
+      }
+      clickRect(giftBtnInside);
+      sleep(700);
+      while (colors.blue(captureScreen().pixel(
+        giftBtnInside.bounds.right,
+        giftBtnInside.bounds.top
+      )) > 220)
+        sleep(500);
+      curRepeat += 1;
+      // 等待“好感度提升”消失
+      if (curRepeat < repeatCnt)
+        ocrUntilFound(res => !res.text.includes('升'), 10, 500);
+    }
+    if (gifts.length == 0)
+      return;
+    if (curRepeat < repeatCnt)
+      返回咨询首页();
+    else
+      back();
+  }
+  返回首页();
+}
+
 function dailyMissionCompleted() {
   return NikkeToday() == NIKKEstorage.get('dailyMissionCompleted', null);
 }
@@ -1418,8 +1590,12 @@ function dailyMissionCompleted() {
 function 每日任务() {
   if (dailyMissionCompleted())
     return;
-  社交点数招募();
-  强化装备();
+  let tasks = 解放();
+  社交点数招募(tasks['招募']);
+  强化装备(tasks['装备强化']);
+  送礼(tasks['送礼']);
+  if (Object.keys(tasks).length != 0)
+    解放();
   let season = ocrUntilFound(res => res.find(e => e.text.includes('SEASON')), 30, 500);
   let i;
   for (i = 0; i < 10; ++i) {

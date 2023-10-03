@@ -34,6 +34,8 @@ else {
 }
 function 启动NIKKE() {
   let NIKKEstorage = storages.create("NIKKEconfig");
+  let errorPath = files.path('./images/nikkerror/');
+  files.ensureDir(errorPath);
   if (firstBoot && NIKKEstorage.get('alreadyInGame', false)) {
     toastLog('已勾选“游戏已启动”选项\n请确保游戏此时正处于前台画面');
     firstBoot = false;
@@ -45,8 +47,6 @@ function 启动NIKKE() {
   sleep(500);
   // 保证错误截图不要过多
   let maxErr = 20;
-  let errorPath = files.path('./images/nikkerror/');
-  files.ensureDir(errorPath);
   let errorImages = files.listDir(errorPath);
   if (errorImages.length >= maxErr) {
     errorImages.sort((a, b) => parseInt(b.split('.')[0]) - parseInt(a.split('.')[0]));

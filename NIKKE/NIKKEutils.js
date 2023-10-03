@@ -187,23 +187,19 @@ function 返回首页(checkSale) {
   }
   result.text = '首页图标';
   homeImage.recycle();
-  clickRect(result);
+  clickRect(result, 0.8);
   sleep(5000);
-  for (let i = 0; i < 10; ++i) {
-    let hallBtn = ocrUntilFound(res => {
-      if (res.text.match(/(大厅|基地|物品|方舟)/) == null)
-        return null;
+  let hallBtn = ocrUntilFound(res => {
+    if (res.text.match(/(大厅|基地|物品|方舟)/) != null)
       return res.find(e => e.text == '大厅');
-    }, 3, 400);
-    if (hallBtn != null) {
-      if (checkSale)
-        关闭限时礼包();
-      clickRect(hallBtn, 1, 0);
-      break;
-    }
     clickRect(result, 0.8, 0);
     sleep(1000);
-  }
+    return null;
+  }, 10, 1000);
+  // hallBtn should not be null
+  if (checkSale)
+    关闭限时礼包();
+  clickRect(hallBtn, 1, 200);
   log('返回首页');
 }
 
@@ -532,7 +528,7 @@ function checkAuto() {
     return;
   }
   let i = 0;
-  while (i < 2) {
+  for (let retry = 0; retry < 10 && i < 2; retry++) {
     let btn = res[i];
     let name = '自动' + (i == 0 ? '瞄准' : '爆裂');
     let region = [btn.left, btn.top, btn.width(), btn.height()];

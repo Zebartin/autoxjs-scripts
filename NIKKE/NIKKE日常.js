@@ -346,19 +346,22 @@ function 商店() {
         ocrUntilFound(res => res.text.match(/(距离|更新|还有)/) != null, 20, 600);
       }
     }
-    return hasFree;
   };
+  let lastFreshed = NIKKEstorage.get('lastShopFreshed', NikkeToday());
   clickRect(ocrUntilFound(res => res.find(e => e.text == '商店'), 30, 1000));
   toastLog('进入商店');
   ocrUntilFound(res => res.text.match(/(普[通逼]|100%|s[oq0]l[od0] [oq0]ut)/i) != null, 50, 1000);
-  if (buyFree()) {
+  buyFree();
+  if (lastFreshed != NikkeToday()) {
     clickRect(ocrUntilFound(res => res.find(e => e.text.match(/(距离|更新|还有)/) != null), 10, 300));
     toastLog('刷新商店');
     clickRect(ocrUntilFound(res => res.find(e => e.text == '确认'), 10, 300));
+    NIKKEstorage.put('lastShopFreshed', NikkeToday());
     // 等待刷新完成
     ocrUntilFound(res => res.text.match(/s[oq0]l[od0] [oq0]ut/i) == null, 20, 500);
     buyFree();
-  }
+  } else
+    log('今日已刷新过普通商店');
   const buyCodeManual = NIKKEstorage.get('buyCodeManual', 3);
   if (buyCodeManual != 0) {
     const arenaShopImage = images.read("./images/arenaShop.jpg");

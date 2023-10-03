@@ -31,9 +31,8 @@ def get_from_gamekee():
         if line.startswith('50') or 'question' in line:
             continue
         if line.startswith('100'):
-            if 'AccountData' in line:
-                continue
             a = punctuation_pattern.sub('', line[5:])
+            a = a.replace('AccountDataNickName', '')
             if not a:
                 continue
             ret[person].append(a)
@@ -75,9 +74,8 @@ def get_from_google_sheet(apiKey):
             else:
                 answers = content
         for n, a in zip(nikke_names, answers):
-            if excluded_pattern.search(a) is not None:
-                continue
             cleaned_a = punctuation_pattern.sub('', a)
+            cleaned_a = excluded_pattern.sub('', cleaned_a)
             if len(cleaned_a) == 0:
                 continue
             if n == 'Ｄ':

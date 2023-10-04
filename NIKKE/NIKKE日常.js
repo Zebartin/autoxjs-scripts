@@ -347,7 +347,11 @@ function 商店() {
       }
     }
   };
-  let lastFreshed = NIKKEstorage.get('lastShopFreshed', NikkeToday());
+  let lastFreshed = NIKKEstorage.get('lastShopFreshed', null);
+  if (lastFreshed === null) {
+    NIKKEstorage.put('lastShopFreshed', NikkeToday());
+    lastFreshed = NikkeToday();
+  }
   clickRect(ocrUntilFound(res => res.find(e => e.text == '商店'), 30, 1000));
   toastLog('进入商店');
   ocrUntilFound(res => res.text.match(/(普[通逼]|100%|s[oq0]l[od0] [oq0]ut)/i) != null, 50, 1000);
@@ -1154,6 +1158,10 @@ function 解放() {
     {
       name: '招募',
       regStr: /招募([123])次$/,
+    },
+    {
+      name: '每日任务',
+      regStr: /日任\D*(\d+)/,
     }
   ];
   const PATTERN = new RegExp(TASK_LIST.map(({ regStr }) => regStr.source).join('|'));
@@ -1617,8 +1625,6 @@ function 每日任务() {
   社交点数招募(tasks['招募']);
   强化装备(tasks['装备强化']);
   送礼(tasks['送礼']);
-  if (Object.keys(tasks).length != 0)
-    解放();
   let season = ocrUntilFound(res => res.find(e => e.text.includes('SEASON')), 30, 500);
   let i;
   for (i = 0; i < 10; ++i) {
@@ -1705,5 +1711,7 @@ function 每日任务() {
     return false;
   }, 30, 600);
   back();
+  if (Object.keys(tasks).length != 0)
+    解放();
   NIKKEstorage.put('dailyMissionCompleted', NikkeToday());
 }

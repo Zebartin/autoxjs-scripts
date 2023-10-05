@@ -114,7 +114,7 @@ function clickRect(rect, scale, delay) {
   scale = scale || 0.8;
   let x = Math.round((random() - 0.5) * rect.bounds.width() * scale + rect.bounds.centerX());
   let y = Math.round((random() - 0.5) * rect.bounds.height() * scale + rect.bounds.centerY());
-  logText +=`(${x}, ${y})`;
+  logText += `(${x}, ${y})`;
   log(`点击${logText}`);
   click(x, y);
 }
@@ -365,11 +365,11 @@ function killApp(packageName) {
     back();
     app.openAppSetting(name);
   }
-  let is_sure = textMatches(/[强行停止结束]{2,}/).findOne();
-  if (is_sure.enabled()) {
+  let is_sure = textMatches(/.*[强行停止结束]{2,}.*/).findOne(2000);
+  if (is_sure != null && is_sure.enabled()) {
     is_sure.click();
     sleep(1000);
-    textMatches(/(确定|[强行停止结束]{2,})/).click();
+    textMatches(/(确[定认]|.*[强行停止结束]{2,}.*)/).click();
     log(app.getAppName(name) + "应用已被关闭");
     sleep(1000);
     back();

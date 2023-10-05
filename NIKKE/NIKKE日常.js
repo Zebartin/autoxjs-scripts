@@ -1381,6 +1381,10 @@ function 强化装备(repeatCnt) {
       let nikkes = detectNikkes(captureScreen(), {
         region: [0, upperBound]
       });
+      if (nikkes.length < 6){
+        sleep(700);
+        continue;
+      }
       if (nikkes[nikkes.length - 1].name == lastNikke)
         break;
       lastNikke = nikkes[nikkes.length - 1].name;

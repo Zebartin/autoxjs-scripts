@@ -35,6 +35,8 @@ else {
 }
 function 日常() {
   [width, height] = getDisplaySize();
+  返回首页();
+  exit();
   const todoTask = JSON.parse(NIKKEstorage.get('todoTask', null));
   const taskFunc = {
     商店: 商店,
@@ -183,12 +185,20 @@ function cashShop() {
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('付')), 30, 1000));
   let upperBound = ocrUntilFound(res => {
     let ubs = res.filter(e => e.text.match(/([仅在指定的销售期间]{3,}|[从同时出现的礼包中]{3,})/) != null).toArray();
-    if (ubs.length == 0)
+    if (ubs.length == 0) {
+      let cashShopBtn = res.find(e => e.text.includes('付'));
+      if (cashShopBtn != null)
+        clickRect(cashShopBtn, 1, 0);
       return null;
+    }
     return ubs.reduce((prev, curr) =>
       prev.bounds.top < curr.bounds.top ? prev : curr
     ).bounds.bottom;
   }, 20, 1000);
+  if (upperBound === null) {
+    console.error('无法进入付费商店');
+    return;
+  }
   let cashShopImg = images.read('./images/cashShop.jpg');
   let target = null;
   for (let i = 0; i < 3; ++i) {
@@ -204,12 +214,12 @@ function cashShop() {
     let clicked = false;
     for (let j = 0; j < 3; ++j) {
       clickRect(target);
+      sleep(1000);
       let targetColor = captureScreen().pixel(target.bounds.right, target.bounds.centerY());
       if (rgbToGray(targetColor) >= 100) {
         clicked = true;
         break;
       }
-      sleep(500);
     }
     if (clicked)
       break;
@@ -1381,7 +1391,7 @@ function 强化装备(repeatCnt) {
       let nikkes = detectNikkes(captureScreen(), {
         region: [0, upperBound]
       });
-      if (nikkes.length < 6){
+      if (nikkes.length < 6) {
         sleep(700);
         continue;
       }

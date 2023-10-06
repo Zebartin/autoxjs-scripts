@@ -174,28 +174,28 @@ function 退出NIKKE() {
 
 function 返回首页(checkSale) {
   const homeImage = images.read('./images/home.jpg');
-  var result = null;
-  for (let i = 0; i < 10; ++i) {
-    let img = captureScreen();
-    result = findImageByFeature(img, homeImage, {
-      threshold: 0.6,
-      region: [0, img.height * 0.8, img.width / 2, img.height * 0.2]
-    });
-    if (result != null)
-      break;
-    sleep(300);
-  }
-  result.text = '首页图标';
-  homeImage.recycle();
-  clickRect(result, 0.8);
-  sleep(5000);
-  let hallBtn = ocrUntilFound(res => {
-    if (res.text.match(/(大厅|基地|物品|方舟)/) != null)
-      return res.find(e => e.text == '大厅');
-    clickRect(result, 0.8, 0);
-    sleep(2000);
+  let i = 0;
+  let homeBtn = null;
+  let hallBtn = ocrUntilFound((res, img) => {
+    let t = res.find(e => e.text == '大厅');
+    if (t != null)
+      return t;
+    if (homeBtn === null) {
+      homeBtn = findImageByFeature(img, homeImage, {
+        threshold: 0.6,
+        region: [0, img.height * 0.8, img.width / 2, img.height * 0.2]
+      });
+      if (homeBtn === null) {
+        sleep(500);
+        return null;
+      }
+      homeBtn.text = '首页图标';
+    }
+    clickRect(homeBtn, 0.8, 0);
+    sleep(Math.max(500, 2000 - 500 * i));
+    i++;
     return null;
-  }, 10, 1000);
+  }, 15, 1000);
   // hallBtn should not be null
   if (checkSale)
     关闭限时礼包();
@@ -554,5 +554,6 @@ function checkAuto() {
       continue;
     }
   }
-  firstCheckAuto = false;
+  if (i == 2)
+    firstCheckAuto = false;
 }

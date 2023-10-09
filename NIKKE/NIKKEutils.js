@@ -136,7 +136,9 @@ function 等待NIKKE加载() {
       manuallyEnter = false;
     }
     else if (res.text.match(/(大厅|员招|物品栏)/) != null) {
-      if (res.text.match(/(方舟|基地|商店)/) != null)
+      if (manuallyEnter == false)
+        return true;
+      if (res.text.match(/(基地|商店)/) != null)
         return true;
       let hallBtn = res.find(e => e.text == '大厅');
       if (hallBtn != null)

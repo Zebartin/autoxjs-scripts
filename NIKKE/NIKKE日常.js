@@ -35,8 +35,6 @@ else {
 }
 function 日常() {
   [width, height] = getDisplaySize();
-  返回首页();
-  exit();
   const todoTask = JSON.parse(NIKKEstorage.get('todoTask', null));
   const taskFunc = {
     商店: 商店,
@@ -251,7 +249,6 @@ function cashShop() {
     if (rgbToGray(color) < 50)
       log(`每${name}免费礼包已领取`);
     else {
-      log(`领取每${name}免费礼包`);
       clickRect(free, 1, 0);
       let clickOut = ocrUntilFound(res => res.find(
         e => e.text.includes('点击')
@@ -1208,8 +1205,11 @@ function 解放() {
       sleep(1000);
       return false;
     }
-    if (res.text.match(/(今日|代理|小时|分钟)/) == null) {
-      click(width / 2, height / 2);
+    let timeBound = res.find(e => e.text.match(/更新.*小时.{0,4}分钟/) != null);
+    if (res.text.includes('AUT') || timeBound == null) {
+      let a = 0.65, b = 0.8;
+      let x = random() * (b - a) + a;
+      click(width / 2, height * x);
       sleep(1000);
       return false;
     }
@@ -1218,6 +1218,13 @@ function 解放() {
       clickRect(btn, 1, 200);
     if (completeBtns.length != 0)
       return false;
+    let taskText = res.toArray(3).toArray().filter(e =>
+      e.bounds != null && e.text.match(/^[\d\w/-]+$/) == null &&
+      e.bounds.left >= timeBound.bounds.left &&
+      e.bounds.top > timeBound.bounds.bottom &&
+      e.bounds.bottom < timeBound.bounds.bottom + 400
+    ).map(x => x.text).join('\n');
+    console.info(`解放任务文本内容：\n${taskText}`);
     let ret = {};
     let tasks = res.toArray(3).toArray().filter(e => e.text.match(PATTERN) != null);
     for (let e of tasks) {
@@ -1230,7 +1237,7 @@ function 解放() {
       }
     }
     return ret;
-  }, 40, 1000);
+  }, 20, 600);
   返回首页();
   return tasks;
 }
@@ -1467,8 +1474,10 @@ function 强化装备(repeatCnt) {
     toastLog('没有强化材料');
   } else {
     for (let i = 0; i < repeatCnt; ++i) {
-      clickRect({ bounds: enhanceStuff[0] }, 0.8, 500);
-      log('点击第一个强化材料');
+      clickRect({ 
+        text: '第一个强化材料',
+        bounds: enhanceStuff[0]
+      }, 0.8, 500);
       clickRect(enhanceConfirm);
       sleep(1000);
       while (colors.blue(captureScreen().pixel(

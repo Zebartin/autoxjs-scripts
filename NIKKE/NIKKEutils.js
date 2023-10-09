@@ -110,14 +110,23 @@ function 等待NIKKE加载() {
     }
     else if (res.text.includes('不再显')) {
       let target = res.find(e => e.text.match(/.{0,4}不再显/) != null);
-      clickRect(target);
+      clickRect(target, 1, 0);
       sleep(500);
       click(width / 2, height * 0.85);
     }
     else if (res.text.match(/[確确][認认]/) != null) {
       let target = res.find(e => e.text.match(/[確确][認认]$/) != null);
       if (target != null)
-        clickRect(target);
+        clickRect(target, 1, 0);
+    }
+    else if (res.text.includes('返回')) {
+      let target = res.find(e =>
+        e.text.endsWith('返回') && e.bounds != null &&
+        e.bounds.top > height * 0.8 &&
+        e.bounds.right < width * 0.5
+      );
+      if (target != null)
+        clickRect(target, 1, 0);
     }
     else if (res.text.includes('正在下载')) {
       sleep(20000);
@@ -126,8 +135,13 @@ function 等待NIKKE加载() {
       click(width / 2, height / 2);
       manuallyEnter = false;
     }
-    else if (res.text.match(/(大厅|员招|物品栏)/) != null)
-      return true;
+    else if (res.text.match(/(大厅|员招|物品栏)/) != null) {
+      if (res.text.match(/(方舟|基地|商店)/) != null)
+        return true;
+      let hallBtn = res.find(e => e.text == '大厅');
+      if (hallBtn != null)
+        clickRect(hallBtn, 1, 0);
+    }
     // 月卡检查要放在这里之后
     else if (res.text.match(/(REWARD|点击|每日|补给)/) != null)
       click(width / 2, height * 0.8);

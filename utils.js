@@ -365,11 +365,13 @@ function killApp(packageName) {
     back();
     app.openAppSetting(name);
   }
-  let is_sure = textMatches(/.*[强行停止结束]{2,}.*/).findOne(2000);
+  let is_sure = textMatches(/.*(强行|停止|结束).{0,3}/).findOne(2000);
+  while (is_sure != null && !is_sure.clickable())
+    is_sure = is_sure.parent()
   if (is_sure != null && is_sure.enabled()) {
     is_sure.click();
     sleep(1000);
-    textMatches(/(确[定认]|.*[强行停止结束]{2,}.*)/).click();
+    textMatches(/(确[定认]|(强行|停止|结束).{0,3})/).click();
     log(app.getAppName(name) + "应用已被关闭");
     sleep(1000);
     back();

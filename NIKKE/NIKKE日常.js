@@ -1160,7 +1160,7 @@ function 解放() {
     },
     {
       name: '装备强化',
-      regStr: /升[級级]([123])次$/,
+      regStr: /升[級级]+([123])次$/,
     },
     {
       name: '招募',
@@ -1226,7 +1226,11 @@ function 解放() {
     ).map(x => x.text).join('\n');
     console.info(`解放任务文本内容：\n${taskText}`);
     let ret = {};
-    let tasks = res.toArray(3).toArray().filter(e => e.text.match(PATTERN) != null);
+    let tasks = res.toArray(3).toArray().filter(e =>
+      e.bounds != null && e.text.match(PATTERN) != null &&
+      e.bounds.left >= timeBound.bounds.left &&
+      e.bounds.top > timeBound.bounds.bottom
+    );
     for (let e of tasks) {
       for (let task of TASK_LIST) {
         let cnt = e.text.match(task.regStr);
@@ -1426,6 +1430,7 @@ function 强化装备(repeatCnt) {
     clickRect(ocrUntilFound(res => res.find(e => e.text == '大厅'), 30, 1000));
     return;
   }
+  target.text = target.name;
   clickRect(target, 0.5);
   ocrUntilFound(res => res.text.match(/(STATUS|体力|攻击|返回)/), 30, 1000);
   // 点击指定装备
@@ -1474,7 +1479,7 @@ function 强化装备(repeatCnt) {
     toastLog('没有强化材料');
   } else {
     for (let i = 0; i < repeatCnt; ++i) {
-      clickRect({ 
+      clickRect({
         text: '第一个强化材料',
         bounds: enhanceStuff[0]
       }, 0.8, 500);

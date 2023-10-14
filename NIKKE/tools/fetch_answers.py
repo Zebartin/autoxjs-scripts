@@ -2,10 +2,12 @@ import json
 import os
 import re
 import sys
+import time
 from collections import defaultdict
 
 import requests
 import zhconv
+from bs4 import BeautifulSoup
 
 session = requests.Session()
 
@@ -14,7 +16,7 @@ session = requests.Session()
 punctuation_pattern = re.compile(r"[，⋯…？?、!！「」～☆【】。.—{}'\"“”♪\s]")
 
 
-def get_from_gamekee():
+def get_from_gamekee_netcut():
     note_id = '38b3472ea9d95306'
     resp = session.post(
         'https://netcut.cn/api/note2/info/',
@@ -38,6 +40,95 @@ def get_from_gamekee():
             ret[person].append(a)
         else:
             person = line[:-1]
+    print('Gamekee Netcut:')
+    keys = list(ret.keys())
+    for i in range(0, len(keys), 5):
+        print(', '.join(keys[i:i+5]))
+    return ret
+
+
+def get_from_gamekee_wiki(skip_names: set[str]):
+    ret = dict()
+    game_header = {'game-alias': 'nikke'}
+    entry_url = 'https://nikke.gamekee.com/v1/wiki/entry'
+    entry_json = session.get(entry_url, headers=game_header).json()
+    characters = None
+    entry_id = None
+    for d in entry_json['data']['entry_list']:
+        if d.get('name', None) == '游戏图鉴':
+            for l in d['child']:
+                if l.get('name', None) == '角色图鉴':
+                    characters = l['child']
+                    entry_id = l['id']
+                    break
+            break
+    if characters == None:
+        print('获取gamekee角色图鉴失败')
+        return ret
+    entry_filter = session.get(
+        'https://nikke.gamekee.com/v1/entryFilter/getEntryFilter',
+        headers=game_header,
+        params={'entry_id': entry_id}
+    ).json()
+    invalid_pair = set()
+    for f in entry_filter['data']['entry_filter']:
+        if f['name'] == '企业':
+            for c in f['children']:
+                if c['name'] == '反常':
+                    invalid_pair.add((f['id'], c['id']))
+        elif f['name'] == '稀有度':
+            for c in f['children']:
+                if c['name'] == 'R':
+                    invalid_pair.add((f['id'], c['id']))
+
+    def is_valid(nikke_entry):
+        # gamekee首页误写为“诺薇尔”
+        if nikke_entry['name'] == '诺薇尔':
+            return False
+        if nikke_entry['name'] in skip_names:
+            return False
+        for attr in entry_filter['data']['entry_filter_attr'].get(str(nikke_entry['id']), []):
+            if (attr['input_id'], attr['value']) in invalid_pair:
+                return False
+        return True
+
+    def get_single(content_id):
+        data_json = session.get(
+            f'https://nikke.gamekee.com/v1/content/detail/{content_id}',
+            headers=game_header
+        ).json()
+        soup = None
+        for model in reversed(data_json['data']['model_list']):
+            soup = BeautifulSoup(model['html'], 'html.parser')
+            title = soup.select_one('tbody > tr:nth-child(1) > td > div')
+            if title != None and next(title.stripped_strings) == '好感度对话':
+                break
+        else:
+            print(f'无法获取到好感度对话: content_id={content_id}')
+            return
+        for line in soup.select('tbody > tr'):
+            line_strs = list(line.stripped_strings)
+            if len(line_strs) != 4:
+                continue
+            answer = ''
+            if line_strs[0] == '100':
+                answer = line_strs[1]
+            elif line_strs[-1] == '50':
+                answer = line_strs[-2]
+            else:
+                print(f'无法解析：{line_strs}')
+                continue
+            answer = punctuation_pattern.sub('', answer)
+            answer = answer.replace('AccountDataNickName', '')
+            if answer:
+                yield answer
+
+    for nikke in characters:
+        if not is_valid(nikke):
+            continue
+        ret[nikke['name']] = list(get_single(nikke['content_id']))
+        time.sleep(0.5)
+    print('Gamekee Wiki:')
     keys = list(ret.keys())
     for i in range(0, len(keys), 5):
         print(', '.join(keys[i:i+5]))
@@ -85,7 +176,9 @@ def get_from_google_sheet(apiKey):
 
 
 if __name__ == '__main__':
-    zh_cn_data = get_from_gamekee()
+    zh_cn_data = get_from_gamekee_netcut()
+    zh_cn_data_extra = get_from_gamekee_wiki(set(zh_cn_data.keys()))
+    zh_cn_data.update(zh_cn_data_extra)
     if len(sys.argv) > 1:
         zh_tw_data = get_from_google_sheet(sys.argv[1])
     else:

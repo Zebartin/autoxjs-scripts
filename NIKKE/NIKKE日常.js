@@ -1178,7 +1178,7 @@ function 解放() {
     let liberateBtn = res.find(e => e.text == '解放');
     if (liberateBtn != null) {
       clickRect(liberateBtn, 1, 0);
-      sleep(1000);
+      sleep(2000);
       return null;
     }
     let nikkeBtn = res.find(e =>
@@ -1193,6 +1193,7 @@ function 解放() {
     console.error('无法进入解放页面，放弃');
     return {};
   }
+  log('已进入解放页面');
   sleep(1000);  // 等待动画
   let tasks = ocrUntilFound((res, img) => {
     let skipBtn = res.find(e =>
@@ -1207,30 +1208,34 @@ function 解放() {
     }
     let timeBound = res.find(e => e.text.match(/更新.*小时.{0,4}分钟/) != null);
     if (res.text.includes('AUT') || timeBound == null) {
-      let a = 0.65, b = 0.8;
+      let a = 0.75, b = 0.9;
       let x = random() * (b - a) + a;
       click(width / 2, height * x);
       sleep(1000);
       return false;
     }
-    let completeBtns = res.toArray(3).toArray().filter(e => e.text.endsWith('完成'));
+    let taskBtns = res.toArray(3).toArray().filter(e =>
+      e.bounds != null &&
+      e.bounds.left >= timeBound.bounds.left &&
+      e.bounds.top > timeBound.bounds.bottom &&
+      e.bounds.bottom < timeBound.bounds.bottom + 400
+    );
+    let completeBtns = taskBtns.filter(e => e.text.match(/[成戍戌]$/) != null);
+    let otherBtns = taskBtns.filter(e => e.text.match(/(^直|往$|CLE)/) != null);
     for (let btn of completeBtns)
       clickRect(btn, 1, 200);
     if (completeBtns.length != 0)
       return false;
-    let taskText = res.toArray(3).toArray().filter(e =>
-      e.bounds != null && e.text.match(/^[\d\w/-]+$/) == null &&
-      e.bounds.left >= timeBound.bounds.left &&
-      e.bounds.top > timeBound.bounds.bottom &&
-      e.bounds.bottom < timeBound.bounds.bottom + 400
-    ).map(x => x.text).join('\n');
-    console.info(`解放任务文本内容：\n${taskText}`);
+    if (completeBtns.length + otherBtns.length != 3) {
+      console.info(`总数不为3，识别有误：\n${taskBtns.map(x => x.text).join('\n')}`);
+      sleep(random(500, 2000));
+      return false;
+    }
+    taskBtns = taskBtns.filter(e => e.text.match(/(^直|往$|^[\d\w/-]+$)/) == null);
+    if (taskBtns.length != 0)
+      console.info(`解放任务文本内容：\n${taskBtns.map(x => x.text).join('\n')}`);
     let ret = {};
-    let tasks = res.toArray(3).toArray().filter(e =>
-      e.bounds != null && e.text.match(PATTERN) != null &&
-      e.bounds.left >= timeBound.bounds.left &&
-      e.bounds.top > timeBound.bounds.bottom
-    );
+    let tasks = taskBtns.filter(e => e.text.match(PATTERN) != null);
     for (let e of tasks) {
       for (let task of TASK_LIST) {
         let cnt = e.text.match(task.regStr);

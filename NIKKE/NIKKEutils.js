@@ -6,6 +6,7 @@ var {
 } = require('./utils.js');
 var firstBoot = true;
 var firstCheckAuto = true;
+var homeBtn = null;
 if (typeof module === 'undefined') {
   auto.waitFor();
   unlockIfNeed();
@@ -191,11 +192,11 @@ function 退出NIKKE() {
 function 返回首页(checkSale) {
   const homeImage = images.read('./images/home.jpg');
   let i = 0;
-  let homeBtn = null;
   let hallBtn = ocrUntilFound((res, img) => {
     let t = res.find(e => e.text == '大厅');
     if (t != null)
       return t;
+    let clickHome = false;
     if (homeBtn === null) {
       homeBtn = findImageByFeature(img, homeImage, {
         threshold: 0.6,
@@ -206,12 +207,22 @@ function 返回首页(checkSale) {
         return null;
       }
       homeBtn.text = '首页图标';
+      clickHome = true;
+    } else if (i % 5 == 0) {
+      clickHome = true;
+    } else {
+      let oc = homeImage.pixel(0, 0);
+      let cc = img.pixel(homeBtn.bounds.left, homeBtn.bounds.top);
+      if (colors.isSimilar(oc, cc, 75))
+        clickHome = true;
     }
-    clickRect(homeBtn, 0.8, 0);
+    if (clickHome)
+      clickRect(homeBtn, 0.8, 0);
     sleep(Math.max(500, 2000 - 500 * i));
     i++;
     return null;
   }, 15, 1000);
+  homeImage && homeImage.recycle();
   // hallBtn should not be null
   if (checkSale)
     关闭限时礼包();

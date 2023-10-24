@@ -486,6 +486,14 @@ function detectNikkes(originalImg, options) {
 }
 
 function checkAuto() {
+  let NIKKEstorage = storages.create("NIKKEconfig");
+  if (!NIKKEstorage.get('checkGameAuto', true)) {
+    if (firstCheckAuto) {
+      log('已设置不检查自动瞄准&爆裂');
+      firstCheckAuto = false;
+    }
+    return;
+  }
   // 把这一部分放在前面，为了检测已进入战斗
   sleep(5000);
   let autoBtn = ocrUntilFound((res, img) => res.find(e =>

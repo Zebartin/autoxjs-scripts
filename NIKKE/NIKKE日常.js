@@ -1206,6 +1206,15 @@ function 解放() {
       sleep(1000);
       return false;
     }
+    let confirmBtn = res.find(e =>
+      e.text.match(/[確确][認认]$/) != null && e.bounds != null &&
+      e.bounds.bottom > img.height * 0.6
+    );
+    if (confirmBtn != null) {
+      clickRect(confirmBtn, 1, 0);
+      sleep(1000);
+      return false;
+    }
     let timeBound = res.find(e => e.text.match(/更新.*小时.{0,4}分钟/) != null);
     if (res.text.includes('AUT') || timeBound == null) {
       let a = 0.75, b = 0.9;

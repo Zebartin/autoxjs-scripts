@@ -35,6 +35,7 @@ ui.layout(
             <Switch text="打开本界面时自动检查更新" id="checkUpdateAuto" textSize="16sp" margin="10 2" />
             <Switch text="游戏中会出现限时礼包" id="checkSale" textSize="16sp" margin="10 2" />
             <Switch text="运行结束后退出游戏" id="exitGame" textSize="16sp" margin="10 2" />
+            <Switch text="检查自动瞄准及爆裂" id="checkGameAuto" textSize="16sp" margin="10 2" />
             <Switch text="总是检查签到奖励" id="alwaysCheckDailyLogin" textSize="16sp" margin="10 2" />
             <Switch text="v2rayNG魔法" id="v2rayNG" textSize="16sp" margin="10 2" />
             <horizontal margin="10 2" gravity="center_vertical|left" weightSum="10" h="0" layout_weight="1">
@@ -451,9 +452,13 @@ ui.maxRetry.setMax(5);
 ui.maxRetry.setProgress(NIKKEstorage.get('maxRetry', 1));
 for (let generalOption of [
   'mute', 'alreadyInGame', 'checkUpdateAuto',
-  'checkSale', 'exitGame', 'alwaysCheckDailyLogin', 'v2rayNG'
+  'exitGame', 'alwaysCheckDailyLogin', 'v2rayNG'
 ])
   ui.findView(generalOption).setChecked(NIKKEstorage.get(generalOption, false));
+for (let generalOption of [
+  'checkSale', 'checkGameAuto'
+])
+  ui.findView(generalOption).setChecked(NIKKEstorage.get(generalOption, true));
 
 // 检查更新
 if (NIKKEstorage.get('checkUpdateAuto', false)) {
@@ -537,8 +542,8 @@ ui.save.on("click", function () {
   NIKKEstorage.put('dailyMission', dailyMission);
 
   for (let generalOption of [
-    'mute', 'alreadyInGame', 'checkUpdateAuto',
-    'checkSale', 'exitGame', 'alwaysCheckDailyLogin', 'v2rayNG'
+    'mute', 'alreadyInGame', 'checkUpdateAuto', 'checkSale',
+    'exitGame', 'checkGameAuto', 'alwaysCheckDailyLogin', 'v2rayNG'
   ])
     NIKKEstorage.put(generalOption, ui.findView(generalOption).isChecked());
   NIKKEstorage.put('checkDailyLogin', ui.checkDailyLogin.getProgress());

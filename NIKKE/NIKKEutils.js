@@ -86,6 +86,9 @@ function 启动NIKKE() {
         firstCard.click();
         break;
       }
+      desc('更多选项').click();
+      text('更新订阅').waitFor();
+      click('更新订阅');
       sleep(3000);
     }
     if (i == maxRetry) {

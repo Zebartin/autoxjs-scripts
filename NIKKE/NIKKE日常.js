@@ -1218,6 +1218,13 @@ function 解放() {
       return false;
     }
     let timeBound = res.find(e => e.text.match(/更新.*小时.{0,4}分钟/) != null);
+    if (timeBound == null) {
+      let allDone = res.find(e => e.text.match(/更生$/) != null);
+      if (allDone != null) {
+        log('当前似乎没有指定解放对象');
+        return {};
+      }
+    }
     if (res.text.includes('AUT') || timeBound == null) {
       let a = 0.75, b = 0.9;
       let x = random() * (b - a) + a;
@@ -1232,7 +1239,7 @@ function 解放() {
       e.bounds.bottom < timeBound.bounds.bottom + 400
     );
     let completeBtns = taskBtns.filter(e => e.text.match(/[成戍戌]$/) != null);
-    let otherBtns = taskBtns.filter(e => e.text.match(/(^直|往$|CLE)/) != null);
+    let otherBtns = taskBtns.filter(e => e.text.match(/(^直|[往住]$|CLE)/) != null);
     for (let btn of completeBtns)
       clickRect(btn, 1, 200);
     if (completeBtns.length != 0)
@@ -1257,7 +1264,7 @@ function 解放() {
       }
     }
     return ret;
-  }, 20, 600);
+  }, 20, 600) || {};
   返回首页();
   return tasks;
 }

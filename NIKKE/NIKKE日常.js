@@ -843,7 +843,9 @@ function 下载咨询文本() {
   if (NIKKEstorage.get('fetchLatestNikkeJson', true))
     try {
       log('正在下载最新咨询文本');
-      advise = http.get('https://github.blindfirefly.top/https://raw.githubusercontent.com/Zebartin/autoxjs-scripts/dev/NIKKE/nikke.json').body.json();
+      let resp = http.get('https://github.blindfirefly.top/https://raw.githubusercontent.com/Zebartin/autoxjs-scripts/dev/NIKKE/nikke.json')
+      files.write('./nikke.json', resp.body.string());
+      advise = resp.body.json();
       log('下载完成');
     } catch (error) {
       log(`获取最新咨询文本失败：${error.message}`);

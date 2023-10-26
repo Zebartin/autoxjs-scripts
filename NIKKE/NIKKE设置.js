@@ -139,6 +139,10 @@ ui.layout(
                   <seekbar id="adviseLimit" w="0" layout_weight="6" layout_gravity="center" />
                 </horizontal>
               </vertical>
+              <vertical margin="0 20">
+                <text textColor="#999999" textSize="16sp">咨询答案更新日志</text>
+                <text id="adviseChangeLog" textColor="#999999" textSize="16sp" margin="15 5" />
+              </vertical>
             </vertical>
           </vertical>
         </vertical>
@@ -337,6 +341,23 @@ ui.adviseLimit.setOnSeekBarChangeListener({
   }
 });
 ui.adviseLimit.setProgress(NIKKEstorage.get('adviseLimit', 0));
+let advise = JSON.parse(files.read('./nikke.json'));
+let changelogs = (advise['$meta'] || {})['changelogs'] || [];
+let adviseChangeLogTexts = [];
+for (let cl of changelogs) {
+  let changes = [];
+  for (let c of cl['changes']) {
+    let v = '新增';
+    if (c['count'] < 0)
+      v = '删除';
+    changes.push(`${v}【${c['name']}】${Math.abs(c['count'])}条`);
+  }
+  adviseChangeLogTexts.push(`${cl['date']}\t${changes.join('，')}`);
+}
+if (adviseChangeLogTexts.length == 0)
+  ui.adviseChangeLog.setText('无');
+else
+  ui.adviseChangeLog.setText(adviseChangeLogTexts.join('\n'));
 
 ui.specialArenaClaim.setChecked(NIKKEstorage.get('specialArenaClaim', true));
 ui.rookieArenaTarget.setMax(3);

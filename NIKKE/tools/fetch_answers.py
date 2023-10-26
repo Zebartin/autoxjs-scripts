@@ -1,9 +1,10 @@
+import datetime
 import json
-import os
 import re
 import sys
 import time
 from collections import defaultdict
+from pathlib import Path
 
 import requests
 import zhconv
@@ -192,7 +193,39 @@ if __name__ == '__main__':
         zh_cn_data[k] = zh_tw_data[k]
     for k in zh_cn_data:
         zh_cn_data[k] = sorted(zh_cn_data[k])
-    with open(os.path.join(os.path.dirname(__file__), '..', 'nikke.json'), 'w', encoding='utf-8') as f:
+    nikke_json_path = Path(__file__).parent.parent / 'nikke.json'
+    with open(nikke_json_path, 'r', encoding='utf-8') as f:
+        old_data = json.load(f)
+    change_infos = []
+    for k in old_data.keys():
+        count = 0
+        if k in zh_cn_data:
+            count = len(zh_cn_data[k]) - len(old_data[k])
+        elif k != '$meta':
+            count = -len(old_data[k])
+        if count != 0:
+            change_infos.append({
+                'name': k,
+                'count': count
+            })
+    for k in set(zh_cn_data.keys()) - set(old_data.keys()):
+        change_infos.append({
+            'name': k,
+            'count': len(zh_cn_data[k])
+        })
+    zh_cn_data['$meta'] = old_data.get('$meta', {'changelogs': []})
+    changelogs: list = zh_cn_data['$meta']['changelogs']
+    if change_infos:
+        print(
+            f'Changes: {json.dumps(change_infos, ensure_ascii=False, indent=2)}')
+        today_date = datetime.datetime.now().strftime('%Y-%m-%d')
+        changelogs.insert(0, {
+            'date': today_date,
+            'changes': change_infos
+        })
+    while len(changelogs) > 5:
+        changelogs.pop()
+    with open(nikke_json_path, 'w', encoding='utf-8') as f:
         json.dump(
             dict(sorted(zh_cn_data.items())),
             f, ensure_ascii=False, indent=2

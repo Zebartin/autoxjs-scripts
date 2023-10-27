@@ -194,38 +194,24 @@ if __name__ == '__main__':
     for k in zh_cn_data:
         zh_cn_data[k] = sorted(zh_cn_data[k])
     nikke_json_path = Path(__file__).parent.parent / 'nikke.json'
-    with open(nikke_json_path, 'r', encoding='utf-8') as f:
+    with nikke_json_path.open('r', encoding='utf-8') as f:
         old_data = json.load(f)
-    change_infos = []
-    for k in old_data.keys():
-        count = 0
-        if k in zh_cn_data:
-            count = len(zh_cn_data[k]) - len(old_data[k])
-        elif k != '$meta':
-            count = -len(old_data[k])
-        if count != 0:
-            change_infos.append({
-                'name': k,
-                'count': count
-            })
-    for k in set(zh_cn_data.keys()) - set(old_data.keys()):
-        change_infos.append({
-            'name': k,
-            'count': len(zh_cn_data[k])
-        })
+    change_texts = []
+    for k in zh_cn_data.keys():
+        count = len(zh_cn_data[k]) - len(old_data.get(k, []))
+        if count > 0:
+            change_texts.append(f'新增【{k}】{count}条')
+        elif count < 0:
+            change_texts.append(f'删除【{k}】{-count}条')
     zh_cn_data['$meta'] = old_data.get('$meta', {'changelogs': []})
     changelogs: list = zh_cn_data['$meta']['changelogs']
-    if change_infos:
-        print(
-            f'Changes: {json.dumps(change_infos, ensure_ascii=False, indent=2)}')
+    if change_texts:
+        print(f'Changes: {"，".join(change_texts)}')
         today_date = datetime.datetime.now().strftime('%Y-%m-%d')
-        changelogs.insert(0, {
-            'date': today_date,
-            'changes': change_infos
-        })
+        changelogs.insert(0, f'{today_date}\t{"，".join(change_texts)}')
     while len(changelogs) > 5:
         changelogs.pop()
-    with open(nikke_json_path, 'w', encoding='utf-8') as f:
+    with nikke_json_path.open('w', encoding='utf-8') as f:
         json.dump(
             dict(sorted(zh_cn_data.items())),
             f, ensure_ascii=False, indent=2

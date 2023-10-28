@@ -83,11 +83,6 @@ def get_from_gamekee_wiki(skip_names: set[str]):
                     invalid_pair.add((f['id'], c['id']))
 
     def is_valid(nikke_entry):
-        # gamekee首页误写为“诺薇尔”
-        if nikke_entry['name'] == '诺薇尔':
-            return False
-        if nikke_entry['name'] in skip_names:
-            return False
         for attr in entry_filter['data']['entry_filter_attr'].get(str(nikke_entry['id']), []):
             if (attr['input_id'], attr['value']) in invalid_pair:
                 return False
@@ -125,7 +120,11 @@ def get_from_gamekee_wiki(skip_names: set[str]):
                 yield answer
 
     for nikke in characters:
+        # gamekee首页误写为“诺薇尔”
+        if nikke['name'] == '诺薇尔' or nikke['name'] in skip_names:
+            continue
         if not is_valid(nikke):
+            ret[nikke['name']] = []
             continue
         ret[nikke['name']] = list(get_single(nikke['content_id']))
         time.sleep(0.5)
@@ -193,6 +192,16 @@ if __name__ == '__main__':
         zh_cn_data[k] = zh_tw_data[k]
     for k in zh_cn_data:
         zh_cn_data[k] = sorted(zh_cn_data[k])
+    for old_name, new_name in (
+        ('玛奇玛', '真纪真'),
+        ('饼干', '曲奇饼')
+    ):
+        if old_name not in zh_cn_data:
+            continue
+        if new_name in zh_cn_data:
+            continue
+        zh_cn_data[new_name] = zh_cn_data[old_name]
+
     nikke_json_path = Path(__file__).parent.parent / 'nikke.json'
     with nikke_json_path.open('r', encoding='utf-8') as f:
         old_data = json.load(f)

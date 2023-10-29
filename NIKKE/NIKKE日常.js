@@ -180,8 +180,19 @@ function 废铁商店() {
 function cashShop() {
   if (!NIKKEstorage.get('checkCashShopFree', false))
     return;
+  let handlePopUp = (res) => {
+    if (res.text.match(/操控|关闭$|意见/) == null)
+      return false;
+    let close = res.find(e => e.text.endsWith('关闭'));
+    if (close == null)
+      return false;
+    clickRect(close, 1, 0);
+    return true;
+  }
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('付')), 30, 1000));
   let upperBound = ocrUntilFound(res => {
+    if (handlePopUp(res))
+      return null;
     let ubs = res.filter(e => e.text.match(/([仅在指定的销售期间]{3,}|[从同时出现的礼包中]{3,})/) != null).toArray();
     if (ubs.length == 0) {
       let cashShopBtn = res.find(e => e.text.includes('付'));
@@ -224,6 +235,8 @@ function cashShop() {
   }
   cashShopImg.recycle();
   let [daily, weekly, monthly] = ocrUntilFound(res => {
+    if (handlePopUp(res))
+      return null;
     let d = res.find(e => e.text.endsWith('日'));
     let w = res.find(e => e.text.endsWith('周'));
     let m = res.find(e => e.text.endsWith('月'));
@@ -241,6 +254,8 @@ function cashShop() {
     let name = btn.text.substr(-1);
     clickRect(btn);
     let [free, color] = ocrUntilFound((res, img) => {
+      if (handlePopUp(res))
+        return null;
       let t = res.find(e => e.text.includes(name + '免'));
       if (!t)
         return null;

@@ -220,6 +220,7 @@ ui.layout(
             <Switch id="每日任务TAB" text="未启用" textSize="16sp" />
             <text text="强化装备、社交点数招募、送礼、领取100P" textColor="#999999" textSize="14sp" />
             <vertical id="dailyMission" margin="0 20">
+              <Switch id="missionPass" margin="0 4" textColor="#222222" text="Mission Pass（季卡）" textSize="16sp" />
               <Switch id="liberate" margin="0 4" textColor="#222222" text="解放" textSize="16sp" />
               <Switch id="socialPointRecruit" margin="0 4" textColor="#222222" text="社交点数招募" textSize="16sp" />
               <horizontal>
@@ -425,14 +426,14 @@ ui.equipEnhanceSlot.setOnSeekBarChangeListener({
   }
 });
 let dailyMission = NIKKEstorage.get('dailyMission', {});
-let liberate = dailyMission.liberate;
-if (liberate === null || liberate === undefined)
-  liberate = true;
-let socialPointRecruit = dailyMission.socialPointRecruit;
-if (socialPointRecruit === null || socialPointRecruit === undefined)
-  socialPointRecruit = true;
-ui.liberate.setChecked(liberate);
-ui.socialPointRecruit.setChecked(socialPointRecruit);
+for (let dailyPart of [
+  'missionPass', 'liberate', 'socialPointRecruit'
+]) {
+  let part = dailyMission[dailyPart];
+  if (part === null || part === undefined)
+    part = true;
+  ui.findView(dailyPart).setChecked(part);
+}
 ui.equipEnhanceNikke.setText(dailyMission.equipEnhanceNikke || '');
 ui.equipEnhanceSlot.setProgress(dailyMission.equipEnhanceSlot || 0);
 
@@ -550,6 +551,7 @@ ui.save.on("click", function () {
   NIKKEstorage.put('simulationRoom', JSON.stringify(simulationRoom));
 
   let dailyMission = {};
+  dailyMission.missionPass = ui.missionPass.isChecked();
   dailyMission.liberate = ui.liberate.isChecked();
   dailyMission.socialPointRecruit = ui.socialPointRecruit.isChecked();
   dailyMission.equipEnhanceNikke = ui.equipEnhanceNikke.text().trim();

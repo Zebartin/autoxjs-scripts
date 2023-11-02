@@ -408,27 +408,33 @@ function 商店() {
     arenaShop.text = '竞技场商店图标';
     arenaShopImage.recycle();
     clickRect(arenaShop);
-    let manuals = ocrUntilFound(res => {
+    let manuals = [];
+    ocrUntilFound(res => {
       let shopName = res.find(e => e.text.match(/[竟竞]技场/) != null);
       if (!shopName) {
         clickRect(arenaShop, 0.8, 1);
-        return null;
+        return false;
       }
       let upper = res.find(e => e.text.match(/(距离|更新|还有)/) != null);
       let goods = res.toArray(3).toArray().filter(e =>
         e.text.match(/(代码手册|选择|宝箱|([A-Z]\.?){2,})/) != null &&
+        e.text.match(/(s[oq0]l[od0]|[oq0]ut)/i) == null &&
         e.bounds != null && e.bounds.top >= upper.bounds.bottom
       );
+      if (goods.length > manuals.length)
+        manuals = goods.slice();
       if (goods.length < 4)
-        return null;
-      goods.sort((a, b) => {
-        let t = a.bounds.bottom - b.bounds.bottom;
-        if (Math.abs(t) < 30)
-          return a.bounds.left - b.bounds.left;
-        return t;
-      });
-      return goods;
-    }, 30, 1000);
+        return false;
+      return true;
+    }, 20, 800);
+    manuals.sort((a, b) => {
+      let t = a.bounds.bottom - b.bounds.bottom;
+      if (Math.abs(t) < 30)
+        return a.bounds.left - b.bounds.left;
+      return t;
+    });
+    if (manuals.length < 4)
+      console.warn(`竞技场商店商品识别结果不足4个：${manuals}`);
     for (let i = 0; i < buyCodeManual; ++i) {
       buyGood(manuals[i]);
       ocrUntilFound(res => res.text.includes('技场'), 30, 500);

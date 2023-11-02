@@ -1234,8 +1234,10 @@ function 解放() {
     }
     let timeBound = res.find(e => e.text.match(/更新.*小时.{0,4}分钟/) != null);
     if (timeBound == null) {
-      let allDone = res.find(e => e.text.match(/更生$/) != null);
-      if (allDone != null) {
+      let chineseStrs = res.toArray(3).toArray().filter(e=>
+        e.text.match(/[\u4e00-\u9fa5]+/) != null
+      );
+      if (chineseStrs.length < 5) {
         log('当前似乎没有指定解放对象');
         return {};
       }
@@ -1680,6 +1682,92 @@ function 送礼(repeatCnt) {
   返回首页();
 }
 
+function missionPass() {
+  let dailyMission = NIKKEstorage.get('dailyMission', {});
+  if (dailyMission.missionPass === false)
+    return;
+  let [rewardBtn, taskBtn, claimBtn] = ocrUntilFound((res, img) => {
+    let seasonBtn = res.find(e =>
+      e.text.includes('SEASON') && e.bounds != null &&
+      e.bounds.left >= img.width / 2 && e.bounds.bottom < img.height / 2
+    );
+    if (seasonBtn != null) {
+      clickRect(seasonBtn, 1, 0);
+      sleep(1000);
+      return null;
+    }
+    let rb = res.find(e =>
+      e.text.match(/^奖励$/) != null && e.bounds != null &&
+      e.bounds.right <= img.width / 2 && e.bounds.bottom < img.height / 2
+    );
+    let tb = res.find(e =>
+      e.text.match(/^任务$/) != null && e.bounds != null &&
+      e.bounds.left >= img.width / 2 && e.bounds.bottom < img.height / 2
+    );
+    let cb = res.find(e =>
+      e.text.match(/.{0,2}全[^\d]+取/) != null &&
+      e.bounds != null && e.bounds.bottom > img.height / 2
+    );
+    if (rb && tb && cb)
+      return [rb, tb, cb];
+    return null;
+  }, 20, 700) || [null, null, null];
+  if (rewardBtn == null) {
+    console.error('无法进入mission pass页面');
+    return;
+  }
+  let taskDone = false;
+  ocrUntilFound((res, img) => {
+    let tasks = res.toArray(3).toArray().filter(e =>
+      e.text.match(/\d+次/) != null && e.bounds != null &&
+      e.bounds.left <= img.width / 2 && e.bounds.top > taskBtn.bounds.bottom
+    );
+    if (tasks.length < 3) {
+      clickRect(taskBtn, 1, 0);
+      return false;
+    }
+    let c = img.pixel(claimBtn.bounds.left - 5, claimBtn.bounds.top);
+    if (colors.blue(c) < 180) {
+      let ensureClaim = res.find(e =>
+        e.text.match(/.{0,2}全[^\d]+取/) != null &&
+        e.bounds != null && e.bounds.bottom > img.height / 2
+      );
+      if (ensureClaim != null)
+        return true;
+    }
+    clickRect(claimBtn, 1, 0);
+    taskDone = true;
+    return false;
+  }, 20, 700);
+  if (!taskDone) {
+    log('没有pass任务完成');
+    back();
+    return;
+  }
+  ocrUntilFound((res, img) => {
+    let checked = res.find(e =>
+      e.text.match(/[高级級]+/) != null && e.bounds != null &&
+      e.bounds.left >= img.width / 2 && e.bounds.top > rewardBtn.bounds.bottom
+    );
+    if (!checked) {
+      clickRect(rewardBtn, 1, 0);
+      return false;
+    }
+    let c = img.pixel(claimBtn.bounds.left - 5, claimBtn.bounds.top);
+    if (colors.blue(c) < 180) {
+      let ensureClaim = res.find(e =>
+        e.text.match(/.{0,2}全[^\d]+取/) != null &&
+        e.bounds != null && e.bounds.bottom > img.height / 2
+      );
+      if (ensureClaim != null)
+        return true;
+    }
+    clickRect(claimBtn, 1, 0);
+    return false;
+  }, 20, 700);
+  back();
+}
+
 function dailyMissionCompleted() {
   return NikkeToday() == NIKKEstorage.get('dailyMissionCompleted', null);
 }
@@ -1777,6 +1865,7 @@ function 每日任务() {
     return false;
   }, 30, 600);
   back();
+  missionPass();
   if (Object.keys(tasks).length != 0)
     解放();
   NIKKEstorage.put('dailyMissionCompleted', NikkeToday());

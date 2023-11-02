@@ -105,7 +105,7 @@ function 废铁商店() {
     "好感券-极乐净土": /极/,
     "好感券-米西利斯": /米/,
     "好感券-泰特拉": /特/,
-    "好感券-朝圣者": /朝/,
+    "好感券-朝圣者": /(朝|补给|交换)/,
     "好感券-反常": /反/,
     "芯尘盒": /尘盒$/,
     "信用点盒": /点盒$/,
@@ -172,8 +172,10 @@ function 废铁商店() {
     if (LAST_GOOD.test(lastGood.text))
       break;
     let middleLine = (lastGood.bounds.top + firstGood.bounds.top) / 2;
-    swipe(width / 2, lastGood.bounds.top, width / 2, upperBound, 1000);
-    swipe(firstGood.bounds.left, middleLine, lastGood.bounds.right, middleLine, 500);
+    gestures(
+      [0, 500, [width / 2, lastGood.bounds.top], [width / 2, upperBound]],
+      [600, 200, [firstGood.bounds.left, middleLine], [lastGood.bounds.right, middleLine]]
+    );
   }
   NIKKEstorage.put('recyclingShopLastChecked', NikkeToday());
 }
@@ -406,47 +408,26 @@ function 商店() {
     arenaShop.text = '竞技场商店图标';
     arenaShopImage.recycle();
     clickRect(arenaShop);
-    ocrUntilFound(res => {
-      if (res.text.match(/[竟竞]技场/) != null)
-        return true;
-      clickRect(arenaShop, 0.8, 1);
-      return false;
-    }, 10, 1000);
     let manuals = ocrUntilFound(res => {
-      let goods = res.filter(e =>
-        e.level == 3 &&
-        e.text.includes('代码手册')
-      ).toArray();
-      let ret = [], ms = null;
-      for (let g of goods) {
-        if (g.text.startsWith('代')) {
-          // 选择宝箱可能会连着右侧的商品一起识别
-          // 因此直接截断一半宽度
-          g.bounds.right -= g.bounds.width() / 2;
-          ms = g;
-        }
-        else {
-          let t = g.text.split(/代码手册/);
-          let cnt = t.length - 1;
-          let w = g.bounds.width() / cnt;
-          for (let i = 0; i < cnt; ++i) {
-            let newBounds = new android.graphics.Rect();
-            newBounds.left = Math.round(g.bounds.left + w * i);
-            newBounds.right = Math.round(newBounds.left + w);
-            newBounds.top = g.bounds.top;
-            newBounds.bottom = g.bounds.bottom;
-            ret.push({
-              text: t[i] + '代码手册',
-              bounds: newBounds
-            });
-          }
-        }
-      }
-      if (ms != null)
-        ret.push(ms);
-      if (ret.length < 4)
+      let shopName = res.find(e => e.text.match(/[竟竞]技场/) != null);
+      if (!shopName) {
+        clickRect(arenaShop, 0.8, 1);
         return null;
-      return ret;
+      }
+      let upper = res.find(e => e.text.match(/(距离|更新|还有)/) != null);
+      let goods = res.toArray(3).toArray().filter(e =>
+        e.text.match(/(代码手册|选择|宝箱|([A-Z]\.?){2,})/) != null &&
+        e.bounds != null && e.bounds.top >= upper.bounds.bottom
+      );
+      if (goods.length < 4)
+        return null;
+      goods.sort((a, b) => {
+        let t = a.bounds.bottom - b.bounds.bottom;
+        if (Math.abs(t) < 30)
+          return a.bounds.left - b.bounds.left;
+        return t;
+      });
+      return goods;
     }, 30, 1000);
     for (let i = 0; i < buyCodeManual; ++i) {
       buyGood(manuals[i]);
@@ -1234,7 +1215,7 @@ function 解放() {
     }
     let timeBound = res.find(e => e.text.match(/更新.*小时.{0,4}分钟/) != null);
     if (timeBound == null) {
-      let chineseStrs = res.toArray(3).toArray().filter(e=>
+      let chineseStrs = res.toArray(3).toArray().filter(e =>
         e.text.match(/[\u4e00-\u9fa5]+/) != null
       );
       if (chineseStrs.length < 5) {
@@ -1460,8 +1441,10 @@ function 强化装备(repeatCnt) {
         target = t;
         break;
       }
-      swipe(width / 2, bottomY, width / 2, upperBound, 1000);
-      swipe(100, bottomY, width / 2, bottomY, 500);
+      gestures(
+        [0, 500, [width / 2, bottomY], [width / 2, upperBound]],
+        [600, 200, [100, bottomY], [width / 2, bottomY]]
+      );
       sleep(500);
     }
   }

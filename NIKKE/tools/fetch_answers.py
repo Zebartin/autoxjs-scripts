@@ -192,10 +192,7 @@ if __name__ == '__main__':
         zh_cn_data[k] = zh_tw_data[k]
     for k in zh_cn_data:
         zh_cn_data[k] = sorted(zh_cn_data[k])
-    for old_name, new_name in (
-        ('玛奇玛', '真纪真'),
-        ('饼干', '曲奇饼')
-    ):
+    for old_name, new_name in []:
         if old_name not in zh_cn_data:
             continue
         if new_name in zh_cn_data:

@@ -1733,6 +1733,8 @@ function missionPass() {
     back();
     return;
   }
+  let rewardChecked = false;
+  let claimClicked = 0;
   ocrUntilFound((res, img) => {
     let checked = res.find(e =>
       e.text.match(/[高级級]+/) != null && e.bounds != null &&
@@ -1743,7 +1745,7 @@ function missionPass() {
       return false;
     }
     let c = img.pixel(claimBtn.bounds.left - 5, claimBtn.bounds.top);
-    if (colors.blue(c) < 180) {
+    if (colors.blue(c) < 180 && (rewardChecked || claimClicked >= 3 || claimClicked == 0)) {
       let ensureClaim = res.find(e =>
         e.text.match(/.{0,2}全[^\d]+取/) != null &&
         e.bounds != null && e.bounds.bottom > img.height / 2
@@ -1751,10 +1753,19 @@ function missionPass() {
       if (ensureClaim != null)
         return true;
     }
+    if (!rewardChecked && res.find(e => e.text.match(/(REWARD|点击)/) != null))
+      rewardChecked = true;
     clickRect(claimBtn, 1, 0);
+    claimClicked++;
     return false;
   }, 20, 700);
   back();
+  ocrUntilFound(res => {
+    if (res.find(e => e.text == '商店') != null)
+      return true;
+    back();
+    return false;
+  }, 10, 1000);
 }
 
 function dailyMissionCompleted() {

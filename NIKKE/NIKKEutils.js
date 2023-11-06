@@ -192,10 +192,12 @@ function 退出NIKKE() {
 }
 
 
-function 返回首页(checkSale) {
+function 返回首页(checkSale, beforeHook) {
   const homeImage = images.read('./images/home.jpg');
   let i = 0;
   let hallBtn = ocrUntilFound((res, img) => {
+    if (beforeHook && !beforeHook(res, img))
+      return null;
     let t = res.find(e => e.text == '大厅');
     if (t != null)
       return t;

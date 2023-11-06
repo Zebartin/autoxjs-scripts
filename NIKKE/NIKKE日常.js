@@ -1199,7 +1199,9 @@ function 解放() {
   }
   log('已进入解放页面');
   sleep(1000);  // 等待动画
-  let tasks = ocrUntilFound((res, img) => {
+  let tasks = {};
+  let taskChecked = false;
+  let taskHook = (res, img) => {
     let skipBtn = res.find(e =>
       e.text.match(/SK.P/) != null && e.bounds != null &&
       e.bounds.left >= img.width * 0.5 &&
@@ -1212,7 +1214,7 @@ function 解放() {
     }
     let confirmBtn = res.find(e =>
       e.text.match(/[確确][認认]$/) != null && e.bounds != null &&
-      e.bounds.bottom > img.height * 0.6
+      e.bounds.bottom > img.height * 0.5
     );
     if (confirmBtn != null) {
       clickRect(confirmBtn, 1, 0);
@@ -1220,15 +1222,19 @@ function 解放() {
       return false;
     }
     let timeBound = res.find(e => e.text.match(/更新.*小时.{0,4}分钟/) != null);
-    if (timeBound == null) {
+    if (timeBound == null && res.text.match(/(返回|AUT)/) == null) {
       let chineseStrs = res.toArray(3).toArray().filter(e =>
         e.text.match(/[\u4e00-\u9fa5]+/) != null
       );
       if (chineseStrs.length < 5) {
         log('当前似乎没有指定解放对象');
-        return {};
+        tasks = {};
+        taskChecked = true;
+        return true;
       }
     }
+    if (taskChecked)
+      return true;
     if (res.text.includes('AUT') || timeBound == null) {
       let a = 0.75, b = 0.9;
       let x = random() * (b - a) + a;
@@ -1253,12 +1259,12 @@ function 解放() {
       sleep(random(500, 2000));
       return false;
     }
-    taskBtns = taskBtns.filter(e => e.text.match(/(^直|往$|^[\d\w/-]+$)/) == null);
+    taskBtns = taskBtns.filter(e => e.text.match(/(^直|[往住]$|^[\d\w/-]+$)/) == null);
     if (taskBtns.length != 0)
       console.info(`解放任务文本内容：\n${taskBtns.map(x => x.text).join('\n')}`);
     let ret = {};
-    let tasks = taskBtns.filter(e => e.text.match(PATTERN) != null);
-    for (let e of tasks) {
+    let tbs = taskBtns.filter(e => e.text.match(PATTERN) != null);
+    for (let e of tbs) {
       for (let task of TASK_LIST) {
         let cnt = e.text.match(task.regStr);
         if (cnt == null)
@@ -1267,9 +1273,11 @@ function 解放() {
         break;
       }
     }
-    return ret;
-  }, 20, 600) || {};
-  返回首页();
+    tasks = ret;
+    taskChecked = true;
+    return true;
+  }
+  返回首页(false, taskHook);
   return tasks;
 }
 

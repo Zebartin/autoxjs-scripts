@@ -136,6 +136,10 @@ function 废铁商店() {
       break;
     sleep(300);
   }
+  if (recyclingShop === null) {
+    console.error('无法找到废铁商店图标，放弃');
+    return;
+  }
   // 减少可点击范围，避免点到悬浮窗
   recyclingShop.bounds.left += recyclingShop.bounds.width() * 0.7;
   recyclingShop.text = '废铁商店图标';
@@ -192,14 +196,19 @@ function cashShop() {
     return true;
   }
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('付')), 30, 1000));
-  let upperBound = ocrUntilFound(res => {
+  let upperBound = ocrUntilFound((res, img) => {
     if (handlePopUp(res))
       return null;
+    let cashShopBtn = res.find(e =>
+      e.text.includes('付') && e.bounds != null &&
+      e.bounds.right < img.width / 2 && e.bounds.bottom >= img.height * 0.5
+    );
+    if (cashShopBtn != null) {
+      clickRect(cashShopBtn, 1, 0);
+      return null;
+    }
     let ubs = res.filter(e => e.text.match(/([仅在指定的销售期间]{3,}|[从同时出现的礼包中]{3,})/) != null).toArray();
     if (ubs.length == 0) {
-      let cashShopBtn = res.find(e => e.text.includes('付'));
-      if (cashShopBtn != null)
-        clickRect(cashShopBtn, 1, 0);
       return null;
     }
     return ubs.reduce((prev, curr) =>
@@ -224,7 +233,7 @@ function cashShop() {
     target.text = '礼包图标';
     let clicked = false;
     for (let j = 0; j < 3; ++j) {
-      clickRect(target);
+      clickRect(target, 1, 0);
       sleep(1000);
       let targetColor = captureScreen().pixel(target.bounds.right, target.bounds.centerY());
       if (rgbToGray(targetColor) >= 100) {
@@ -236,6 +245,11 @@ function cashShop() {
       break;
   }
   cashShopImg.recycle();
+  if (target === null) {
+    console.error('无法找到礼包图标，放弃');
+    返回首页();
+    return;
+  }
   let [daily, weekly, monthly] = ocrUntilFound(res => {
     if (handlePopUp(res))
       return null;
@@ -254,7 +268,7 @@ function cashShop() {
   }, 30, 700, { maxScale: 2 });
   for (let btn of [daily, weekly, monthly]) {
     let name = btn.text.substr(-1);
-    clickRect(btn);
+    clickRect(btn, 1, 200);
     let [free, color] = ocrUntilFound((res, img) => {
       if (handlePopUp(res))
         return null;

@@ -390,9 +390,18 @@ function 商店() {
     NIKKEstorage.put('lastShopFreshed', NikkeToday());
     lastFreshed = NikkeToday();
   }
-  clickRect(ocrUntilFound(res => res.find(e => e.text == '商店'), 30, 1000));
-  toastLog('进入商店');
-  ocrUntilFound(res => res.text.match(/(普[通逼]|100%|s[oq0]l[od0] [oq0]ut)/i) != null, 50, 1000);
+  ocrUntilFound((res, img) => {
+    let shopBtn = res.find(e =>
+      e.text == '商店' && e.bounds != null &&
+      e.bounds.top >= img.height / 2
+    );
+    if (shopBtn != null) {
+      clickRect(shopBtn, 1, 0);
+      sleep(1000);
+      return null;
+    }
+    return res.text.match(/(普[通逼]|100%|s[oq0]l[od0] [oq0]ut)/i) != null;
+  }, 30, 800);
   buyFree();
   if (lastFreshed != NikkeToday()) {
     clickRect(ocrUntilFound(res => res.find(e => e.text.match(/(距离|更新|还有)/) != null), 10, 300));
@@ -449,7 +458,7 @@ function 商店() {
     });
     if (manuals.length < 4)
       console.warn(`竞技场商店商品识别结果不足4个：${manuals}`);
-    for (let i = 0; i < buyCodeManual; ++i) {
+    for (let i = 0; i < buyCodeManual && i < manuals.length; ++i) {
       buyGood(manuals[i]);
       ocrUntilFound(res => res.text.includes('技场'), 30, 500);
     }
@@ -461,7 +470,7 @@ function 商店() {
 
 function collectDefense(outpostBtn, wipeOut) {
   let levelUp = false;
-  clickRect(outpostBtn);
+  clickRect(outpostBtn, 1, 0);
   let wipeOutBtn = ocrUntilFound(res => {
     let t = res.find(e => e.text.endsWith('灭'));
     if (t == null) {
@@ -471,18 +480,18 @@ function collectDefense(outpostBtn, wipeOut) {
     return t;
   }, 30, 1000);
   if (wipeOut && wipeOutBtn != null) {
-    clickRect(wipeOutBtn);
+    clickRect(wipeOutBtn, 1, 0);
     toastLog('尝试一举歼灭');
     clickRect(ocrUntilFound(res => {
       if (!res.text.includes('今日'))
         return null;
       return res.find(e => e.text.startsWith('进行'));
-    }, 30, 1000));
+    }, 30, 1000), 1, 0);
     ocrUntilFound(res => {
       if (res.text.match(/(优先|珠宝|确认)/) != null)
         back();
       else if (res.text.includes('点击'))
-        clickRect(res.find(e => e.text.includes('点击')));
+        clickRect(res.find(e => e.text.includes('点击')), 1, 100);
       else
         return false;
       return true;
@@ -490,15 +499,14 @@ function collectDefense(outpostBtn, wipeOut) {
     ocrUntilFound(res => res.text.includes('今日'), 30, 1000);
     back();
   }
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('奖励')), 30, 1000));
-  toastLog('点击获得奖励');
-  clickRect(ocrUntilFound(res => res.find(e => e.text.match(/(点击|获得|奖励)/) != null), 10, 3000, { maxScale: 4 }));
+  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('奖励')), 30, 1000), 1, 300);
+  clickRect(ocrUntilFound(res => res.find(e => e.text.match(/(点击|获得|奖励)/) != null), 10, 3000, { maxScale: 4 }), 1, 300);
   ocrUntilFound(res => {
     if (res.text.match(/(返回|中心|公告)/) != null)
       return true;
     let t = res.find(e => e.text.match(/(点击|获得|奖励)/) != null);
     if (t != null) {
-      clickRect(t);
+      clickRect(t, 1, 0);
       toastLog('升级了');
       levelUp = true;
     }
@@ -509,9 +517,15 @@ function collectDefense(outpostBtn, wipeOut) {
 
 function dispatch(bulletin) {
   clickRect(bulletin, 0.3);
-  toastLog('进入公告栏');
   // 等待派遣内容加载
-  let target = ocrUntilFound(res => res.text.match(/(时间|完成|目前)/), 20, 500);
+  let target = ocrUntilFound(res => {
+    let ret = res.text.match(/(时间|完成|目前)/);
+    if (ret == null) {
+      clickRect(bulletin, 0.3, 0);
+      sleep(500);
+    }
+    return ret;
+  }, 20, 500);
   // 已经没有派遣内容
   if (target[0] == '目前')
     toastLog('今日派遣已完成');
@@ -523,13 +537,13 @@ function dispatch(bulletin) {
         return null;
       return [t1, t2];
     }, 30, 1000);
-    if (colors.red(images.pixel(captureScreen(), receive.bounds.right, receive.bounds.top)) < 100) {
+    if (colors.red(captureScreen().pixel(receive.bounds.right, receive.bounds.top)) < 100) {
       toastLog('全部领取');
       clickRect(receive);
-      clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 10, 3000));
+      clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 20, 1000), 1, 300);
       ocrUntilFound(res => res.text.match(/(时间|目前)/), 20, 500);
     }
-    if (colors.red(images.pixel(captureScreen(), send.bounds.right, send.bounds.top)) > 240) {
+    if (colors.red(captureScreen().pixel(send.bounds.right, send.bounds.top)) > 240) {
       clickRect(send);
       sleep(1000);
       target = ocrUntilFound(res => {
@@ -548,7 +562,7 @@ function dispatch(bulletin) {
   }
   clickRect(bulletin, 1, 0);
   ocrUntilFound(res => {
-    if (res.text.includes('中心'))
+    if (res.text.match(/(全|目录)/) == null)
       return true;
     clickRect(bulletin, 1, 0);
     return false;
@@ -556,28 +570,25 @@ function dispatch(bulletin) {
 }
 
 function 基地收菜(doDailyMission) {
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('基地')), 30, 1000));
-  toastLog('进入基地');
   let [bulletin, outpostBtn] = ocrUntilFound((res, img) => {
+    let enter = res.find(e =>
+      e.text.endsWith('基地') && e.bounds != null &&
+      e.bounds.bottom > img.height / 2
+    );
+    if (enter != null) {
+      clickRect(enter, 1, 0);
+      sleep(1000);
+      return null;
+    }
     let headquarter = res.find(e => e.text.endsWith('中心'));
     let ret = res.find(e => e.text.match(/^派.*[公告栏]+$/) != null);
     let outpost = res.find(e => e.text.match(/(DEFENSE|LV[\.\d]+|\d{1,3}%)/) != null)
-    if (!headquarter || !ret || !outpost) {
-      // 可能没进基地，重进一下
-      let enter = res.find(e =>
-        e.text.endsWith('基地') && e.bounds != null &&
-        e.bounds.bottom > img.height / 2
-      );
-      if (enter != null) {
-        clickRect(enter, 1, 100);
-        sleep(1000);
-      }
+    if (!headquarter || !ret || !outpost)
       return null;
-    }
     // 将识别区域扩宽到整个公告栏图标
     ret.bounds.top = headquarter.bounds.bottom;
     return [ret, outpost];
-  }, 50, 1000);
+  }, 30, 800);
   let levelUp = collectDefense(outpostBtn, true);
   dispatch(bulletin);
   if (doDailyMission)
@@ -585,11 +596,16 @@ function 基地收菜(doDailyMission) {
   返回首页(levelUp);
 }
 function 好友() {
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('好友')), 30, 1000), 0.1);
-  toastLog('点击好友');
-  // 等待列表加载
   // 一个好友都没有的话会出问题
-  let [sendBtn, someFriend] = ocrUntilFound(res => {
+  let [sendBtn, someFriend] = ocrUntilFound((res, img) => {
+    let enterBtn = res.find(e =>
+      e.text.includes('好友') && e.bounds != null &&
+      e.bounds.left > img.width / 2
+    );
+    if (enterBtn != null) {
+      clickRect(enterBtn, 0, 5, 0);
+      return null;
+    }
     let send = res.find(e => e.text.endsWith('赠送') && e.text.match(/[每日发上限]/) == null);
     let upper = res.find(e => e.text.includes('可以'));
     if (!send || !upper)
@@ -603,44 +619,59 @@ function 好友() {
       return null;
     return [send, f];
   }, 30, 1000);
-  clickRect(someFriend);
+  // 等待列表加载
   ocrUntilFound(res => {
-    if (res.text.match(/(日期|代表|进度)/) != null)
+    if (res.text.match(/(日期|代表|进度)/) != null) {
+      sleep(500);
       return true;
+    }
     clickRect(someFriend, 1, 0);
     return false;
   }, 30, 500);
-  sleep(500);
   back();
   ocrUntilFound(res => res.text.match(/(可以|目录|搜寻|赠送)/) != null, 20, 1500);
-  let btnColor = colors.toString(images.pixel(captureScreen(), sendBtn.bounds.left, sendBtn.bounds.top));
+  let btnColor = colors.toString(captureScreen().pixel(sendBtn.bounds.left, sendBtn.bounds.top));
   log(`赠送按钮颜色：${btnColor}`)
   if (colors.isSimilar('#1aaff7', btnColor, 75)) {
     clickRect(sendBtn);
     toastLog('点击赠送');
-    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('确认')), 30, 1000));
+    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('确认')), 30, 1000), 1, 300);
     sleep(1000);
   } else
     toastLog('赠送按钮不可点击');
   back();
 }
 function 爬塔() {
-  clickRect(ocrUntilFound((res, img) => res.find(e =>
-    e.text.includes('方舟') && e.bounds != null &&
-    e.bounds.bottom > img.height / 2
-  ), 30, 1000));
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('无限之塔')), 30, 1000));
-  ocrUntilFound(res => res.text.includes('开启'), 30, 500);
-  toastLog('进入无限之塔');
+  ocrUntilFound((res, img) => {
+    let arkBtn = res.find(e =>
+      e.text.includes('方舟') && e.bounds != null &&
+      e.bounds.bottom > img.height / 2
+    );
+    if (arkBtn != null && !res.text.includes('返回')) {
+      clickRect(arkBtn, 1, 0);
+      sleep(800);
+      return null;
+    }
+    let towerBtn = res.find(e =>
+      e.text.includes('无限之塔') && e.bounds != null &&
+      e.bounds.top < img.height / 2 && e.bounds.right > img.width / 2
+    );
+    if (towerBtn != null && res.text.match(/(方舟|技场|迷失)/) != null) {
+      clickRect(towerBtn, 1, 0);
+      sleep(800);
+      return null;
+    }
+    if (res.text.includes('开启') && res.text.match(/(目前|每日|T.WER)/))
+      return true;
+  }, 30, 800);
   let manufacturerTowers = ocrUntilFound(res => {
     let ret = res.toArray(3).toArray().filter(e => e.text.match(/(目前|每日)/));
     if (ret.length < 4)
       return null;
-    return ret;
-  }, 30, 1000, { maxScale: 3 });
-  for (let tower of manufacturerTowers) {
-    if (tower.text.includes('目前'))
-      continue;
+    return ret.filter(e => !e.text.includes('目前'));
+  }, 30, 800, { maxScale: 3 });
+  for (let i = 0; i < manufacturerTowers.length; ++i) {
+    let tower = manufacturerTowers[i];
     clickRect(tower);
     let successFlag = false;
     let [curTower, cnt] = ocrUntilFound(res => {
@@ -661,8 +692,7 @@ function 爬塔() {
     sleep(1000);
     click(width / 2, height / 2 - 100);
     toast('点击屏幕中央');
-    sleep(1000);
-    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('入战')), 30, 1000));
+    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('入战')), 30, 1000), 1, 300);
     toast('进入战斗');
     for (let j = 0; j < cnt; ++j) {
       checkAuto();
@@ -680,16 +710,15 @@ function 爬塔() {
         e => e.text.match(/(下[^步方法]{2}|返回)/) != null
       ), 30, 500, { maxScale: 8 });
       if (endCombat.text.includes('返回')) {
-        clickRect(endCombat);
+        clickRect(endCombat, 1, 300);
         toastLog('作战失败');
         break;
       }
       if (colors.blue(captureScreen().pixel(endCombat.bounds.left, endCombat.bounds.top)) < 200) {
-        clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 10, 600));
+        clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 10, 600), 1, 300);
         toastLog('每日次数已用完');
         break;
       }
-      sleep(1000);
       clickRect(endCombat);
       toastLog('下一关卡');
       successFlag = true;
@@ -699,8 +728,10 @@ function 爬塔() {
     // 等待可能出现的限时礼包
     if (successFlag)
       关闭限时礼包();
-    back();
-    ocrUntilFound(res => res.text.includes('开启'), 30, 1000);
+    if (i != manufacturerTowers.length - 1) {
+      back();
+      ocrUntilFound(res => res.text.includes('开启'), 30, 1000);
+    }
   }
   返回首页();
 }
@@ -1236,11 +1267,11 @@ function 解放() {
       return false;
     }
     let timeBound = res.find(e => e.text.match(/更新.*小时.{0,4}分钟/) != null);
-    if (timeBound == null && res.text.match(/(返回|AUT)/) == null) {
+    if (timeBound == null && res.text.includes('返回') && !res.text.includes('AUT')) {
       let chineseStrs = res.toArray(3).toArray().filter(e =>
         e.text.match(/[\u4e00-\u9fa5]+/) != null
       );
-      if (chineseStrs.length < 5) {
+      if (chineseStrs.length < 50) {
         log('当前似乎没有指定解放对象');
         tasks = {};
         taskChecked = true;

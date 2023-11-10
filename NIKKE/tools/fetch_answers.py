@@ -20,7 +20,7 @@ punctuation_pattern = re.compile(r"[，⋯…？?、!！「」～☆【】。.�
 def get_from_gamekee_netcut():
     note_id = '38b3472ea9d95306'
     resp = session.post(
-        'https://netcut.cn/api/note2/info/',
+        'https://netcut.txtbin.cn/api/note2/info/',
         data={'note_id': note_id}
     )
     note_content = resp.json()['data']['note_content']

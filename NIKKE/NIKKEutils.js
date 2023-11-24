@@ -226,7 +226,7 @@ function 返回首页(checkSale, beforeHook) {
     sleep(Math.max(500, 2000 - 500 * i));
     i++;
     return null;
-  }, 15, 1000);
+  }, 25, 1000);
   homeImage && homeImage.recycle();
   // hallBtn should not be null
   if (checkSale)
@@ -371,15 +371,37 @@ function 刷刷刷() {
       });
       if (hasBlue == null)
         break;
-      let target = ocrUntilFound((res, img) => {
+      let target = null;
+      let upperBound = clickNext.bounds.bottom;
+      let leftBound = img.width / 2;
+      for (let i = 0; i < 10; ++i) {
+        img = captureScreen();
+        let clipped = images.clip(img, leftBound, upperBound, img.width - leftBound, img.height - upperBound);
+        let res = gmlkit.ocr(clipped, 'zh');
         let nextCombat = res.find(e => e.text.match(/^[^重新开始]{0,3}下[^步方法]{2}/) != null);
-        if (nextCombat != null)
-          return nextCombat;
-        let restart = res.find(e => e.text.match(/[重新开始]{3,4}[^下一关卡]{0,3}$/) != null);
-        if (restart != null && restart.bounds.left >= img.width / 2)
-          return restart;
-        return null;
-      }, 30, 500, { maxScale: 8 });
+        if (nextCombat != null) {
+          target = nextCombat;
+          clipped && clipped.recycle();
+          break;
+        }
+        let restart = res.find(e =>
+          e.text.match(/[重新开始]{3,4}[^下一关卡]{0,3}$/) != null
+        );
+        if (restart != null) {
+          target = restart;
+          clipped && clipped.recycle();
+          break;
+        }
+        sleep(1000);
+      }
+      if (target == null) {
+        toastLog('找不到下一关卡按钮，脚本退出');
+        exit();
+      }
+      target.bounds.left += leftBound;
+      target.bounds.right += leftBound;
+      target.bounds.top += upperBound;
+      target.bounds.bottom += upperBound;
       clickRect(target);
     }
     log('门票用完了');

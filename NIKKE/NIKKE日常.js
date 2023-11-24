@@ -1021,11 +1021,13 @@ function 咨询页面识别(btnText, maxRetry) {
     let newImg = img;
     if (scale > 1)
       newImg = images.scale(img, scale, scale, 'CUBIC');
-    let nameText = gmlkit.ocr(newImg, 'zh').text;
+    let nameText = gmlkit.ocr(newImg, 'zh').text.replace(/[i,\s]+$/, '');
     if (scale > 1)
       newImg && newImg.recycle();
     if (nameText.length == 0)
       continue;
+    if (nameText.match(/^雷[费骨賽費登]$/) != null)
+      nameText = '基里';
     let result = mostSimilar(nameText, Object.keys(advise));
     if (result.similarity >= 0.5) {
       name = result.result;
@@ -1243,9 +1245,10 @@ function 解放() {
     return {};
   }
   log('已进入解放页面');
-  sleep(1000);  // 等待动画
+  sleep(2000);  // 等待动画
   let tasks = {};
   let taskChecked = false;
+  let confirmCount = 0;
   let taskHook = (res, img) => {
     let skipBtn = res.find(e =>
       e.text.match(/SK.P/) != null && e.bounds != null &&
@@ -1271,12 +1274,16 @@ function 解放() {
       let chineseStrs = res.toArray(3).toArray().filter(e =>
         e.text.match(/[\u4e00-\u9fa5]+/) != null
       );
-      if (chineseStrs.length < 50) {
+      if (chineseStrs.length < 5) {
+        confirmCount++;
+      }
+      if (confirmCount >= 3) {
         log('当前似乎没有指定解放对象');
         tasks = {};
         taskChecked = true;
         return true;
       }
+      sleep(1000);
     }
     if (taskChecked)
       return true;
@@ -1832,7 +1839,15 @@ function 每日任务() {
   社交点数招募(tasks['招募']);
   强化装备(tasks['装备强化']);
   送礼(tasks['送礼']);
-  let season = ocrUntilFound(res => res.find(e => e.text.includes('SEASON')), 30, 500);
+  let season = ocrUntilFound((res, img) => {
+    let ret = res.find(e => e.text.includes('SEASON'));
+    if (ret)
+      return ret;
+    let hallBtn = res.find(e => e.text == '大厅');
+    if (hallBtn)
+      clickRect(hallBtn, 1, 0);
+    return null;
+  }, 20, 800);
   let i;
   for (i = 0; i < 10; ++i) {
     let img = captureScreen();

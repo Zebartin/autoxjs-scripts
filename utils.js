@@ -142,8 +142,8 @@ function buildRegion(region, img) {
   region = region || [];
   let x = region[0] === undefined ? 0 : region[0];
   let y = region[1] === undefined ? 0 : region[1];
-  let w = region[2] === undefined ? img.getWidth() - x : region[2];
-  let h = region[3] === undefined ? (img.getHeight() - y) : region[3];
+  let w = region[2] === undefined ? img.width - x : region[2];
+  let h = region[3] === undefined ? (img.height - y) : region[3];
   if (x < 0 || y < 0 || x + w > img.width || y + h > img.height)
     throw new Error("out of region: region = [" + [x, y, w, h] + "], image.size = [" + [img.width, img.height] + "]");
   return [x, y, w, h];

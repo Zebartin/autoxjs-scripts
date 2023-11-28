@@ -123,6 +123,9 @@ def get_from_gamekee_wiki(skip_names: set[str]):
         # gamekee首页误写为“诺薇尔”
         if nikke['name'] == '诺薇尔' or nikke['name'] in skip_names:
             continue
+        # 编辑中词条
+        if nikke['content_id'] == 0:
+            continue
         if not is_valid(nikke):
             ret[nikke['name']] = []
             continue

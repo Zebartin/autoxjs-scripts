@@ -167,7 +167,7 @@ function 等待NIKKE加载() {
       back();
       return false;
     }
-    if (res.text.includes('系统公告'))
+    if (res.text.match(/(系[统統]|活动)公告/) != null)
       return true;
     if (res.text.match(/(REWARD|点击|奖励)/) != null)
       click(width / 2, height * 0.8);

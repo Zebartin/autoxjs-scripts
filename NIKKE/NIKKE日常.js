@@ -1477,14 +1477,37 @@ function 强化装备(repeatCnt) {
   log(`强化装备：${repeatCnt}次`);
   let targetNikkeReg = new RegExp(targetNikke);
   let target = null;
-  clickRect(ocrUntilFound(res => res.find(e => e.text == '妮姬'), 40, 1000));
-  let allBtn = ocrUntilFound(res => res.find(e => e.text == 'ALL'), 30, 600);
-  let upperBound = allBtn.bounds.bottom;
+  let ubBtn = ocrUntilFound(res => {
+    let ret = res.find(e => e.text.match(/看同伴/) != null);
+    if (ret != null)
+      return ret;
+    let nikkeBtn = res.find(e => e.text == '妮姬');
+    if (nikkeBtn != null)
+      clickRect(nikkeBtn, 0.8, 400);
+    return null;
+  }, 30, 600);
+  let upperBound = ubBtn.bounds.bottom;
   // 找到指定妮姬
   for (let retry = 0; target == null && retry < 3; ++retry) {
     if (retry > 0) {
-      clickRect(allBtn, 0.6, 300);
-      sleep(1000);
+      ocrUntilFound(res => {
+        if (res.text.match(/(方舟|商店|基地)/) != null)
+          return true;
+        let hall = res.find(e => e.text == '大厅');
+        if (hall != null) {
+          clickRect(hall, 0.5, 0);
+          return false;
+        }
+      }, 30, 1500);
+      ocrUntilFound(res => {
+        let ret = res.find(e => e.text.match(/看同伴/) != null);
+        if (ret != null)
+          return true;
+        let nikkeBtn = res.find(e => e.text == '妮姬');
+        if (nikkeBtn != null)
+          clickRect(nikkeBtn, 0.8, 0);
+        return false;
+      }, 30, 1500);
     }
     let lastNikke = null;
     for (let page = 0; page < 10; ++page) {

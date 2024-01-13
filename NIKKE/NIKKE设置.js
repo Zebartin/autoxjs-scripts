@@ -234,6 +234,7 @@ ui.layout(
             </vertical>
             <vertical margin="0 20">
               <text text="说明：" textColor="#999999" textSize="14sp" margin="0 4" />
+              <text text="强化装备指定妮姬留空时跳过装备强化" textColor="#999999" textSize="14sp" margin="0 2" />
               <text text="送礼时会在咨询首页随机挑选妮姬，送出稀有度最低的好感券" textColor="#999999" textSize="14sp" margin="0 2" />
               <text text="如果开启解放功能，需尽量保证装备强化材料足够、友情点足够、好感券足够" textColor="#999999" textSize="14sp" margin="0 2" />
             </vertical>
@@ -507,8 +508,7 @@ ui.save.on("click", function () {
     return;
   }
   if (ui.findView('每日任务').isChecked() && ui.equipEnhanceNikke.text().trim() == '') {
-    toast('强化装备指定妮姬不可留空，无法保存');
-    return;
+    toast('强化装备指定妮姬为空');
   }
   let todoTask = [];
   for (let task of [

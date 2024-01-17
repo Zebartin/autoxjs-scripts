@@ -5,9 +5,9 @@ var {
 } = require('./NIKKEutils.js');
 var { 模拟室 } = require('./模拟室.js');
 var {
-  ocrUntilFound, clickRect, findImageByFeature,
+  scaleBack, ocrUntilFound, clickRect, findImageByFeature,
   requestScreenCaptureAuto, getDisplaySize,
-  findContoursRect, rgbToGray
+  findContoursRect, rgbToGray, imageColorCount
 } = require('./utils.js');
 let width, height;
 let advise = null;
@@ -250,18 +250,20 @@ function cashShop() {
     返回首页();
     return;
   }
-  let [daily, weekly, monthly] = ocrUntilFound(res => {
+  let [daily, weekly, monthly] = ocrUntilFound((res, img, scale) => {
     if (handlePopUp(res))
       return null;
     let d = res.find(e => e.text.endsWith('日'));
     let w = res.find(e => e.text.endsWith('周'));
     let m = res.find(e => e.text.endsWith('月'));
     if (!d || !w || !m) {
-      if (d != null)
+      if (d != null) {
+        scaleBack(d, scale);
         swipe(
           d.bounds.right, d.bounds.centerY(),
           0, d.bounds.centerY(), 500
         );
+      }
       return null;
     }
     return [d, w, m];
@@ -323,7 +325,7 @@ function buyGood(good, doMax) {
     return;
   }
   let affordable = true;
-  ocrUntilFound(res => {
+  ocrUntilFound((res, img, scale) => {
     if (res.find(e => e.text.match(/不足.?$/) != null)) {
       affordable = false;
       return true;
@@ -336,12 +338,26 @@ function buyGood(good, doMax) {
     let buyBtn = res.find(e => e.text.endsWith('购买'));
     if (buyBtn != null) {
       if (doMax) {
-        let maxBtn = res.find(e => e.text.match(/[Mm].[Xx]/) != null);
+        let maxBtn = res.find(e => e.text.match(/M.X/i) != null);
         if (maxBtn == null)
           return null;
-        clickRect(maxBtn, 0.3, 0);
-        sleep(400);
+        // 可能识别到左侧的加号
+        maxBtn.bounds.left += maxBtn.bounds.width() / 2;
+        let cropped = images.clip(
+          img, maxBtn.bounds.left, maxBtn.bounds.top,
+          maxBtn.bounds.width(), maxBtn.bounds.height()
+        );
+        let count = imageColorCount(cropped, '#6b6b6b', 221);
+        let ratio = count / (maxBtn.bounds.width() * maxBtn.bounds.height());
+        cropped.recycle();
+        if (ratio < 0.15) {
+          scaleBack(maxBtn, scale);
+          clickRect(maxBtn, 0.6, 0);
+          sleep(400);
+          return null;
+        }
       }
+      scaleBack(buyBtn, scale);
       clickRect(buyBtn, 1, 0);
     }
     return null;
@@ -1358,7 +1374,7 @@ function 社交点数招募(repeatCnt) {
     return;
   }
   for (let i = 0; i < repeatCnt; ++i) {
-    let [skipBtn] = ocrUntilFound((res, img) => {
+    let [skipBtn] = ocrUntilFound((res, img, scale) => {
       let doRecruit = res.find(e =>
         e.bounds != null && (
           (e.text.includes('1名') && e.bounds.right <= img.width / 2) ||
@@ -1366,6 +1382,7 @@ function 社交点数招募(repeatCnt) {
         )
       );
       if (doRecruit != null) {
+        scaleBack(doRecruit, scale);
         clickRect(doRecruit, 1, 0);
         sleep(8000);
         return null;
@@ -1477,15 +1494,18 @@ function 强化装备(repeatCnt) {
   log(`强化装备：${repeatCnt}次`);
   let targetNikkeReg = new RegExp(targetNikke);
   let target = null;
-  let ubBtn = ocrUntilFound(res => {
+  let ubBtn = ocrUntilFound((res, img) => {
     let ret = res.find(e => e.text.match(/看同伴/) != null);
     if (ret != null)
       return ret;
-    let nikkeBtn = res.find(e => e.text == '妮姬');
+    let nikkeBtn = res.find(e =>
+      e.text == '妮姬' && e.bounds != null &&
+      e.bounds.bottom > img.height * 0.7
+    );
     if (nikkeBtn != null)
-      clickRect(nikkeBtn, 0.8, 400);
+      clickRect(nikkeBtn, 0.8);
     return null;
-  }, 30, 600);
+  }, 20, 1500);
   let upperBound = ubBtn.bounds.bottom;
   // 找到指定妮姬
   for (let retry = 0; target == null && retry < 3; ++retry) {
@@ -1499,11 +1519,14 @@ function 强化装备(repeatCnt) {
           return false;
         }
       }, 30, 1500);
-      ocrUntilFound(res => {
+      ocrUntilFound((res, img) => {
         let ret = res.find(e => e.text.match(/看同伴/) != null);
         if (ret != null)
           return true;
-        let nikkeBtn = res.find(e => e.text == '妮姬');
+        let nikkeBtn = res.find(e =>
+          e.text == '妮姬' && e.bounds != null &&
+          e.bounds.bottom > img.height * 0.7
+        );
         if (nikkeBtn != null)
           clickRect(nikkeBtn, 0.8, 0);
         return false;

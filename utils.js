@@ -4,6 +4,7 @@ if (typeof module === 'undefined') {
 }
 else {
   module.exports = {
+    scaleBack: scaleBack,
     ocrUntilFound: ocrUntilFound,
     clickRect: clickRect,
     imgToBounds: imgToBounds,
@@ -15,7 +16,8 @@ else {
     rgbToGray: rgbToGray,
     buildRegion: buildRegion,
     findContoursRect: findContoursRect,
-    findImageByFeature: findImageByFeature
+    findImageByFeature: findImageByFeature,
+    imageColorCount: imageColorCount
   };
 }
 
@@ -48,6 +50,14 @@ function getDisplaySize(doNotForcePortrait) {
     Math.max(width, height)
   ];
 }
+function scaleBack(x, scale) {
+  if (!x.bounds)
+    return;
+  x.bounds.left /= scale;
+  x.bounds.right /= scale;
+  x.bounds.top /= scale;
+  x.bounds.bottom /= scale;
+}
 
 /*
 options:
@@ -58,14 +68,6 @@ function ocrUntilFound(found, retry, interval, options) {
   options = options || {};
   maxScale = options.maxScale || 1;
   gray = (options.gray === true);
-  let scaleBack = function (x, scale) {
-    if (!x.bounds)
-      return;
-    x.bounds.left /= scale;
-    x.bounds.right /= scale;
-    x.bounds.top /= scale;
-    x.bounds.bottom /= scale;
-  };
   for (let i = 0; i < retry; ++i) {
     sleep(interval);
     let scale = (i % maxScale) + 1;
@@ -84,7 +86,7 @@ function ocrUntilFound(found, retry, interval, options) {
     let ocrRes = gmlkit.ocr(img, "zh");
     if (ocrRes == null || ocrRes.text == null)
       continue;
-    let res = found(ocrRes, img);
+    let res = found(ocrRes, img, scale);
     img && img.recycle();
     if (res || res === 0) {
       if (scale > 1) {
@@ -147,6 +149,21 @@ function buildRegion(region, img) {
   if (x < 0 || y < 0 || x + w > img.width || y + h > img.height)
     throw new Error("out of region: region = [" + [x, y, w, h] + "], image.size = [" + [img.width, img.height] + "]");
   return [x, y, w, h];
+}
+function colorToRGB(color) {
+  let r, g, b;
+  if (Array.isArray(color)) {
+    r = color[0];
+    g = color[1];
+    b = color[2];
+  } else if (typeof color === 'string' || typeof color === 'number') {
+    r = colors.red(color);
+    g = colors.green(color);
+    b = colors.blue(color);
+  } else {
+    throw new Error(`Invalid color: ${color}`);
+  }
+  return [r, g, b];
 }
 
 // 参考：https://docs.opencv.org/3.4/d1/de0/tutorial_py_feature_homography.html
@@ -349,6 +366,26 @@ function findContoursRect(img, options) {
     return t;
   });
   return ret;
+}
+
+function imageColorCount(image, color, threshold) {
+  importPackage(org.opencv.core);
+  let mat = image.getMat();
+  let diff = new Mat();
+  let channels = new java.util.ArrayList();
+  let maxDiff = new Mat();
+  let mask = new Mat();
+  let [r, g, b] = colorToRGB(color);
+  Core.absdiff(mat, new Scalar(r, g, b), diff);
+  Core.split(diff, channels);
+  Core.max(channels[0], channels[1], maxDiff);
+  Core.max(channels[2], maxDiff, maxDiff);
+  Core.subtract(new Mat(new Size(maxDiff.cols(), maxDiff.rows()), CvType.CV_8UC1, new Scalar(255)), maxDiff, mask);
+
+  Core.inRange(mask, new Scalar(threshold), new Scalar(255), mask);
+  let inRangeCount = Core.countNonZero(mask);
+  log(`Color count(${color}): ${inRangeCount}/${image.getWidth() * image.getHeight()}`);
+  return inRangeCount;
 }
 
 function killApp(packageName) {

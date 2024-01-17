@@ -72,12 +72,26 @@ function 模拟室(fromIndex) {
   let tryDiff = (Math.floor(tryDiffArea / 3) + 3).toString();
   let tryArea = tryDiffArea % 3;
   if (fromIndex) {
-    clickRect(ocrUntilFound((res, img) => res.find(e =>
-      e.text.includes('方舟') && e.bounds != null &&
-      e.bounds.bottom > img.height / 2
-    ), 30, 1000));
-    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('模拟室')), 30, 1000));
-    sleep(2000);
+    ocrUntilFound((res, img) => {
+      if (res.text.includes('开始') || res.text.includes('结'))
+        return true;
+      let arkBtn = res.find(e =>
+        e.text.includes('方舟') && e.bounds != null &&
+        e.bounds.bottom > img.height / 2
+      );
+      if (arkBtn != null) {
+        clickRect(arkBtn, 1, 0);
+        return null;
+      }
+      let simBtn = res.find(e =>
+        e.text.includes('模拟室') && e.bounds != null &&
+        e.bounds.bottom > img.height * 0.4
+      );
+      if (simBtn != null) {
+        clickRect(simBtn, 1, 0);
+        return null;
+      }
+    }, 50, 1000);
   }
   quitPrevSim();
   // 检查今日模拟室是否已完成

@@ -95,10 +95,9 @@ function 模拟室(fromIndex) {
   }
   quitPrevSim();
   // 检查今日模拟室是否已完成
-  if (clickIntoDiffArea(tryDiff, tryArea, true)) {
+  if (fromIndex && clickIntoDiffArea(tryDiff, tryArea, true)) {
     toastLog('完成模拟室任务');
-    if (fromIndex)
-      返回首页();
+    返回首页();
     return;
   }
   let status = {

@@ -22,8 +22,11 @@ def get_from_gamekee_netcut():
     resp = session.post(
         'https://netcut.txtbin.cn/api/note2/info/',
         data={'note_id': note_id}
-    )
-    note_content = resp.json()['data']['note_content']
+    ).json()
+    if 'error' in resp:
+        print(f'Netcut error: {resp["error"]}')
+        return {}
+    note_content = resp['data']['note_content']
     note_content = note_content.replace('\\n', '\n').replace('\\t', '\t')
     ret = defaultdict(list)
     person = None
@@ -180,6 +183,9 @@ def get_from_google_sheet(apiKey):
 
 if __name__ == '__main__':
     zh_cn_data = get_from_gamekee_netcut()
+    if not zh_cn_data:
+        print('Cannot get data from netcut, quit here')
+        exit(1)
     zh_cn_data_extra = get_from_gamekee_wiki(set(zh_cn_data.keys()))
     zh_cn_data.update(zh_cn_data_extra)
     if len(sys.argv) > 1:

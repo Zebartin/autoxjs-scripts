@@ -674,23 +674,43 @@ function selectBuff(buffType, status) {
       return null;
     return [t1, t2];
   }, 20, 300);
-  if (bestBuff == null) {
+  const doCancel = () => {
     clickRect(cancelBtn);
     sleep(600);
     clickRect(ocrUntilFound(res => res.find(e => e.text.includes('确认')), 10, 300));
+  };
+  if (bestBuff == null) {
+    doCancel();
   } else {
     clickRect(bestBuff);
     sleep(600);
     clickRect(confirmBtn);
-    status.newBuffs[bestBuff.name] = {
-      name: bestBuff.name,
-      level: bestBuff.level
-    };
-    if (status.mode == '刷buff')
-      status.bestBuffToKeep = {
+    let [ok] = ocrUntilFound(res => {
+      if (res.text.includes('RESET'))
+        return [true];
+      else if (res.text.match(/(相同|替换|取)/) != null)
+        return [false];
+      return null;
+    }, 10, 300);
+    if (ok === true) {
+      status.newBuffs[bestBuff.name] = {
         name: bestBuff.name,
         level: bestBuff.level
       };
+      if (status.mode == '刷buff')
+        status.bestBuffToKeep = {
+          name: bestBuff.name,
+          level: bestBuff.level
+        };
+    } else {
+      clickRect(ocrUntilFound(res => res.find(e => e.text.includes('取')), 10, 300));
+      sleep(600);
+      doCancel();
+      status.newBuffs[bestBuff.name] = {
+        name: bestBuff.name,
+        level: 'SSR'
+      };
+    }
   }
   sleep(1000);
 }

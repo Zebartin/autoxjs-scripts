@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import json
 import re
@@ -7,6 +8,7 @@ from collections import defaultdict
 from pathlib import Path
 
 import requests
+import websockets
 import zhconv
 from bs4 import BeautifulSoup
 
@@ -17,20 +19,10 @@ session = requests.Session()
 punctuation_pattern = re.compile(r"[，⋯…？?、!！「」～☆【】。.—{}'\"“”♪\s]")
 
 
-def get_from_gamekee_netcut():
-    note_id = '38b3472ea9d95306'
-    resp = session.post(
-        'https://netcut.txtbin.cn/api/note2/info/',
-        data={'note_id': note_id}
-    ).json()
-    if 'error' in resp:
-        print(f'Netcut error: {resp["error"]}')
-        return {}
-    note_content = resp['data']['note_content']
-    note_content = note_content.replace('\\n', '\n').replace('\\t', '\t')
+def parse_gamekee_data(data: str):
     ret = defaultdict(list)
     person = None
-    for line in note_content.splitlines():
+    for line in data.splitlines():
         line = line.strip()
         if not line:
             continue
@@ -44,11 +36,65 @@ def get_from_gamekee_netcut():
             ret[person].append(a)
         else:
             person = line[:-1]
-    print('Gamekee Netcut:')
+    print('Gamekee pastebin:')
     keys = list(ret.keys())
     for i in range(0, len(keys), 5):
         print(', '.join(keys[i:i+5]))
     return ret
+
+
+async def get_from_gamekee_baidu_pan():
+    docid = '521691390812354'
+    surl = f'12uSFe5M1o5PMM4p0kwJnQ-{docid}'
+    appid = '250528'
+    pwd = 'x2fh'
+    author_uk = '2351864206'    # can actually get uk from some api
+    timestamp = int(time.time())
+    # verify
+    params = {
+        'clienttype': 0,
+        'app_id': appid,
+        'web': 1
+    }
+    data = dict(pwd=pwd, surl=surl)
+    resp = session.post(
+        'https://pan.baidu.com/api/docol/verify', params=params, data=data)
+    assert resp.json()['errno'] == 0
+    # get signature
+    params = {
+        'clienttype': 0,
+        'bdstoken': '',
+        'docid': docid,
+        'doc_uri': f'/doc?appid={appid}&docid={docid}&doc_timestamp={timestamp}&mode=readonly',
+        'surl': surl
+    }
+    resp = session.get(
+        'https://pan.baidu.com/api/docol/signature', params=params)
+    assert resp.json()['errno'] == 0
+    sig = resp.json()['data']['sign']
+    # fetch data via websocket
+    uri = f'wss://docpan.baidu.com/doc?appid={appid}&docid={docid}&doc_timestamp={timestamp}&mode=readonly&sig={sig}&uk={author_uk}'
+    async with websockets.connect(uri) as ws:
+        await ws.send(json.dumps({'a': 's', 'c': appid, 'd': docid}))
+        ans = await ws.recv()
+        ans = await ws.recv()
+        data = json.loads(ans)['data']['data']['ops'][0]['insert']
+    return parse_gamekee_data(data)
+
+
+def get_from_gamekee_netcut():
+    '''deprecated'''
+    note_id = '38b3472ea9d95306'
+    resp = session.post(
+        'https://netcut.txtbin.cn/api/note2/info/',
+        data={'note_id': note_id}
+    ).json()
+    if 'error' in resp:
+        print(f'Netcut error: {resp["error"]}')
+        return {}
+    note_content = resp['data']['note_content']
+    note_content = note_content.replace('\\n', '\n').replace('\\t', '\t')
+    return parse_gamekee_data(note_content)
 
 
 def get_from_gamekee_wiki(skip_names: set[str]):
@@ -112,7 +158,7 @@ def get_from_gamekee_wiki(skip_names: set[str]):
             answer = ''
             if line_strs[0] == '100':
                 answer = line_strs[1]
-            elif line_strs[-1] == '50':
+            elif line_strs[-1] == '100':
                 answer = line_strs[-2]
             else:
                 print(f'无法解析：{line_strs}')
@@ -182,7 +228,7 @@ def get_from_google_sheet(apiKey):
 
 
 if __name__ == '__main__':
-    zh_cn_data = get_from_gamekee_netcut()
+    zh_cn_data = asyncio.run(get_from_gamekee_baidu_pan())
     if not zh_cn_data:
         print('Cannot get data from netcut, quit here')
         exit(1)

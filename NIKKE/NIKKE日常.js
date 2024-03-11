@@ -826,7 +826,7 @@ function 特殊竞技场() {
   // 如果识别出了百分号，直接点百分号
   // 没有就点上方中央“特殊竞技场”下方位置，可能能点到
   let specialRewardBtn = ocrUntilFound(res => {
-    let atk = res.find(e => e.text.includes('ATK'));
+    let atk = res.find(e => e.text.match(/(ATK|DEF)/) != null);
     if (!atk) {
       let enterSpecial = res.find(e => e.text.includes('SPECIAL'));
       if (enterSpecial != null)
@@ -843,18 +843,18 @@ function 特殊竞技场() {
     let ret = res.find(e =>
       e.text.includes('%') && e.bounds != null &&
       e.bounds.bottom < atk.bounds.top &&
-      e.bounds.left > atk.bounds.right
+      e.bounds.left > atk.bounds.centerX()
     );
     if (ret == null) {
       let touch = res.find(e =>
         e.text.match(/^T.UCH/) != null && e.bounds != null &&
         e.bounds.bottom < atk.bounds.top &&
-        e.bounds.left > atk.bounds.right
+        e.bounds.left > atk.bounds.centerX()
       );
       ret = res.find(e =>
         e.text.startsWith('特殊') && e.bounds != null &&
         e.bounds.bottom < atk.bounds.top &&
-        e.bounds.left > atk.bounds.right
+        e.bounds.left > atk.bounds.centerX()
       );
       if (!ret || !touch)
         return null;

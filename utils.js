@@ -71,7 +71,7 @@ function ocrUntilFound(found, retry, interval, options) {
   for (let i = 0; i < retry; ++i) {
     sleep(interval);
     let scale = (i % maxScale) + 1;
-    let img = captureScreen();
+    let img = images.copy(captureScreen());
     if (gray) {
       let newImg = images.grayscale(img);
       img && img.recycle();

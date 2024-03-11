@@ -915,7 +915,7 @@ function teamUp(status) {
       e.text.includes('室') && e.bounds != null &&
       e.bounds.bottom > img.height / 2
     );
-    let l = res.find(e => e.text.match(/(资讯|入战)/) != null);
+    let l = res.find(e => e.text.match(/([内]容|入战)/) != null);
     if (!u || !l)
       return null;
     return [u.bounds.bottom, l.bounds.top];
@@ -934,6 +934,7 @@ function teamUp(status) {
   }
   log(`开始模拟室编队：${status.team.join('、')}`);
   clickRect(teamEmpty);
+  // 没有all啦
   let [upperBound, lowerBound, allBtn, saveBtn] = ocrUntilFound(res => {
     let upper = res.find(e => e.text.match(/[可以变更编队]{3}/) != null);
     let allBtn = res.find(e => e.text == 'ALL');

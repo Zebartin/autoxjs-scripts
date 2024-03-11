@@ -52,7 +52,8 @@ function 日常() {
     for (; alreadyRetry <= maxRetry; ++alreadyRetry) {
       try {
         等待NIKKE加载();
-        return func();
+        func();
+        return true;
       } catch (error) {
         if (!error.message.includes('InterruptedException')) {
           toast(error.message);
@@ -70,16 +71,20 @@ function 日常() {
             启动NIKKE();
           }
         } else
-          return;
+          return false;
       }
     }
   };
   for (let task of todoTask)
-    retryFunc(taskFunc[task]);
+    if (!retryFunc(taskFunc[task]))
+      break;
   if (NIKKEstorage.get('exitGame', false))
     退出NIKKE();
   else
     console.show();
+  if (images.stopScreenCapturer) {
+    images.stopScreenCapturer();
+  }
   toastLog('NIKKE脚本结束运行');
 }
 

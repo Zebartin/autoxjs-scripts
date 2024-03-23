@@ -44,6 +44,9 @@ if (typeof module === 'undefined') {
       }
     }
   }
+  if (images.stopScreenCapturer) {
+    images.stopScreenCapturer();
+  }
   exit();
 }
 else {

@@ -23,7 +23,7 @@ let myBtn = ocrUntilFound(res => {
 sleep(2000);
 back();
 clickRect(myBtn);
-clickRect(ocrUntilFound(res => res.find(e => e.text.includes('分商')), 10, 700));
+clickRect(ocrUntilFound(res => res.find(e => e.text.match(/(分[商高])/) != null), 10, 700));
 
 let targetName = '【超特惠】';
 let costPoint = 100;
@@ -32,18 +32,14 @@ if (hourNow == 9 || hourNow == 10) {
   targetName = '【特惠】';
   costPoint = 300;
 }
-const firstSelector = className("android.view.View").textContains(targetName);
-const confirmSelector = className("android.view.View").textEndsWith(`${costPoint} 积分兑换`).depth(14);
+const firstSelector = className("android.widget.TextView").textContains(targetName);
+const confirmSelector = className("android.widget.TextView").textEndsWith(`${costPoint} 积分兑换`).depth(14);
 firstSelector.waitFor();
-
-let remainPoint = ocrUntilFound(res => {
-  let t = res.text.match(/季[积枳]+分[：:\s]*(\d+)/);
-  if (!t)
-    return null;
-  return parseInt(t[1]);
-}, 10, 1000);
-let firstButton = null;
+const matched = textStartsWith('赛季积分').findOne().text().match(/季[积枳]+分[：:\s]*(\d+)/);
+const remainPoint = matched ? parseInt(matched[1]) : 0;
 log(`赛季积分：${remainPoint}`);
+
+let firstButton = null;
 if (remainPoint >= costPoint) {
   for (let i = 0; i < 100; ++i) {
     firstButton = firstSelector.findOne().parent().child(2);
@@ -80,4 +76,7 @@ if (remainPoint >= costPoint) {
 for (let i = 0; i < 4; ++i) {
   back();
   sleep(500);
+}
+if (images.stopScreenCapturer) {
+  images.stopScreenCapturer();
 }

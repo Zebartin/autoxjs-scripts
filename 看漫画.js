@@ -30,32 +30,44 @@ let myBtn = ocrUntilFound(res => {
 sleep(2000);
 back();
 clickRect(myBtn);
-// 点击“福利中心”
-let giftCenter = ocrUntilFound(res => {
+
+let checkin = ocrUntilFound(res => {
   if (!res.text.includes('活动中心'))
     return null;
-  return res.find(e => e.text.includes('前') && e.bounds != null && e.bounds.bottom > height * 0.4);
+  return res.find(e => e.text.includes('签') && e.bounds != null && e.bounds.bottom > height * 0.3);
 }, 20, 1000);
 // 先进一次消除签到板
-clickRect(giftCenter);
-text('去阅读').waitFor();
+clickRect(checkin);
 sleep(1000);
+back();
+sleep(1000);
+swipe(width / 2, checkin.bounds.bottom, width / 2, 300, 500);
+
+const books = ocrUntilFound(res => {
+  const goRead = res.toArray(3).toArray().filter(e => e.text.match(/去.读/) != null);
+  if (goRead.length != 5)
+    return null;
+  const point = res.toArray(3).toArray().filter(e => e.text.match(/(再.*分|[已己巳][获荻])/) != null);
+  if (point.length != 5)
+    return null;
+  return goRead.filter((book, i) => point[i].text.includes('再'));
+}, 10, 1000);
+log(`未读数量：${books.length}`);
 let order = [0, 1, 2, 3, 4];
 shuffle(order);
 for (let index of order) {
-  let allBooks = text('去阅读').find().map(x => x.parent());
-  let book = allBooks[index];
-  log(book.child(1).text())
-  if (book.findOne(textContains('已获得')) != null) {
-    log('已读');
+  if (index >= books.length) {
     continue;
   }
-  book.child(3).click();
+  clickRect(books[index]);
   readBook();
 }
 for (let i = 0; i < 4; i++) {
   back();
   sleep(500);
+}
+if (images.stopScreenCapturer) {
+  images.stopScreenCapturer();
 }
 exit();
 
@@ -102,11 +114,12 @@ function readBook() {
     }
     log("看漫画结束");
     // 连按退出
-    while (true) {
+    back();
+    ocrUntilFound(res => {
+      if (res.text.includes('签到') && res.text.includes('我的'))
+        return true;
       back();
-      if (text('去阅读').findOne(2000) != null)
-        break;
-    }
+    }, 10, 5000);
   });
   // 5分钟后终止threadRead
   threads.start(() => {

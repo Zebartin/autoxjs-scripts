@@ -33,6 +33,9 @@ function getOcrRes() {
     return true;
   }, 1, 1);
   toast('识别完成，可以退出查看日志');
+  if (images.stopScreenCapturer) {
+    images.stopScreenCapturer();
+  }
 }
 
 function getDisplaySize(doNotForcePortrait) {

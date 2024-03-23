@@ -276,7 +276,7 @@ const todoTaskDefault = [
 const simulationRoomDefault = {
   maxPass: 20,
   maxSsrNumber: 4,
-  tryDiffArea: 0,
+  tryDiffArea: 8,
   preferredBuff: [
     "引流转换器", "高品质粉末",
     "冲击引流器", "控制引导器"
@@ -417,7 +417,7 @@ ui.simTeam.setText((() => {
 })());
 ui.maxPass.setProgress(simulationRoom.maxPass);
 ui.maxSsrNumber.setProgress(simulationRoom.maxSsrNumber);
-ui.tryDiffArea.setProgress(simulationRoom.tryDiffArea || 0);
+ui.tryDiffArea.setProgress(simulationRoom.tryDiffArea || 8);
 
 
 ui.equipEnhanceSlot.setMax(3);

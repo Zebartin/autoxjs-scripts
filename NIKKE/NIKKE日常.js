@@ -299,7 +299,16 @@ function cashShop() {
   }
   返回首页();
 }
-
+function backToRefresh() {
+  ocrUntilFound(res => {
+    if (res.text.match(/(距离|更新|还有)/) === null) {
+      back();
+      sleep(600);
+      return false;
+    }
+    return true;
+  }, 20, 600);
+}
 function buyGood(good, doMax) {
   let c = captureScreen().pixel(good.bounds.right + 5, good.bounds.bottom);
   if (good.text != '免费商品' && rgbToGray(c) < 100) {
@@ -326,17 +335,21 @@ function buyGood(good, doMax) {
   }
   if (costGem && good.text != '免费商品' && !good.text.includes('珠宝')) {
     log('消耗珠宝，放弃购买');
-    back();
+    backToRefresh();
     return;
   }
   let affordable = true;
+  let confirmCount = 0;
   ocrUntilFound((res, img, scale) => {
     if (res.find(e => e.text.match(/不足.?$/) != null)) {
       affordable = false;
       return true;
     }
-    if (res.text.match(/(距离|更新|还有)/) != null)
-      return true;
+    if (res.text.match(/(距离|更新|还有)/) != null) {
+      confirmCount++;
+      if (confirmCount >= 3)
+        return true;
+    }
     let reward = res.find(e => e.text.match(/(REW|点击|奖励)/) != null);
     if (reward != null)
       click(width / 2, height * 0.8);
@@ -364,12 +377,13 @@ function buyGood(good, doMax) {
       }
       scaleBack(buyBtn, scale);
       clickRect(buyBtn, 1, 0);
+      confirmCount = 0;
     }
     return null;
   }, 20, 600, { gray: true, maxScale: 4 });
   if (!affordable) {
     log('资金不足');
-    back();
+    backToRefresh();
   }
 }
 
@@ -404,7 +418,6 @@ function 商店() {
       }, 4, 300) || [];
       for (let item of otherItems) {
         buyGood(item);
-        ocrUntilFound(res => res.text.match(/(距离|更新|还有)/) != null, 20, 600);
       }
     }
   };
@@ -483,7 +496,6 @@ function 商店() {
       console.warn(`竞技场商店商品识别结果不足4个：${manuals}`);
     for (let i = 0; i < buyCodeManual && i < manuals.length; ++i) {
       buyGood(manuals[i]);
-      ocrUntilFound(res => res.text.includes('技场'), 30, 500);
     }
   }
   废铁商店();
@@ -797,13 +809,15 @@ function 新人竞技场(rookieTarget) {
     if (hasFree != 'free')
       break;
     clickRect(targetFight);
-    clickRect(ocrUntilFound(res => {
+    clickRect(ocrUntilFound((res, img) => {
       if (!res.text.includes('变更') || res.text.includes('目录'))
         return false;
-      return res.find(e => e.text.endsWith('战斗'));
+      return res.find(e =>
+        e.text.endsWith('战斗') && e.bounds != null &&
+        e.bounds.centerX() > img.width / 2
+      );
     }, 30, 1000));
     toastLog('进入战斗');
-    sleep(5000);
     ocrUntilFound(res => res.text.includes('RANK'), 20, 3000);
     toastLog('结算界面');
     ocrUntilFound((res, img) => {

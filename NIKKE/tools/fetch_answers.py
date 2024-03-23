@@ -16,7 +16,7 @@ session = requests.Session()
 
 # ord('⋯') = 8943
 # ord('…') = 8230
-punctuation_pattern = re.compile(r"[，⋯…？?、!！「」～☆【】。.—{}'\"“”♪\s]")
+punctuation_pattern = re.compile(r"[，⋯…？?、!！「」～☆【】《》。.—{}'\"“”♪\s]")
 
 
 def parse_gamekee_data(data: str):
@@ -98,6 +98,8 @@ def get_from_gamekee_netcut():
 
 
 def get_from_gamekee_wiki(skip_names: set[str]):
+    # gamekee首页误写
+    skip_names.update(['D:杀手妻子', '诺薇尔'])
     ret = dict()
     game_header = {'game-alias': 'nikke'}
     entry_url = 'https://nikke.gamekee.com/v1/wiki/entry'
@@ -169,8 +171,7 @@ def get_from_gamekee_wiki(skip_names: set[str]):
                 yield answer
 
     for nikke in characters:
-        # gamekee首页误写为“诺薇尔”
-        if nikke['name'] == '诺薇尔' or nikke['name'] in skip_names:
+        if nikke['name'] in skip_names:
             continue
         # 编辑中词条
         if nikke['content_id'] == 0:

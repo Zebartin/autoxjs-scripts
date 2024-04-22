@@ -1127,10 +1127,14 @@ function 单次咨询() {
     return failFunc();
   }
   for (let i = 1; i <= maxRetry; ++i) {
-    clickRect(adviseBtn);
-    clickRect(ocrUntilFound(res => res.find(
-      e => e.text.includes('确认')
-    ), 30, 1000));
+    clickRect(ocrUntilFound(res => {
+      let confirm = res.find(e => e.text == '确认');
+      if (!confirm) {
+        clickRect(adviseBtn, 1, 0);
+        return null;
+      }
+      return confirm;
+    }, 30, 700));
     let pageStat = ocrUntilFound(res => {
       if (res.text.includes('取消') && res.text.includes('确认'))
         return 'outside';
@@ -1228,14 +1232,16 @@ function 单次咨询() {
     }
     log(`咨询选择："${options[whichOne]}"`);
     clickRect({ bounds: result[whichOne] }, 0.8, 0);
-    ocrUntilFound(res => {
+    ocrUntilFound((res, img) => {
       if (res.find(e => e.text.endsWith('咨询')))
         return true;
       let skipBtn = res.find(e =>
         e.text.match(/[LAUTOG]/) == null && e.text.match(/SK.P/) != null
       );
-      if (skipBtn == null)
-        click(width / 2, height / 2);
+      if (skipBtn == null) {
+        clickRect(getRandomArea(img, [0.2, 0.2, 0.8, 0.6]), 1, 0);
+        sleep(random(0, 1000));
+      }
       else
         clickRect(skipBtn, 0.1);
     }, 30, 1000);

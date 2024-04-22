@@ -843,9 +843,11 @@ function 特殊竞技场() {
     let atk = res.find(e => e.text.match(/(ATK|DEF)/) != null);
     if (!atk) {
       let enterSpecial = res.find(e => e.text.includes('SPECIAL'));
-      if (enterSpecial != null)
+      if (enterSpecial != null) {
         clickRect(enterSpecial, 1, 0);
-      let teamUpPage = res.find(e => e.text.match(/[攻击防御自动下一步]{2,}/) != null);
+        return null;
+      }
+      const teamUpPage = res.find(e => e.text.match(/[攻击防御自动下一步]{2,}/) != null);
       if (teamUpPage != null) {
         log('误入编队界面，返回');
         back();
@@ -883,7 +885,19 @@ function 特殊竞技场() {
       log('奖励进度0%，跳过');
       return;
     }
-    clickRect(specialRewardBtn);
+    ocrUntilFound(res => {
+      const teamUpPage = res.find(e => e.text.match(/[攻击防御自动下一步]{2,}/) != null);
+      if (teamUpPage != null) {
+        log('误入编队界面，返回');
+        back();
+        sleep(600);
+        return null;
+      }
+      if (res.text.includes('取'))
+        return true;
+      clickRect(specialRewardBtn, 0.8, 100);
+      return null;
+    }, 15, 500);
     log('领取竞技场奖励');
     ocrUntilFound((res, img) => {
       if (!res.text.includes('取'))

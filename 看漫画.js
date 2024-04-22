@@ -47,7 +47,7 @@ const books = ocrUntilFound(res => {
   const goRead = res.toArray(3).toArray().filter(e => e.text.match(/去.读/) != null);
   if (goRead.length != 5)
     return null;
-  const point = res.toArray(3).toArray().filter(e => e.text.match(/(再.*分|[已己巳][获荻])/) != null);
+  const point = res.toArray(3).toArray().filter(e => e.text.match(/(再.*分|[已己巳][获荻狭])/) != null);
   if (point.length != 5)
     return null;
   return goRead.filter((book, i) => point[i].text.includes('再'));

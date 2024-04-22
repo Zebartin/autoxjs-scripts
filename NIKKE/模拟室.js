@@ -813,7 +813,7 @@ function getOptions(expectedOptionNumber) {
 // 预计在当前画面能识别到至少expectedCount个增益效果
 function getBuffs(expectedCount) {
   return ocrUntilFound((res, img) => {
-    const r = res.filter(e => e.text.match(/^([5S]{0,2}R|EP..)$/i) != null && e.level == 3).toArray();
+    const r = res.filter(e => e.text.match(/^([5S]{0,2}R|.{0,2}EP..)$/i) != null && e.level == 3).toArray();
     const l = res.filter(e => e.text.match(/[連達连][結练绪结]等[級级]/) != null && e.level == 3).toArray();
     r.sort((a, b) => a.bounds.top - b.bounds.top);
     l.sort((a, b) => a.bounds.top - b.bounds.top);

@@ -8,6 +8,7 @@ else {
     ocrUntilFound: ocrUntilFound,
     clickRect: clickRect,
     imgToBounds: imgToBounds,
+    getRandomArea: getRandomArea,
     unlockIfNeed: unlockIfNeed,
     requestScreenCaptureAuto: requestScreenCaptureAuto,
     getOcrRes: getOcrRes,
@@ -153,6 +154,17 @@ function buildRegion(region, img) {
     throw new Error("out of region: region = [" + [x, y, w, h] + "], image.size = [" + [img.width, img.height] + "]");
   return [x, y, w, h];
 }
+
+function getRandomArea(img, bounds) {
+  bounds = bounds || [0.2, 0.2, 0.8, 0.8];
+  let b = new android.graphics.Rect();
+  b.left = img.width * bounds[0];
+  b.right = img.width * bounds[2];
+  b.top = img.height * bounds[1];
+  b.bottom = img.height * bounds[3];
+  return { bounds: b };
+}
+
 function colorToRGB(color) {
   let r, g, b;
   if (Array.isArray(color)) {

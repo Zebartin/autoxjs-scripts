@@ -1,6 +1,7 @@
 var {
   ocrUntilFound,
   clickRect,
+  getRandomArea,
   findImageByFeature,
   getDisplaySize
 } = require('./utils.js');
@@ -263,7 +264,7 @@ function quitPrevSim() {
   if (pageState == 'beginSim')
     return;
   if (pageState == 'combat')
-    click(width / 2, height / 2);
+    clickRect(getRandomArea(captureScreen(), [0.2, 0.3, 0.8, 0.7]), 1, 0);
   else if (pageState != 'selectOption') {
     clickRect(ocrUntilFound(res => res.find(e => e.text.match(/(不[迷选迭]择$|体力)/) != null), 10, 500));
     clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('确认')), 10, 500));
@@ -624,7 +625,7 @@ function doWithOption(option, status) {
     if (result.text.includes('返回')) {
       ocrUntilFound(res => res.text.includes('入战'), 30, 1000);
       sleep(500);
-      click(width / 2, height / 2);
+      clickRect(getRandomArea(captureScreen(), [0.2, 0.3, 0.7, 0.6]), 1, 0);
       status.earlyStop = true;
       return;
     }

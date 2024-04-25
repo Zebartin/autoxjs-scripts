@@ -720,15 +720,37 @@ function 爬塔() {
     }, 20, 1000);
     toastLog(`${curTower}（${cnt}/3）`);
     if (cnt == 0) {
-      back();
-      ocrUntilFound(res => res.text.includes('开启'), 30, 1000);
+      if (i != manufacturerTowers.length - 1) {
+        back();
+        ocrUntilFound(res => res.text.includes('开启'), 30, 1000);
+      }
       continue;
     }
-    sleep(1000);
-    click(width / 2, height / 2 - 100);
-    toast('点击屏幕中央');
-    clickRect(ocrUntilFound(res => res.find(e => e.text.includes('入战')), 30, 1000), 1, 300);
-    toast('进入战斗');
+    ocrUntilFound(res => {
+      if (res.text.includes('AUT'))
+        return true;
+      const enterCombat = res.find(e => e.text.includes('入战'));
+      if (enterCombat) {
+        clickRect(enterCombat, 1, 0);
+        return false;
+      }
+      const stageEntrance = res.find(e =>
+        e.text.includes('TAGE') && e.bounds != null &&
+        e.bounds.right <= width / 2 &&
+        e.bounds.top >= height * 0.2 &&
+        e.bounds.bottom <= height * 0.7
+      );
+      if (stageEntrance) {
+        const diffX = width / 2 - stageEntrance.bounds.centerX();
+        stageEntrance.bounds.left += diffX;
+        stageEntrance.bounds.right += diffX;
+        clickRect(stageEntrance, 1, 0);
+        sleep(1000);
+        return false;
+      }
+      sleep(1300);
+      return false;
+    }, 30, 700);
     for (let j = 0; j < cnt; ++j) {
       checkAuto();
       sleep(20 * 1000);

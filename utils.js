@@ -7,6 +7,7 @@ else {
     scaleBack: scaleBack,
     ocrUntilFound: ocrUntilFound,
     clickRect: clickRect,
+    swipeRandom: swipeRandom,
     imgToBounds: imgToBounds,
     getRandomArea: getRandomArea,
     unlockIfNeed: unlockIfNeed,
@@ -125,6 +126,39 @@ function clickRect(rect, scale, delay) {
   click(x, y);
 }
 
+/**
+ * 
+ * @param {Rect} area 
+ * @param {string} direction up/down/left/right
+ * @param {number} duration 
+ */
+function swipeRandom(area, direction, duration) {
+  direction = direction || 'up';
+  duration = duration || 500;
+  const scale = 0.6;
+  const x = Math.round((random() - 0.5) * area.width() * scale + area.centerX());
+  const y = Math.round((random() - 0.5) * area.height() * scale + area.centerY());
+  let x1, y1, x2, y2;
+  if (direction == 'up') {
+    x1 = x2 = x;
+    y1 = area.bottom;
+    y2 = area.top;
+  } else if (direction == 'down') {
+    x1 = x2 = x;
+    y1 = area.top;
+    y2 = area.bottom;
+  } else if (direction == 'left') {
+    x1 = area.right;
+    x2 = area.left;
+    y1 = y2 = y;
+  } else if (direction == 'right') {
+    x1 = area.left;
+    x2 = area.right;
+    y1 = y2 = y;
+  }
+  log(`Swipe (${x1}, ${y1}) -> (${x2}, ${y2})`);
+  swipe(x1, y1, x2, y2, duration);
+}
 // 灰度公式：https://docs.opencv.org/3.4/de/d25/imgproc_color_conversions.html#color_convert_rgb_gray
 function rgbToGray(color) {
   let ret = 0.299 * colors.red(color);

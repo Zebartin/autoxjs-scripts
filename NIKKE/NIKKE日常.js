@@ -5,7 +5,7 @@ var {
 } = require('./NIKKEutils.js');
 var { 模拟室 } = require('./模拟室.js');
 var {
-  scaleBack, ocrUntilFound, clickRect, getRandomArea,
+  scaleBack, ocrUntilFound, clickRect, swipeRandom, getRandomArea,
   findImageByFeature, requestScreenCaptureAuto, getDisplaySize,
   findContoursRect, rgbToGray, imageColorCount
 } = require('./utils.js');
@@ -979,60 +979,60 @@ function 咨询() {
     adviseCnt = adviseLimit;
     log(`咨询次数限制：${adviseLimit}`);
   }
-  while (cnt < adviseCnt) {
-    let adviseTarget = null;
-    let cases, attrs;
-    while (adviseTarget == null) {
-      [cases, attrs] = ocrUntilFound(res => {
-        let x1 = res.filter(e => e.text.startsWith('CASE') && e.level == 1).toArray();
-        let x2 = res.filter(e => e.text.includes('Attr') && e.level == 1).toArray();
-        x1.sort((a, b) => a.bounds.top - b.bounds.top);
-        x2.sort((a, b) => a.bounds.top - b.bounds.top);
-        return [x1, x2];
-      }, 20, 1000);
-      // 不遍历最后一个RANK，以应对特殊情况：
-      // 屏幕最后一个RANK对应的CASE CLOSED正好不在当前页
-      for (let i = 0; i + 1 < attrs.length; ++i) {
-        let curCase = cases.find(e =>
-          e.bounds.bottom > attrs[i].bounds.top &&
-          e.bounds.top < attrs[i + 1].bounds.bottom
-        );
-        if (curCase == null) {
-          adviseTarget = i;
-          break;
-        }
-      }
-      if (adviseTarget == null) {
-        toastLog('整页都咨询过了');
-        let lastAttr = attrs[attrs.length - 1].bounds.top;
-        swipe(
-          width / 2, cases[cases.length - 1].bounds.top,
-          width / 2, attrs[0].bounds.bottom, 1000
-        );
-        swipe(100, lastAttr, width / 2, lastAttr, 500);
-        sleep(1000);
+  let adviseTarget = null;
+  let cases, attrs;
+  while (adviseTarget == null) {
+    [cases, attrs] = ocrUntilFound(res => {
+      let x1 = res.filter(e => e.text.startsWith('CASE') && e.level == 1).toArray();
+      let x2 = res.filter(e => e.text.includes('Attr') && e.level == 1).toArray();
+      x1.sort((a, b) => a.bounds.top - b.bounds.top);
+      x2.sort((a, b) => a.bounds.top - b.bounds.top);
+      return [x1, x2];
+    }, 20, 1000);
+    // 不遍历最后一个RANK，以应对特殊情况：
+    // 屏幕最后一个RANK对应的CASE CLOSED正好不在当前页
+    for (let i = 0; i + 1 < attrs.length; ++i) {
+      let curCase = cases.find(e =>
+        e.bounds.bottom > attrs[i].bounds.top &&
+        e.bounds.top < attrs[i + 1].bounds.bottom
+      );
+      if (curCase == null) {
+        adviseTarget = i;
+        break;
       }
     }
-    // 减少可点击范围，避免点到悬浮窗
-    attrs[adviseTarget].bounds.left += attrs[adviseTarget].bounds.width() * 0.7;
-    clickRect(attrs[adviseTarget]);
-    if (ocrUntilFound(res => {
-      if (res.text.includes('看花'))
-        return true;
-      clickRect(attrs[adviseTarget], 0, 0);
-      return null;
-    }, 20, 1000) != true)
-      throw new Error('无法进入单人咨询页面');
-    let res = 单次咨询();
-    if (res == 'ok')
-      cnt++;
-    else if (res == 'failed') {
+    if (adviseTarget == null) {
+      toastLog('整页都咨询过了');
       let lastAttr = attrs[attrs.length - 1].bounds.top;
       swipe(
-        width / 2, attrs[adviseTarget + 1].bounds.top,
-        width / 2, attrs[0].bounds.top, 1000
+        width / 2, cases[cases.length - 1].bounds.top,
+        width / 2, attrs[0].bounds.bottom, 1000
       );
       swipe(100, lastAttr, width / 2, lastAttr, 500);
+      sleep(1000);
+    }
+  }
+  // 减少可点击范围，避免点到悬浮窗
+  attrs[adviseTarget].bounds.left += attrs[adviseTarget].bounds.width() * 0.7;
+  clickRect(attrs[adviseTarget]);
+  if (ocrUntilFound(res => {
+    if (res.text.includes('看花'))
+      return true;
+    clickRect(attrs[adviseTarget], 0, 0);
+    return null;
+  }, 20, 1000) != true)
+    throw new Error('无法进入单人咨询页面');
+  while (cnt < adviseCnt) {
+    let res = 单次咨询();
+    if (res == 'ok') {
+      cnt++;
+    }
+    if (res != 'retry') {
+      swipeRandom(new android.graphics.Rect(
+        random(width * 0.15, width * 0.35), height * 0.2,
+        random(width * 0.65, width * 0.85), height * 0.5
+      ), 'left');
+      sleep(600);
     }
   }
   toastLog('完成咨询');
@@ -1043,48 +1043,60 @@ function 咨询页面识别(btnText, maxRetry) {
   下载咨询文本();
   btnText = btnText || '咨询$';
   maxRetry = maxRetry || 5;
-  let [btn, upper, lower, hasMax] = ocrUntilFound((res, img) => {
-    let btn = res.find(e =>
+  const [btn, 查看花絮, 下一花絮, RANK] = ocrUntilFound((res, img) => {
+    const btn = res.find(e =>
       e.text.match(btnText) != null && e.level == 3 &&
       e.bounds != null && e.bounds.top > img.height / 2
     );
-    let upper = res.find(e => e.text.includes('看花') && e.bounds != null);
-    let lower = res.find(e => e.text.includes('下') && e.bounds != null);
-    if (!btn || !upper || !lower)
+    const 查看花絮 = res.find(e => e.text.includes('看花') && e.bounds != null);
+    const 下一花絮 = res.find(e => e.text.includes('下') && e.bounds != null);
+    const RANK = res.find(e => e.text.match(/RANK/) != null);
+    if (!btn || !查看花絮 || !下一花絮 || !RANK)
       return null;
-    let value = res.find(e =>
-      e.bounds != null && e.bounds.top > upper.bounds.top &&
-      e.bounds.bottom < lower.bounds.top && e.bounds.right > upper.bounds.left
-    );
-    if (!value)
-      return null;
-    return [btn, upper, lower, value.text.match(/[Mm].[Xx]/) != null];
+    return [btn, 查看花絮, 下一花絮, RANK];
   }, 20, 1000, { maxScale: 4, gray: true });
+  const nameRect = new android.graphics.Rect(
+    0, RANK.bounds.bottom,
+    查看花絮.bounds.left,
+    下一花絮.bounds.top
+  );
   let name = '';
+  let hasMax = false;
   let img = images.clip(
-    captureScreen(), 0, upper.bounds.top,
-    upper.bounds.left, lower.bounds.top - upper.bounds.top
+    captureScreen(), nameRect.left, nameRect.top,
+    nameRect.width(), nameRect.height()
   );
   let gray = images.grayscale(img);
   img && img.recycle();
   img = gray;
   for (let scale = 1; scale <= maxRetry; ++scale) {
     let newImg = img;
+    let compared = {};
     if (scale > 1)
       newImg = images.scale(img, scale, scale, 'CUBIC');
-    let nameText = gmlkit.ocr(newImg, 'zh').text.replace(/[i,\s]+$/, '');
+    let res = gmlkit.ocr(newImg, 'zh').toArray(3).toArray().map(x => x.text);
     if (scale > 1)
       newImg && newImg.recycle();
-    if (nameText.length == 0)
-      continue;
-    if (nameText.match(/^雷[费骨賽費登]$/) != null)
-      nameText = '基里';
-    let result = mostSimilar(nameText, Object.keys(advise));
-    if (result.similarity >= 0.5) {
-      name = result.result;
-      break;
+    for (let childText of res) {
+      if (childText.length == 0)
+        continue;
+      if (childText.match(/[Mm].[Xx]/) != null) {
+        hasMax = true;
+        continue;
+      }
+      if (childText.match(/^雷[费骨賽費登]$/) != null)
+        childText = '基里';
+      compared = mostSimilar(
+        childText.replace(/[i,\s]+$/, ''),
+        Object.keys(advise)
+      );
+      if (compared.similarity >= 0.5)
+        name = compared.result;
     }
-    log(`妮姬名OCR结果：${nameText}，匹配：${result.result}，相似度${result.similarity.toFixed(2)}`);
+    if (name)
+      break;
+    if (compared.similarity)
+      log(`妮姬名OCR结果：${res.join(' ')}，匹配：${compared.result}，相似度${compared.similarity.toFixed(2)}`);
     if (scale < maxRetry)
       log(`妮姬名字识别相似度过低，重试(${scale}/${maxRetry})`);
     else {
@@ -1118,27 +1130,23 @@ function 返回咨询首页() {
 }
 
 function 单次咨询() {
-  let failFunc = (ret) => {
-    返回咨询首页();
-    return ret || 'failed';
-  };
   const maxRetry = 5;
   let [adviseBtn, name, hasMax] = 咨询页面识别('咨询$', maxRetry);
   if (adviseBtn == null) {
     toastLog('咨询页面解析失败');
-    return failFunc('retry');
+    return 'retry';
   }
   if (name == '') {
-    return failFunc();
+    return 'failed';
   }
   log(`咨询对象：${name}`);
   if (hasMax) {
     log('已达好感度上限');
-    return failFunc();
+    return 'failed';
   }
-  if (colors.blue(captureScreen().pixel(adviseBtn.bounds.right, adviseBtn.bounds.top)) < 200) {
+  if (colors.blue(captureScreen().pixel(adviseBtn.bounds.right, adviseBtn.bounds.top)) < 130) {
     log('咨询按钮不可点击');
-    return failFunc();
+    return 'failed';
   }
   for (let i = 1; i <= maxRetry; ++i) {
     clickRect(ocrUntilFound(res => {
@@ -1158,9 +1166,7 @@ function 单次咨询() {
     }, 10, 2000);
     if (pageStat == 'outside') {
       log('已达好感度上限');
-      back();
-      sleep(1000);
-      return failFunc();
+      return 'failed';
     }
     // 连点直到出现选项
     let result = null;
@@ -1262,8 +1268,6 @@ function 单次咨询() {
     break;
   }
   ocrUntilFound(res => res.text.includes('咨询'), 20, 3000);
-  sleep(1000);
-  返回咨询首页();
   return 'ok';
 }
 

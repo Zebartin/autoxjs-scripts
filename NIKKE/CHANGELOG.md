@@ -2,6 +2,7 @@
 
 - 适配咨询页面新UI；
 - 模拟室、爬塔部分减少固定坐标点击（改动很少别抱有期望）；
+- 适配安卓14截屏权限申请（[参考](https://github.com/kkevsekk1/AutoX/issues/772#issuecomment-2070098859)）
 
 新增功能或内容：
 

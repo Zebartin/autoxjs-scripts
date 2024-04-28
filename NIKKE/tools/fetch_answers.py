@@ -26,9 +26,9 @@ def parse_gamekee_data(data: str):
         line = line.strip()
         if not line:
             continue
-        if line.startswith('50') or 'question' in line:
+        if line.startswith('100') or 'question' in line:
             continue
-        if line.startswith('100'):
+        if line.startswith('120'):
             a = punctuation_pattern.sub('', line[5:])
             a = a.replace('AccountDataNickName', '')
             if not a:
@@ -158,9 +158,9 @@ def get_from_gamekee_wiki(skip_names: set[str]):
             if len(line_strs) != 4:
                 continue
             answer = ''
-            if line_strs[0] == '100':
+            if line_strs[0] == '120':
                 answer = line_strs[1]
-            elif line_strs[-1] == '100':
+            elif line_strs[-1] == '120':
                 answer = line_strs[-2]
             else:
                 print(f'无法解析：{line_strs}')

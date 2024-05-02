@@ -537,7 +537,7 @@ function requestScreenCaptureAuto() {
             cancelBounds.bottom
           );
         }
-        if (t.top < t.bottom && t.bottom <= device.height) {
+        if (t.top < t.bottom && (device.height == 0 || t.bottom <= device.height)) {
           target = { bounds: t };
           break;
         }

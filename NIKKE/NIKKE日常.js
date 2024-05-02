@@ -315,7 +315,6 @@ function buyGood(good, doMax) {
     log(`${good.text}已售`);
     return;
   }
-  log(`购买${good.text}`);
   clickRect(good, 0.5);
   let [costGem] = ocrUntilFound(res => {
     let t = res.find(e => e.text == '购买');
@@ -403,6 +402,9 @@ function 商店() {
       otherItemNames.push('券');
       otherItemNames.push('米.*卡$');
     }
+    if (NIKKEstorage.get('buyProfileCustomPack', false)) {
+      otherItemNames.push('[简介个性化]{3,}');
+    }
     if (otherItemNames.length > 0) {
       let pattern = null;
       if (otherItemNames.length == 1)
@@ -450,7 +452,8 @@ function 商店() {
   } else
     log('今日已刷新过普通商店');
   const buyCodeManual = NIKKEstorage.get('buyCodeManual', 3);
-  if (buyCodeManual != 0) {
+  const buyProfileCustomPackArena = NIKKEstorage.get('buyProfileCustomPackArena', false);
+  if (buyCodeManual != 0 || buyProfileCustomPackArena) {
     const arenaShopImage = images.read("./images/arenaShop.jpg");
     let arenaShop = null;
     for (let i = 0; i < 10; ++i) {
@@ -467,6 +470,8 @@ function 商店() {
     arenaShop.text = '竞技场商店图标';
     arenaShopImage.recycle();
     clickRect(arenaShop);
+  }
+  if (buyCodeManual != 0) {
     let manuals = [];
     ocrUntilFound(res => {
       let shopName = res.find(e => e.text.match(/[竟竞]技场/) != null);
@@ -496,6 +501,12 @@ function 商店() {
       console.warn(`竞技场商店商品识别结果不足4个：${manuals}`);
     for (let i = 0; i < buyCodeManual && i < manuals.length; ++i) {
       buyGood(manuals[i]);
+    }
+  }
+  if (buyProfileCustomPackArena) {
+    const item = ocrUntilFound(res => res.find(e => e.text.match(/[简介个性化]{3,}/) != null), 5, 700);
+    if (item != null) {
+      buyGood(item);
     }
   }
   废铁商店();
@@ -1153,7 +1164,7 @@ function 返回咨询首页() {
 
 function 单次咨询() {
   const maxRetry = 5;
-  let [adviseBtn, name, hasMax] = 咨询页面识别('咨询$', maxRetry);
+  let [adviseBtn, name, hasMax] = 咨询页面识别('^[^快連德逮速遠]*咨询$', maxRetry);
   if (adviseBtn == null) {
     toastLog('咨询页面解析失败');
     return 'retry';

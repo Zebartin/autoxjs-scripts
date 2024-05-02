@@ -88,6 +88,8 @@ ui.layout(
               <Switch id="checkCashShopFree" margin="0 4" textColor="#222222" text="领取付费商店免费礼包" textSize="16sp" />
               <Switch id="buyCoreDust" margin="0 4" textColor="#222222" text="使用信用点购买芯尘盒" textSize="16sp" />
               <Switch id="buyBondItem" margin="0 4" textColor="#222222" text="使用信用点购买好感券" textSize="16sp" />
+              <Switch id="buyProfileCustomPack" margin="0 4" textColor="#222222" text="使用信用点购买简介个性化礼包" textSize="16sp" />
+              <Switch id="buyProfileCustomPackArena" margin="0 4" textColor="#222222" text="使用竞技场代币购买简介个性化礼包" textSize="16sp" />
               <horizontal margin="0 4">
                 <text id="buyCodeManualText" textSize="16sp" textColor="#222222" w="0" layout_weight="4" >不购买代码手册</text>
                 <seekbar id="buyCodeManual" w="0" layout_weight="6" layout_gravity="center" />
@@ -329,6 +331,8 @@ ui.buyCodeManual.setOnSeekBarChangeListener({
 ui.checkCashShopFree.setChecked(NIKKEstorage.get('checkCashShopFree', false));
 ui.buyCoreDust.setChecked(NIKKEstorage.get('buyCoreDust', false));
 ui.buyBondItem.setChecked(NIKKEstorage.get('buyBondItem', false));
+ui.buyProfileCustomPack.setChecked(NIKKEstorage.get('buyProfileCustomPack', false));
+ui.buyProfileCustomPackArena.setChecked(NIKKEstorage.get('buyProfileCustomPackArena', false));
 ui.buyCodeManual.setProgress(NIKKEstorage.get('buyCodeManual', 3));
 for (let recyclingGood of NIKKEstorage.get('recyclingShopList', ['珠宝', '芯尘盒']))
   ui.findView(`废铁商店.${recyclingGood}`).setChecked(true);
@@ -531,6 +535,8 @@ ui.save.on("click", function () {
   NIKKEstorage.put('checkCashShopFree', ui.checkCashShopFree.isChecked());
   NIKKEstorage.put('buyCoreDust', ui.buyCoreDust.isChecked());
   NIKKEstorage.put('buyBondItem', ui.buyBondItem.isChecked());
+  NIKKEstorage.put('buyProfileCustomPack', ui.buyProfileCustomPack.isChecked());
+  NIKKEstorage.put('buyProfileCustomPackArena', ui.buyProfileCustomPackArena.isChecked());
   NIKKEstorage.put('buyCodeManual', ui.buyCodeManual.getProgress());
   NIKKEstorage.put('adviseLimit', ui.adviseLimit.getProgress());
   NIKKEstorage.put('specialArenaClaim', ui.specialArenaClaim.isChecked());

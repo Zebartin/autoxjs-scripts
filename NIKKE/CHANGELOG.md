@@ -1,11 +1,9 @@
 修复以下问题：
 
-- 适配咨询页面新UI；
-- 模拟室、爬塔部分减少固定坐标点击（改动很少别抱有期望）；
-- 适配安卓14截屏权限申请（[参考](https://github.com/kkevsekk1/AutoX/issues/772#issuecomment-2070098859)）
+- 适配咨询页面UI；
 
 新增功能或内容：
 
-- 咨询时切换妮姬的方式改为滑动；
+- 购买简介个性化礼包，需在设置中启用；
 
 具体使用方式详见[README](https://github.com/Zebartin/autoxjs-scripts/blob/master/NIKKE/README.md)。

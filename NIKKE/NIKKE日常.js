@@ -43,6 +43,7 @@ function 日常() {
     竞技场: 竞技场,
     爬塔: 爬塔,
     咨询: 咨询,
+    拦截战: 拦截战,
     模拟室: () => 模拟室(true),
     每日任务: 每日任务
   };
@@ -75,9 +76,14 @@ function 日常() {
       }
     }
   };
-  for (let task of todoTask)
+  for (let task of todoTask) {
+    if (!taskFunc[task]) {
+      console.error(`没有名为"${task}"的任务`);
+      continue;
+    }
     if (!retryFunc(taskFunc[task]))
       break;
+  }
   if (NIKKEstorage.get('exitGame', false))
     退出NIKKE();
   else
@@ -521,6 +527,7 @@ function collectDefense(outpostBtn, wipeOut) {
     let t = res.find(e => e.text.endsWith('灭'));
     if (t == null) {
       clickRect(outpostBtn, 1, 0);
+      sleep(500);
       return null;
     }
     return t;
@@ -968,6 +975,326 @@ function 竞技场() {
   返回首页();
 }
 
+function getInterceptionTeams() {
+  const [title, info] = ocrUntilFound((res, img) => {
+    const qb = res.find(e =>
+      e.text.match(/快.战/) != null && e.bounds != null &&
+      e.bounds.bottom > img.height / 2 &&
+      e.bounds.left > img.width / 2
+    );
+    const info = res.find(e =>
+      e.text.match(/资讯$/) != null && e.bounds != null &&
+      e.bounds.left > img.width / 2 && e.bounds.bottom > img.height / 2
+    );
+    if (qb && info) {
+      const title = res.find(e =>
+        e.text.match(/战$/) != null && e.bounds != null &&
+        e.bounds.left < img.width / 2 &&
+        e.bounds.bottom > info.bounds.bottom &&
+        e.bounds.bottom < qb.bounds.top
+      );
+      return [title, info];
+    }
+  }, 10, 600);
+  let img;
+  let contours = [];
+  for (let t = 0; t < 10; ++t) {
+    let thresh = random(180, 210);
+    img = captureScreen();
+    contours = findContoursRect(img, {
+      thresh: thresh,
+      region: [
+        title.bounds.right, info.bounds.bottom + title.bounds.height(),
+        info.bounds.right - title.bounds.right,
+        title.bounds.bottom - info.bounds.bottom
+      ],
+      type: "BINARY_INV",
+      rectFilter: rect => {
+        if (Math.abs(rect.width() - 100) > 20)
+          return false;
+        if (Math.abs(rect.height() - 80) > 20)
+          return false;
+        return true;
+      },
+      // debug: true,
+    });
+    if (contours.length == 5)
+      break;
+  }
+  if (contours.length != 5)
+    return null;
+  return contours.map(ct => {
+    const color = img.pixel(ct.left + 10, ct.centerY());
+    return {
+      bounds: ct,
+      selected: colors.blue(color) > 100
+    }
+  });
+}
+
+function interceptBattle(battleBtn, checkDamage) {
+  let damageNumber = null;
+  let confirmCnt = 0;
+  let skipped = false;
+  ocrUntilFound((res, img) => {
+    const damage = res.find(e =>
+      e.text.match(/DAMAGE/) != null && e.bounds != null &&
+      e.bounds.right < img.width / 2 &&
+      e.bounds.bottom > img.height * 0.3
+    );
+    const phase = res.find(e =>
+      e.text.match(/PHASE/) != null && e.bounds != null &&
+      e.bounds.right < img.width / 2 &&
+      e.bounds.bottom > img.height * 0.3
+    );
+    if (damage != null && phase != null) {
+      if (!checkDamage) {
+        return true;
+      }
+      const t = res.find(e =>
+        e.text.match(/\d{2}[\d,]+/) != null && e.bounds != null &&
+        e.bounds.top > damage.bounds.top &&
+        e.bounds.bottom < phase.bounds.bottom
+      );
+      if (t != null) {
+        const dn = parseInt(t.text.replace(/[,\s]+/g, ''));
+        if (dn == damageNumber) {
+          confirmCnt++;
+        } else {
+          damageNumber = dn;
+          confirmCnt = 0;
+        }
+        if (confirmCnt >= 2) {
+          return true;
+        }
+      }
+      return null;
+    }
+    const autoBtn = res.find(e =>
+      e.text.includes('AUT') && e.bounds != null &&
+      e.bounds.right < img.width / 2 &&
+      e.bounds.bottom < img.height * 0.3
+    );
+    if (autoBtn != null) {
+      log('战斗中……');
+      skipped = true;
+      sleep(6000);
+      return null;
+    }
+    // 进入战斗
+    const b = res.find(e =>
+      e.text.match(/入战/) != null && e.bounds != null &&
+      e.bounds.bottom > img.height / 2 &&
+      e.bounds.left > img.width / 2
+    );
+    if (b != null) {
+      clickRect(battleBtn, 1, 0);
+      sleep(5000);
+      return null;
+    }
+    const darkRatio = imageColorCount(img, '#000000', 221) / (img.width * img.height);
+    if (darkRatio > 0.8) {
+      log('加载中……');
+      sleep(500);
+      return null;
+    }
+    if (skipped)
+      return null;
+    // 确认跳过动画
+    const confirm = res.find(e =>
+      e.text.match(/确认$/) != null && e.bounds != null &&
+      e.bounds.left > img.width / 2
+    );
+    if (confirm != null) {
+      clickRect(confirm, 1, 0);
+      return null;
+    }
+    // 跳过动画
+    clickRect(getRandomArea(img, [0, 0, 1, 1]), 0.7, 0);
+  }, 40, 1000);
+  ocrUntilFound((res, img) => {
+    const b = res.find(e =>
+      e.text.match(/入战/) != null && e.bounds != null &&
+      e.bounds.bottom > img.height / 2 &&
+      e.bounds.left > img.width / 2
+    );
+    if (b != null) {
+      return true;
+    }
+    const battleEnd = res.find(e =>
+      e.text.match(/(DAMAGE|PHASE|REWARD)/) != null && e.bounds != null &&
+      e.bounds.right < img.width / 2 &&
+      e.bounds.bottom > img.height * 0.3
+    );
+    if (battleEnd != null) {
+      clickRect(getRandomArea(img, [0, 0, 1, 0.5]), 0.8, 0);
+      return false;
+    }
+  }, 20, 1000);
+  return damageNumber;
+}
+
+function 拦截战() { 
+  const nameDict = {
+    火车: /(火车|古[铁鉄]|夺走|小心)/,
+    钻头: /(掘墓|钻头|阻止|冲击)/,
+    铁匠: /(铁匠|报仇|雪恨|到了)/,
+    嚣嘈: /(嚣嘈|人类|思考|说话)/,
+    神罚: /(神罚|出手|改造|致命)/,
+  }
+  const interception = NIKKEstorage.get('interception', null);
+  if (interception == null) {
+    console.error('未配置拦截战');
+    return;
+  }
+  const interceptionType = interception.type;
+  let confirmCnt = 0;
+  const [enemyName, battle, quickBattle, simBattle] = ocrUntilFound((res, img) => {
+    let b = res.find(e =>
+      e.text.match(/入战/) != null && e.bounds != null &&
+      e.bounds.bottom > img.height / 2 &&
+      e.bounds.left > img.width / 2
+    );
+    let qb = res.find(e =>
+      e.text.match(/快.战/) != null && e.bounds != null &&
+      e.bounds.bottom > img.height / 2 &&
+      e.bounds.left > img.width / 2
+    );
+    let sb = res.find(e =>
+      e.text.match(/[拟以]战/) != null && e.bounds != null &&
+      e.bounds.bottom > img.height / 2 &&
+      e.bounds.left < img.width / 2
+    );
+    if (b && qb && sb) {
+      confirmCnt++;
+      if (confirmCnt < 2) {
+        return null;
+      }
+      for (let n of Object.keys(nameDict)) {
+        if (nameDict[n].test(res.text)) {
+          return [n, b, qb, sb];
+        }
+        for (let c of res.children) {
+          console.log(`${c.bounds}\t${c.text}`);
+        }
+        return [null, b, qb, sb];
+      }
+    }
+    confirmCnt = 0;
+    // 误入编队
+    let teamUp = res.find(e =>
+      e.text.match(/(可以|变更|战斗力|自动|编队|储存)/) != null
+    );
+    if (teamUp != null) {
+      let backBtn = res.find(e => e.text.endsWith('返回'));
+      if (backBtn)
+        clickRect(backBtn, 1, 0);
+      else
+        back();
+      return null;
+    }
+    let arkBtn = res.find(e =>
+      e.text.includes('方舟') && e.bounds != null &&
+      e.bounds.bottom > img.height / 2
+    );
+    if (arkBtn != null) {
+      clickRect(arkBtn, 1, 0);
+      return null;
+    }
+    let interceptionBtn = res.find(e =>
+      e.text.match(/^[拦推][截载戯戲]*战/) != null && e.bounds != null &&
+      e.bounds.bottom > img.height / 2
+    );
+    if (interceptionBtn != null) {
+      clickRect(interceptionBtn, 1, 0);
+      return null;
+    }
+    let entrance = null;
+    if (interceptionType == 0) {
+      entrance = res.find(e =>
+        e.text.match(/LEVEL/i) != null && e.bounds != null &&
+        e.bounds.left < img.width / 2 &&
+        e.bounds.top < img.height / 2
+      );
+    } else if (interceptionType == 1) {
+      entrance = res.find(e =>
+        e.text.match(/LEVEL/i) != null && e.bounds != null &&
+        e.bounds.right > img.width / 2
+      );
+    } else if (interceptionType == 2) {
+      entrance = res.find(e =>
+        e.text.match(/[特殊目标]{2,}/i) != null && e.bounds != null &&
+        e.bounds.bottom > img.height / 2
+      );
+    }
+    if (entrance != null) {
+      clickRect(entrance, 1, 0);
+      return null;
+    }
+  }, 30, 800) || [null, null, null, null];
+  if (battle === null) {
+    console.error('无法进入拦截页面，放弃');
+    返回首页();
+    return;
+  }
+  if (enemyName === null) {
+    console.error('未匹配到目标名字，放弃');
+    返回首页();
+    return;
+  }
+  log(`目标：${enemyName}`);
+  // 切换队伍
+  const teamIndex = interception.config[enemyName].team - 1;
+  if (teamIndex == -1) {
+    log('已设置不打该目标');
+    返回首页();
+    return;
+  }
+  let indexSelected = -1;
+  for (let i = 0; i < 5; ++i) {
+    let teams = getInterceptionTeams();
+    if (!teams) {
+      sleep(1000);
+      continue;
+    }
+    indexSelected = teams.findIndex(t=>t.selected);
+    log(`当前队伍：${indexSelected + 1}`);
+    if (indexSelected == teamIndex)
+      break;
+    clickRect(teams[teamIndex], 0.5, 0);
+    sleep(1000);
+  }
+  if (indexSelected != teamIndex) {
+    console.error('选择队伍失败，放弃');
+    return;
+  }
+  const threshold = [
+    4000000,
+    19300000,
+    62000000
+  ];
+  const enterBattle = battle;
+  // const enterBattle = simBattle;
+  for (let i = 0; i < 5; ++i) {
+    let bColor = captureScreen().pixel(enterBattle.bounds.right + 3, enterBattle.bounds.centerY());
+    let qbColor = captureScreen().pixel(quickBattle.bounds.right + 3, quickBattle.bounds.centerY());
+    log(`进入战斗：${colors.toString(bColor)}，快速战斗：${colors.toString(qbColor)}`);
+    if (colors.red(qbColor) > 120 && i != 0) {
+      interceptBattle(quickBattle, false);
+    } else if (colors.red(bColor) > 150 || colors.blue(bColor) > 150) {
+      let damage = interceptBattle(enterBattle, true);
+      log(`TOTAL DAMAGE：${damage}`);
+      if (!damage || damage < threshold[interceptionType]) {
+        console.error('拦截伤害未达预期，放弃');
+        break;
+      }
+    } else {
+      break;
+    }
+  }
+  log('拦截战已完成');
+  返回首页();
+}
 function 下载咨询文本() {
   if (advise != null)
     return;
@@ -1083,16 +1410,22 @@ function 咨询页面识别(btnText, maxRetry) {
     );
     const 查看花絮 = res.find(e => e.text.includes('看花') && e.bounds != null);
     const 下一花絮 = res.find(e => e.text.includes('下') && e.bounds != null);
-    const RANK = res.find(e => e.text.match(/RANK/) != null);
-    if (!btn || !查看花絮 || !下一花絮 || !RANK)
+    if (!btn || !查看花絮 || !下一花絮)
       return null;
+    const RANK = res.find(e =>
+      e.text.match(/RANK/) != null && e.bounds != null &&
+      e.bounds.bottom < 查看花絮.bounds.top
+    );
     return [btn, 查看花絮, 下一花絮, RANK];
   }, 20, 1000, { maxScale: 4, gray: true });
   const nameRect = new android.graphics.Rect(
-    0, RANK.bounds.bottom,
+    0, captureScreen().height / 2,
     查看花絮.bounds.left,
     下一花絮.bounds.top
   );
+  if (RANK != null) {
+    nameRect.top = RANK.bounds.top;
+  }
   let name = '';
   let hasMax = false;
   let img = images.clip(

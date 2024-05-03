@@ -24,8 +24,12 @@ ui.layout(
               <Switch text="咨询" id="咨询" textSize="16sp" margin="8 4" w="0" layout_weight="1" />
             </horizontal>
             <horizontal>
+              <Switch text="拦截战" id="拦截战" textSize="16sp" margin="8 4" w="0" layout_weight="1" />
               <Switch text="模拟室" id="模拟室" textSize="16sp" margin="8 4" w="0" layout_weight="1" />
+            </horizontal>
+            <horizontal>
               <Switch text="每日任务" id="每日任务" textSize="16sp" margin="8 4" w="0" layout_weight="1" />
+              <text margin="8 4" layout_weight="1" />
             </horizontal>
           </vertical>
           <vertical margin="8 50 0 0">
@@ -152,6 +156,61 @@ ui.layout(
       <ScrollView>
         <vertical>
           <vertical margin="16 8">
+            <Switch id="拦截战TAB" text="未启用" textSize="16sp" />
+            <text text="需自行准备可以自动打满的高练队伍" textColor="#999999" textSize="14sp" />
+            <text text="特拦火车队伍参考：" textColor="#999999" textSize="14sp" />
+            <text text="❄ 鲁德米拉，技能114，充能魔方，T9装备" textColor="#999999" textSize="14sp" />
+            <text text="👑 皇冠，满技能，换弹魔方" textColor="#999999" textSize="14sp" />
+            <text text="😠 红莲：暗影，满技能，换弹魔方" textColor="#999999" textSize="14sp" />
+            <text text="🌸 樱花，技能444，充能魔方，T9装备" textColor="#999999" textSize="14sp" />
+            <text text="👒 小红帽，满技能，换弹魔方" textColor="#999999" textSize="14sp" />
+            <horizontal margin="0 20">
+              <text id="interceptionTypeText" textColor="#222222" textSize="16sp" w="0" layout_weight="4" >选择特殊目标拦截战</text>
+              <seekbar id="interceptionType" w="0" layout_weight="6" layout_gravity="center" />
+            </horizontal>
+            <vertical margin="0 10">
+              <horizontal margin="0 4" id="火车">
+                <horizontal w="0" layout_weight="4">
+                  <text textColor="#222222" textSize="16sp" >火车：</text>
+                  <text id="interceptionTeamText" textColor="#222222" textSize="16sp" >不打</text>
+                </horizontal>
+                <seekbar id="interceptionTeam" w="0" layout_weight="6" layout_gravity="center" />
+              </horizontal>
+              <horizontal margin="0 4" id="钻头">
+                <horizontal w="0" layout_weight="4">
+                  <text textColor="#222222" textSize="16sp" >钻头：</text>
+                  <text id="interceptionTeamText" textColor="#222222" textSize="16sp" >不打</text>
+                </horizontal>
+                <seekbar id="interceptionTeam" w="0" layout_weight="6" layout_gravity="center" />
+              </horizontal>
+              <horizontal margin="0 4" id="铁匠">
+                <horizontal w="0" layout_weight="4">
+                  <text textColor="#222222" textSize="16sp" >铁匠：</text>
+                  <text id="interceptionTeamText" textColor="#222222" textSize="16sp" >不打</text>
+                </horizontal>
+                <seekbar id="interceptionTeam" w="0" layout_weight="6" layout_gravity="center" />
+              </horizontal>
+              <horizontal margin="0 4" id="嚣嘈">
+                <horizontal w="0" layout_weight="4">
+                  <text textColor="#222222" textSize="16sp" >嚣嘈：</text>
+                  <text id="interceptionTeamText" textColor="#222222" textSize="16sp" >不打</text>
+                </horizontal>
+                <seekbar id="interceptionTeam" w="0" layout_weight="6" layout_gravity="center" />
+              </horizontal>
+              <horizontal margin="0 4" id="神罚">
+                <horizontal w="0" layout_weight="4">
+                  <text textColor="#222222" textSize="16sp" >神罚：</text>
+                  <text id="interceptionTeamText" textColor="#222222" textSize="16sp" >不打</text>
+                </horizontal>
+                <seekbar id="interceptionTeam" w="0" layout_weight="6" layout_gravity="center" />
+              </horizontal>
+            </vertical>
+          </vertical>
+        </vertical>
+      </ScrollView>
+      <ScrollView>
+        <vertical>
+          <vertical margin="16 8">
             <Switch id="模拟室TAB" text="未启用" textSize="16sp" />
             <text text="刷取buff，然后尝试高难直到成功通关" textColor="#999999" textSize="14sp" />
             <vertical id='simulationRoom' margin="0 20">
@@ -244,7 +303,7 @@ ui.layout(
         </vertical>
       </ScrollView>
     </viewpager >
-  </vertical >
+  </vertical>
 );
 
 let globalNewTagName = null;
@@ -273,7 +332,7 @@ function checkUpdate() {
 const NIKKEstorage = storages.create("NIKKEconfig");
 const todoTaskDefault = [
   "基地收菜", "好友", "竞技场", "商店",
-  "爬塔", "咨询", "模拟室", "每日任务"
+  "爬塔", "拦截战", "咨询", "模拟室", "每日任务"
 ];
 const simulationRoomDefault = {
   maxPass: 20,
@@ -297,7 +356,7 @@ if (typeof simulationRoom == 'string')
 //设置滑动页面的标题
 ui.viewpager.setTitles(["通用设置"].concat([
   "基地收菜 & 好友 & 竞技场", "商店",
-  "爬塔 & 咨询", "模拟室", "每日任务"
+  "爬塔 & 咨询", "拦截战", "模拟室", "每日任务"
 ]));
 //让滑动页面和标签栏联动
 ui.tabs.setupWithViewPager(ui.viewpager);
@@ -354,7 +413,7 @@ try {
     ui.adviseChangeLog.setText('无');
   else
     ui.adviseChangeLog.setText(changelogs.join('\n'));
-} catch(error) {
+} catch (error) {
   ui.adviseChangeLog.setText('读取咨询答案json失败');
   log(`读取咨询答案json失败：${error.message}`);
 }
@@ -371,6 +430,44 @@ ui.rookieArenaTarget.setOnSeekBarChangeListener({
 });
 ui.rookieArenaTarget.setProgress(NIKKEstorage.get('rookieArenaTarget', 1));
 
+let interception = NIKKEstorage.get('interception', {
+  type: 2,
+  config: {
+    火车: { team: 1 },
+    钻头: { team: 1 },
+    铁匠: { team: 1 },
+    嚣嘈: { team: 1 },
+    神罚: { team: 1 }
+  }
+});
+ui.interceptionType.setMax(2);
+ui.interceptionType.setOnSeekBarChangeListener({
+  onProgressChanged: function (seekbar, p, fromUser) {
+    if (p == 0)
+      ui.interceptionTypeText.setText('选择LEVEL D普通拦截');
+    else if (p == 1)
+      ui.interceptionTypeText.setText(`选择LEVEL S普通拦截`);
+    else if (p == 2)
+      ui.interceptionTypeText.setText(`选择特殊目标拦截战`);
+  }
+});
+ui.interceptionType.setProgress(interception.type);
+
+for (let interceptionID of [
+  "火车", "钻头", "铁匠", "嚣嘈", "神罚"
+]) {
+  let ele = ui.findView(interceptionID);
+  ele.interceptionTeam.setMax(5);
+  ele.interceptionTeam.setOnSeekBarChangeListener({
+    onProgressChanged: function (seekbar, p, fromUser) {
+      if (p == 0)
+        ele.interceptionTeamText.setText('不打');
+      else
+        ele.interceptionTeamText.setText(`选择${p}号队伍`);
+    }
+  });
+  ele.interceptionTeam.setProgress(interception.config[interceptionID].team);
+};
 
 ui.maxPass.setMax(50);
 ui.maxPass.setOnSeekBarChangeListener({
@@ -517,7 +614,7 @@ ui.save.on("click", function () {
   let todoTask = [];
   for (let task of [
     "基地收菜", "好友", "竞技场", "商店",
-    "爬塔", "咨询", "模拟室", "每日任务"
+    "爬塔", "拦截战", "咨询", "模拟室", "每日任务"
   ])
     if (ui.findView(task).isChecked())
       todoTask.push(task);
@@ -541,6 +638,15 @@ ui.save.on("click", function () {
   NIKKEstorage.put('adviseLimit', ui.adviseLimit.getProgress());
   NIKKEstorage.put('specialArenaClaim', ui.specialArenaClaim.isChecked());
   NIKKEstorage.put('rookieArenaTarget', ui.rookieArenaTarget.getProgress());
+
+  let interception = { type: ui.interceptionType.getProgress(), config: {} };
+  for (let interceptionID of [
+    "火车", "钻头", "铁匠", "嚣嘈", "神罚"
+  ]) {
+    let ele = ui.findView(interceptionID);
+    interception.config[interceptionID] = { team: ele.interceptionTeam.getProgress() };
+  }
+  NIKKEstorage.put('interception', interception);
 
   let simulationRoom = {};
   simulationRoom.team = team;

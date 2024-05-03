@@ -949,6 +949,7 @@ function 特殊竞技场() {
       );
       if (confirm != null) {
         clickRect(confirm, 1, 0);
+        sleep(1000);
         return null;
       }
       let clickReward = res.find(e =>
@@ -1134,7 +1135,7 @@ function interceptBattle(battleBtn, checkDamage) {
   return damageNumber;
 }
 
-function 拦截战() { 
+function 拦截战() {
   const nameDict = {
     火车: /(火车|古[铁鉄]|夺走|小心)/,
     钻头: /(掘墓|钻头|阻止|冲击)/,
@@ -1257,7 +1258,7 @@ function 拦截战() {
       sleep(1000);
       continue;
     }
-    indexSelected = teams.findIndex(t=>t.selected);
+    indexSelected = teams.findIndex(t => t.selected);
     log(`当前队伍：${indexSelected + 1}`);
     if (indexSelected == teamIndex)
       break;
@@ -1339,6 +1340,10 @@ function 咨询() {
     adviseCnt = adviseLimit;
     log(`咨询次数限制：${adviseLimit}`);
   }
+  if (adviseCnt == 0) {
+    返回首页();
+    return;
+  }
   let adviseTarget = null;
   let cases, attrs;
   while (adviseTarget == null) {
@@ -1387,7 +1392,7 @@ function 咨询() {
     if (res == 'ok') {
       cnt++;
     }
-    if (res != 'retry') {
+    if (res != 'retry' && cnt < adviseCnt) {
       swipeRandom(new android.graphics.Rect(
         random(width * 0.15, width * 0.35), height * 0.2,
         random(width * 0.65, width * 0.85), height * 0.5

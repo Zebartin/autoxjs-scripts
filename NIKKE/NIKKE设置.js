@@ -614,7 +614,7 @@ ui.save.on("click", function () {
   let todoTask = [];
   for (let task of [
     "基地收菜", "好友", "竞技场", "商店",
-    "爬塔", "拦截战", "咨询", "模拟室", "每日任务"
+    "爬塔", "咨询", "拦截战", "模拟室", "每日任务"
   ])
     if (ui.findView(task).isChecked())
       todoTask.push(task);

@@ -1,8 +1,8 @@
-name: 获取咨询文本
+name: Level Infinite pass 签到
 
 on: 
   schedule:
-    - cron:  '0 17 * * *'
+    - cron:  '0 20 * * *'
   workflow_dispatch:
 
 jobs:
@@ -10,8 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-      with:
-        ref: dev
     - name: Set up Python 3.10
       uses: actions/setup-python@v4
       with:
@@ -22,13 +20,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
       working-directory: ./NIKKE/tools/
+    - name: Ensure browsers are installed
+      run: python -m playwright install chromium --with-deps
     - name: Run python script
       run: |
-        python fetch_answers.py ${{ secrets.GOOGLE_API_KEY }}
+        python pass-checkin.py ${{ secrets.GAME_EMAIL }} ${{ secrets.GAME_PASSWORD }}
       working-directory: ./NIKKE/tools/
-    - name: Commit nikke.json file if changed
-      uses: stefanzweifel/git-auto-commit-action@v4
-      with:
-        commit_message: 更新nikke.json
-        repository: ./NIKKE
-        file_pattern: nikke.json

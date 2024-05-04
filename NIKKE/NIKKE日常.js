@@ -861,7 +861,7 @@ function 新人竞技场(rookieTarget) {
     ocrUntilFound(res => res.text.includes('RANK'), 20, 3000);
     toastLog('结算界面');
     ocrUntilFound((res, img) => {
-      if (res.text.includes('返回'))
+      if (res.text.match(/返[回迴]+/) != null)
         return true;
       click(img.width * 0.5, img.height * 0.2);
       return false;
@@ -943,7 +943,7 @@ function 特殊竞技场() {
       if (!res.text.includes('取'))
         return null;
       let confirm = res.find(e =>
-        e.text.match(/[领領邻]取/) != null && e.bounds != null &&
+        e.text.match(/[领領邻]取$/) != null && e.bounds != null &&
         e.bounds.top > img.height * 0.6 &&
         e.bounds.right > img.width * 0.5
       );
@@ -1175,11 +1175,11 @@ function 拦截战() {
         if (nameDict[n].test(res.text)) {
           return [n, b, qb, sb];
         }
-        for (let c of res.children) {
-          console.log(`${c.bounds}\t${c.text}`);
-        }
-        return [null, b, qb, sb];
       }
+      for (let c of res.children) {
+        console.log(`${c.bounds}\t${c.text}`);
+      }
+      return [null, b, qb, sb];
     }
     confirmCnt = 0;
     // 误入编队
@@ -1565,7 +1565,7 @@ function 单次咨询() {
         log('识别到单选选项，点击消除');
         clickRect({ bounds: resultSingle[0] }, 0.8, 0);
       } else
-        clickRect(getRandomArea(img, [0.2, 0.2, 0.8, 0.6]), 1, 0);
+        clickRect(getRandomArea(img, [0, 0, 1, 0.4]), 0.8, 0);
       sleep(random(300, 1500));
     }
     let options = ocrUntilFound(res => {
@@ -1586,7 +1586,7 @@ function 单次咨询() {
     }, 10, 300) || ["", ""];
     let whichOne = null, similarOne = -1;
     for (let k = 0; k < 2; ++k) {
-      options[k] = options[k].replace(/[,，:：\.。…\?\!？！、「」～~☆【】《》♪\s-\—]/g, '');
+      options[k] = options[k].replace(/[❤,，:：\.。…\?\!？！、「」～~☆【】《》♪\s-\—]/g, '');
       let t = mostSimilar(options[k], advise[name]);
       log(`选项${k + 1}："${options[k]}"`);
       log(`匹配："${t.result}"，相似度${t.similarity.toFixed(2)}`);
@@ -1630,7 +1630,7 @@ function 单次咨询() {
         e.text.match(/[LAUTOG]/) == null && e.text.match(/SK.P/) != null
       );
       if (skipBtn == null) {
-        clickRect(getRandomArea(img, [0.2, 0.2, 0.8, 0.6]), 1, 0);
+        clickRect(getRandomArea(img, [0, 0, 1, 0.4]), 0.8, 0);
         sleep(random(0, 1000));
       }
       else

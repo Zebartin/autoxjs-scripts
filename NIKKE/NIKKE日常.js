@@ -1599,20 +1599,26 @@ function 单次咨询() {
     let thresh = options[whichOne].length < 3 ? 1 : 0.75;
     if (similarOne < thresh && i < maxRetry) {
       toastLog(`相似度过低，放弃本次咨询(尝试次数${i}/${maxRetry})`);
-      clickRect(ocrUntilFound(res => {
-        let ret = res.find(e =>
+      ocrUntilFound(res => {
+        if (res.text.includes('看花'))
+          return true;
+        let cancelBtn = res.find(e =>
           e.text.match(/[UTOG]/) == null && e.text.includes('NCE')
         );
-        if (ret)
-          return ret;
+        if (cancelBtn) {
+          clickRect(cancelBtn, 0.8, 0);
+          return false;
+        }
         // 避免识别不到单独的CANCEL
-        ret = res.find(e =>
+        cancelBtn = res.find(e =>
           e.text.includes('NCE') && e.level == 3
         );
-        ret.bounds.left = ret.bounds.right - 200;
-        return ret;
-      }, 30, 1000));
-      ocrUntilFound(res => res.text.includes('看花'), 20, 2000);
+        if (cancelBtn) {
+          cancelBtn.bounds.left = cancelBtn.bounds.right - 200;
+          clickRect(cancelBtn, 0.8, 0);
+          return false;
+        }
+      }, 30, 1000);
       continue;
     }
     if (similarOne < thresh && i == maxRetry) {

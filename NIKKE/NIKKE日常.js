@@ -17,12 +17,13 @@ if (typeof module === 'undefined') {
   checkConfig();
   启动NIKKE();
   // 保证申请截屏权限时，屏幕是游戏画面
-  sleep(1000);
-  if (NIKKEstorage.get('alreadyInGame', false) == false) {
-    for (let i = 0; i < 3; ++i) {
-      toast('脚本等待中...');
-      sleep(5000);
+  for (let i = 0; i < 10; ++i) {
+    let orientation = context.getResources().getConfiguration().orientation;
+    if (orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT) {
+      break;
     }
+    toast('脚本等待中...');
+    sleep(3000);
   }
   requestScreenCaptureAuto();
   日常();
@@ -783,7 +784,7 @@ function 爬塔() {
       sleep(1000);
       let endCombat = ocrUntilFound(res => res.find(
         e => e.text.match(/(下[^步方法]{2}|返回)/) != null
-      ), 30, 500, { maxScale: 8 });
+      ), 30, 500, { maxScale: 4 });
       if (endCombat.text.includes('返回')) {
         clickRect(endCombat, 1, 300);
         toastLog('作战失败');

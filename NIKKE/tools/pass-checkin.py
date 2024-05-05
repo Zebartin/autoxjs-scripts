@@ -39,21 +39,27 @@ def main():
             logger.info('等待登录完成……')
             page.get_by_text('登录以获得').wait_for(state='hidden')
             logger.info('登录完成')
+            # print(page.context.cookies())
             # 签到
             while 1:
-                confirm = page.get_by_role('span').filter(has_text='确认')
+                confirm = page.locator('span').get_by_text('确认')
                 if confirm.count() == 1:
                     logger.info('点击确认')
                     confirm.click()
+                    time.sleep(random.randint(1, 3))
                     continue
                 first_quest = page.locator("#app-rewards .quests > div").first
                 imgs = first_quest.locator('img')
-                if imgs.first.get_attribute('class').split()[-1] == 'opacity-100':
+                opacity_class = imgs.first.get_attribute('class').split()[-1]
+                if opacity_class == 'opacity-100':
                     logger.info('已签到')
+                    print(page.locator('span').get_by_text('确认').locator('..').inner_html())
+                    # input()
                     break
-                else:
+                elif opacity_class == 'opacity-0':
                     logger.info('点击签到')
                     first_quest.click()
+                    time.sleep(random.randint(1, 3))
         finally:
             browser.close()
 

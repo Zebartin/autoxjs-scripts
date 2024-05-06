@@ -41,25 +41,28 @@ def main():
             logger.info('登录完成')
             # print(page.context.cookies())
             # 签到
+            check_count = 0
             while 1:
                 confirm = page.locator('span').get_by_text('确认')
                 if confirm.count() == 1:
                     logger.info('点击确认')
+                    check_count = 0
                     confirm.click()
-                    time.sleep(random.randint(1, 3))
-                    continue
-                first_quest = page.locator("#app-rewards .quests > div").first
-                imgs = first_quest.locator('img')
-                opacity_class = imgs.first.get_attribute('class').split()[-1]
-                if opacity_class == 'opacity-100':
-                    logger.info('已签到')
-                    print(page.locator('span').get_by_text('确认').locator('..').inner_html())
-                    # input()
-                    break
-                elif opacity_class == 'opacity-0':
-                    logger.info('点击签到')
-                    first_quest.click()
-                    time.sleep(random.randint(1, 3))
+                else:
+                    first_quest = page.locator("#app-rewards .quests > div").first
+                    imgs = first_quest.locator('img')
+                    opacity_class = imgs.first.get_attribute('class').split()[-1]
+                    if opacity_class == 'opacity-100':
+                        check_count += 1
+                        if check_count == 3:
+                            logger.info('已签到')
+                            # print(page.locator('span').get_by_text('确认').locator('..').inner_html())
+                            # input()
+                            break
+                    elif opacity_class == 'opacity-0':
+                        logger.info('点击签到')
+                        first_quest.click()
+                time.sleep(random.randint(1, 3))
         finally:
             browser.close()
 

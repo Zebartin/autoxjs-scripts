@@ -1129,7 +1129,7 @@ function interceptBattle(battleBtn, checkDamage) {
       e.bounds.bottom > img.height * 0.3
     );
     if (battleEnd != null) {
-      clickRect(getRandomArea(img, [0, 0, 1, 0.5]), 0.8, 0);
+      clickRect(getRandomArea(img, [0, 0, 1, 0.3]), 0.8, 0);
       return false;
     }
   }, 20, 1000);
@@ -1615,7 +1615,7 @@ function 单次咨询() {
         );
         if (cancelBtn) {
           cancelBtn.bounds.left = cancelBtn.bounds.right - 200;
-          clickRect(cancelBtn, 0.8, 0);
+          clickRect(cancelBtn, 0.5, 0);
           return false;
         }
       }, 30, 1000);

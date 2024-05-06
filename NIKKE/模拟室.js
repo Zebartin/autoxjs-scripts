@@ -710,10 +710,10 @@ function selectBuff(buffType, status) {
       clickRect(ocrUntilFound(res => res.find(e => e.text.includes('取')), 10, 300));
       sleep(600);
       doCancel();
-      status.newBuffs[bestBuff.name] = {
-        name: bestBuff.name,
-        level: 'SSR'
-      };
+      if (!(bestBuff.name in status.newBuffs)) {
+        status.loaded[bestBuff.name] = bestBuff;
+        status.loaded[bestBuff.name].level = 'SSR'; 
+      }
     }
   }
   sleep(1000);

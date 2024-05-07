@@ -56,12 +56,10 @@ def main():
                         check_count += 1
                         if check_count == 3:
                             logger.info('已签到')
-                            # print(page.locator('span').get_by_text('确认').locator('..').inner_html())
-                            # input()
                             break
                     elif opacity_class == 'opacity-0':
                         logger.info('点击签到')
-                        first_quest.click()
+                        first_quest.click(force=True)
                 time.sleep(random.randint(1, 3))
         finally:
             browser.close()

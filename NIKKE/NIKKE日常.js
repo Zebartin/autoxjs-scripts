@@ -17,17 +17,20 @@ if (typeof module === 'undefined') {
   checkConfig();
   启动NIKKE();
   // 保证申请截屏权限时，屏幕是游戏画面
-  for (let i = 0; i < 10; ++i) {
+  let i;
+  for (i = 0; i < 10; ++i) {
     let orientation = context.getResources().getConfiguration().orientation;
     if (orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT) {
-      break;
+      requestScreenCaptureAuto();
+      日常();
+      exit();
     }
     toast('脚本等待中...');
     sleep(3000);
   }
-  requestScreenCaptureAuto();
-  日常();
-  exit();
+  if (i == 10) {
+    toastLog('游戏不是竖屏状态，脚本退出');
+  }
 }
 else {
   module.exports = {
@@ -1566,7 +1569,7 @@ function 单次咨询() {
         log('识别到单选选项，点击消除');
         clickRect({ bounds: resultSingle[0] }, 0.8, 0);
       } else
-        clickRect(getRandomArea(img, [0, 0, 1, 0.4]), 0.8, 0);
+        clickRect(getRandomArea(img, [0, 0.1, 1, 0.4]), 0.8, 0);
       sleep(random(300, 1500));
     }
     let options = ocrUntilFound(res => {
@@ -1637,7 +1640,7 @@ function 单次咨询() {
         e.text.match(/[LAUTOG]/) == null && e.text.match(/SK.P/) != null
       );
       if (skipBtn == null) {
-        clickRect(getRandomArea(img, [0, 0, 1, 0.4]), 0.8, 0);
+        clickRect(getRandomArea(img, [0, 0.1, 1, 0.4]), 0.8, 0);
         sleep(random(0, 1000));
       }
       else

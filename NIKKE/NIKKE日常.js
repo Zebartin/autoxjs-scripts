@@ -1410,7 +1410,7 @@ function 咨询() {
 
 function 咨询页面识别(btnText, maxRetry) {
   下载咨询文本();
-  btnText = btnText || '咨询$';
+  btnText = btnText || '^[^快連德逮速遠]*咨询$';
   maxRetry = maxRetry || 5;
   const [btn, 查看花絮, 下一花絮, RANK] = ocrUntilFound((res, img) => {
     const btn = res.find(e =>
@@ -1435,6 +1435,7 @@ function 咨询页面识别(btnText, maxRetry) {
   if (RANK != null) {
     nameRect.top = RANK.bounds.top;
   }
+  let results = [];
   let name = '';
   let hasMax = false;
   let img = images.clip(
@@ -1465,11 +1466,16 @@ function 咨询页面识别(btnText, maxRetry) {
         childText.replace(/[i,\s]+$/, ''),
         Object.keys(advise)
       );
-      if (compared.similarity >= 0.5)
-        name = compared.result;
+      if (compared.similarity >= 0.5) {
+        if (compared.similarity == 0.5 && ['2B', 'A2', 'N102'].includes(compared.result))
+            continue;
+        results.push(compared);
+      }
     }
-    if (name)
+    if (results.length > 0) {
+      name = results.reduce((a, b) => a.similarity > b.similarity ? a : b).result;
       break;
+    }
     if (compared.similarity)
       log(`妮姬名OCR结果：${res.join(' ')}，匹配：${compared.result}，相似度${compared.similarity.toFixed(2)}`);
     if (scale < maxRetry)

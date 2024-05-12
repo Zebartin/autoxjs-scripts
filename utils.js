@@ -56,7 +56,7 @@ function getDisplaySize(doNotForcePortrait) {
   ];
 }
 function scaleBack(x, scale) {
-  if (!x.bounds)
+  if (!x || !x.bounds)
     return;
   x.bounds.left /= scale;
   x.bounds.right /= scale;

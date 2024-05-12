@@ -32,8 +32,8 @@ if (hourNow == 9 || hourNow == 10) {
   targetName = '【特惠】';
   costPoint = 300;
 }
-const firstSelector = className("android.widget.TextView").textContains(targetName);
-const confirmSelector = className("android.widget.TextView").textEndsWith(`${costPoint} 积分兑换`).depth(14);
+const firstSelector = className("android.widget.TextView").textContains(targetName).depth(11);
+const confirmSelector = className("android.widget.TextView").textEndsWith(`${costPoint} 积分兑换`).depth(12);
 firstSelector.waitFor();
 const matched = textStartsWith('赛季积分').findOne().text().match(/季[积枳]+分[：:\s]*(\d+)/);
 const remainPoint = matched ? parseInt(matched[1]) : 0;

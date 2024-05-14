@@ -508,59 +508,81 @@ function enterPwd(pwd) {
   }
 }
 
-function requestScreenCaptureAuto() {
+function requestScreenCaptureAuto(ensureImg) {
   let hasPermission = false;
-  //安卓版本高于Android 9
-  if (device.sdkInt > 28) {
-    //等待截屏权限申请并同意
-    threads.start(function () {
-      const ele = textMatches(/(.*录.[或\/]投.*|允许|立即开始|确定|统一)/).findOne(10 * 1000);
-      if (ele === null) {
-        console.error("未能发现截图权限弹窗");
+  let confirmRequest = () => {
+    //安卓版本高于Android 9
+    if (hasPermission || device.sdkInt <= 28) {
+      return;
+    }
+    const ele = textMatches(/(.*录.[或\/]投.*|允许|立即开始|确定|统一)/).findOne(10 * 1000);
+    if (ele === null) {
+      console.error("未能发现截图权限弹窗");
+    }
+    let target = null;
+    for (let i = 0; i < 10; ++i) {
+      sleep(200);
+      let t = null;
+      const cancel = textMatches(/(取消|禁止)/).find();
+      const confirm = textMatches(/(允许|确定|立即开始)/).find();
+      if (!confirm.empty() && confirm.get(0).text()) {
+        log('找到确定按钮');
+        t = confirm.get(0).bounds();
+      } else if (!cancel.empty()) {
+        log('找到取消按钮');
+        const cancelBounds = cancel.get(0).bounds();
+        t = new android.graphics.Rect(
+          device.width - cancelBounds.right,
+          cancelBounds.top,
+          device.width - cancelBounds.left,
+          cancelBounds.bottom
+        );
       }
-      let target = null;
-      for (let i = 0; i < 10; ++i) {
-        sleep(200);
-        let t = null;
-        const cancel = textMatches(/(取消|禁止)/).find();
-        const confirm = textMatches(/(允许|确定|立即开始)/).find();
-        if (!confirm.empty() && confirm.get(0).text()) {
-          log('找到确定按钮');
-          t = confirm.get(0).bounds();
-        } else if (!cancel.empty()) {
-          log('找到取消按钮');
-          const cancelBounds = cancel.get(0).bounds();
-          t = new android.graphics.Rect(
-            device.width - cancelBounds.right,
-            cancelBounds.top,
-            device.width - cancelBounds.left,
-            cancelBounds.bottom
-          );
-        }
-        if (t.top < t.bottom && (device.height == 0 || t.bottom <= device.height)) {
-          target = { bounds: t };
-          break;
-        }
+      if (t.top < t.bottom && (device.height == 0 || t.bottom <= device.height)) {
+        target = { bounds: t };
+        break;
       }
-      if (target === null) {
-        console.error('处理截图权限弹窗失败');
+    }
+    if (target === null) {
+      console.error('处理截图权限弹窗失败');
+      return;
+    }
+    log(`点击区域：${target.bounds}`);
+    for (let i = 0; i < 10; ++i) {
+      if (hasPermission)
         return;
-      }
-      log(`点击区域：${target.bounds}`);
-      for (let i = 0; i < 10; ++i) {
-        if (hasPermission)
-          return;
-        clickRect(target, 0.5, 0);
-        sleep(1000);
-      }
-    });
-  }
+      clickRect(target, 0.5, 0);
+      sleep(1000);
+    }
+  };
+  //等待截屏权限申请并同意
+  threads.start(confirmRequest);
   // 检查屏幕方向
   let orientation = context.getResources().getConfiguration().orientation;
   let isLandscape = (orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE);
   let isTablet = (device.width > device.height);    // 平板横边 > 竖边
   log(`申请截屏权限：${isLandscape ? '横' : '竖'}屏，设备类型：${isTablet ? '平板' : '手机'}`);
   if (!requestScreenCapture((isLandscape ^ isTablet) == 1)) {
+    toastLog("请求截图失败");
+    exit();
+  }
+  if (!ensureImg) {
+    hasPermission = true;
+    return;
+  }
+  const testImg = captureScreen();
+  if (ensureImg(testImg)) {
+    hasPermission = true;
+    return;
+  }
+  toastLog(`截图权限申请异常，截图大小：${testImg.width}x${testImg.height}`);
+  if (!images.stopScreenCapturer) {
+    exit();
+  }
+  log('重新申请截图权限');
+  images.stopScreenCapturer();
+  threads.start(confirmRequest);
+  if (!requestScreenCapture((isLandscape ^ isTablet) == 0)) {
     toastLog("请求截图失败");
     exit();
   }

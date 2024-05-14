@@ -21,7 +21,7 @@ if (typeof module === 'undefined') {
   for (i = 0; i < 10; ++i) {
     let orientation = context.getResources().getConfiguration().orientation;
     if (orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT) {
-      requestScreenCaptureAuto();
+      requestScreenCaptureAuto(img => img.width < img.height);
       日常();
       exit();
     }
@@ -1468,7 +1468,7 @@ function 咨询页面识别(btnText, maxRetry) {
       );
       if (compared.similarity >= 0.5) {
         if (compared.similarity == 0.5 && ['2B', 'A2', 'N102'].includes(compared.result))
-            continue;
+          continue;
         results.push(compared);
       }
     }
@@ -2259,7 +2259,10 @@ function missionPass() {
       e.text.match(/\d+次/) != null && e.bounds != null &&
       e.bounds.left <= img.width / 2 && e.bounds.top > taskBtn.bounds.bottom
     );
-    if (tasks.length < 3) {
+    let allCleared = res.find(e =>
+      e.text.match(/(CLEARED|[已己巳]完成)/) != null
+    );
+    if (tasks.length < 3 && allCleared == null) {
       clickRect(taskBtn, 1, 0);
       return false;
     }

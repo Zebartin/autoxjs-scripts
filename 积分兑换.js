@@ -51,7 +51,7 @@ if (remainPoint >= costPoint) {
   if (firstButton.text() == '抢光了')
     exit();
   var threadClose = threads.start(() => {
-    const closeSelector = text("关闭").depth(13);
+    const closeSelector = text("关闭").depth(11);
     while (true) {
       closeSelector.waitFor();
       remainPoint -= costPoint;

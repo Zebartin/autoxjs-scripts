@@ -111,6 +111,13 @@ function checkConfig() {
     exit();
   }
 }
+function findBackBtn(res, img) {
+  return res.find(e =>
+    e.text.match(/返?[回迴]$/) != null && e.bounds != null &&
+    e.bounds.right < img.width / 2 &&
+    e.bounds.bottom > img.height * 0.8
+  );
+}
 
 function 废铁商店() {
   const GOODS = {
@@ -655,26 +662,26 @@ function 基地收菜(doDailyMission) {
 function 好友() {
   // 一个好友都没有的话会出问题
   let [sendBtn, someFriend] = ocrUntilFound((res, img) => {
+    let send = res.find(e => e.text.endsWith('赠送') && e.text.match(/[每日发上限]/) == null);
+    let upper = res.find(e => e.text.includes('可以'));
+    if (send && upper) {
+      let f = res.find(e =>
+        e.text.match(/(分钟|小时|天|登入$)/) != null &&
+        e.bounds != null && e.bounds.top > upper.bounds.bottom &&
+        e.bounds.bottom < send.bounds.top
+      );
+      if (f)
+        return [send, f];
+    }
     let enterBtn = res.find(e =>
       e.text.includes('好友') && e.bounds != null &&
       e.bounds.left > img.width / 2
     );
     if (enterBtn != null) {
-      clickRect(enterBtn, 0, 5, 0);
-      return null;
+      clickRect(enterBtn, 0.3, 0);
+      sleep(500);
     }
-    let send = res.find(e => e.text.endsWith('赠送') && e.text.match(/[每日发上限]/) == null);
-    let upper = res.find(e => e.text.includes('可以'));
-    if (!send || !upper)
-      return null;
-    let f = res.find(e =>
-      e.text.match(/(分钟|小时|天|登入$)/) != null &&
-      e.bounds != null && e.bounds.top > upper.bounds.bottom &&
-      e.bounds.bottom < send.bounds.top
-    );
-    if (!f)
-      return null;
-    return [send, f];
+    return null;
   }, 30, 1000);
   // 等待列表加载
   ocrUntilFound(res => {
@@ -1682,20 +1689,22 @@ function 解放() {
   ];
   const PATTERN = new RegExp(TASK_LIST.map(({ regStr }) => regStr.source).join('|'));
   let inPage = ocrUntilFound((res, img) => {
-    if (res.text.includes('返回'))
+    if (findBackBtn(res,img))
       return true;
-    let liberateBtn = res.find(e => e.text == '解放');
-    if (liberateBtn != null) {
-      clickRect(liberateBtn, 1, 0);
-      sleep(2000);
-      return null;
-    }
     let nikkeBtn = res.find(e =>
       e.text == '妮姬' && e.bounds != null &&
       e.bounds.top >= img.height * 0.7
     );
-    if (nikkeBtn != null)
-      clickRect(nikkeBtn, 1, 0);
+    let liberateBtn = res.find(e => e.text == '解放');
+    if (nikkeBtn != null) {
+      if (liberateBtn != null) {
+        clickRect(liberateBtn, 1, 0);
+        sleep(2000);
+      } else {
+        clickRect(nikkeBtn, 1, 0);
+        sleep(1300);
+      }
+    }
     return null;
   }, 40, 700);
   if (inPage != true) {
@@ -1728,7 +1737,7 @@ function 解放() {
       return false;
     }
     let timeBound = res.find(e => e.text.match(/更新.*小时.{0,4}分钟/) != null);
-    if (timeBound == null && res.text.includes('返回') && !res.text.includes('AUT')) {
+    if (timeBound == null && findBackBtn(res, img) && !res.text.includes('AUT')) {
       let chineseStrs = res.toArray(3).toArray().filter(e =>
         e.text.match(/[\u4e00-\u9fa5]+/) != null
       );
@@ -1746,9 +1755,7 @@ function 解放() {
     if (taskChecked)
       return true;
     if (res.text.includes('AUT') || timeBound == null) {
-      let a = 0.75, b = 0.9;
-      let x = random() * (b - a) + a;
-      click(width / 2, height * x);
+      clickRect(getRandomArea(img, [0, 0.7, 1, 0.9]), 0.8, 0);
       sleep(1000);
       return false;
     }

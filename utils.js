@@ -15,6 +15,7 @@ else {
     getOcrRes: getOcrRes,
     getDisplaySize: getDisplaySize,
     killApp: killApp,
+    killSameScripts: killSameScripts,
     rgbToGray: rgbToGray,
     buildRegion: buildRegion,
     findContoursRect: findContoursRect,
@@ -466,6 +467,25 @@ function killApp(packageName) {
     back();
   }
 }
+
+function killSameScripts() {
+  const myEngine = engines.myEngine();
+  engines.all().forEach(e => {
+      if (e.getId() == myEngine.getId()) {
+          return;
+      }
+      if (e.getSource().toString() == myEngine.getSource().toString()) {
+          toastLog(`存在同名脚本，停止其运行：${e}`);
+          for (let i = 0; i < 10; ++i) {
+              e.forceStop();
+              if (e.isDestroyed())
+                  break;
+              sleep(500);
+          }
+      }
+  });
+}
+
 /**
  * 解锁屏幕
  */

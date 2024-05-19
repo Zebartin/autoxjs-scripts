@@ -7,7 +7,7 @@ var { 模拟室 } = require('./模拟室.js');
 var {
   scaleBack, ocrUntilFound, clickRect, swipeRandom, getRandomArea,
   findImageByFeature, requestScreenCaptureAuto, getDisplaySize,
-  findContoursRect, rgbToGray, imageColorCount
+  findContoursRect, rgbToGray, imageColorCount, killSameScripts
 } = require('./utils.js');
 let width, height;
 let advise = null;
@@ -15,6 +15,7 @@ let NIKKEstorage = storages.create("NIKKEconfig");
 if (typeof module === 'undefined') {
   auto.waitFor();
   checkConfig();
+  killSameScripts();
   启动NIKKE();
   // 保证申请截屏权限时，屏幕是游戏画面
   let i;
@@ -80,18 +81,23 @@ function 日常() {
       }
     }
   };
+  let interrupted = false;
   for (let task of todoTask) {
     if (!taskFunc[task]) {
       console.error(`没有名为"${task}"的任务`);
       continue;
     }
-    if (!retryFunc(taskFunc[task]))
+    if (!retryFunc(taskFunc[task])) {
+      interrupted = true;
       break;
+    }
   }
-  if (NIKKEstorage.get('exitGame', false))
-    退出NIKKE();
-  else
-    console.show();
+  if (!interrupted) {
+    if (NIKKEstorage.get('exitGame', false))
+      退出NIKKE();
+    else
+      console.show();
+  }
   if (images.stopScreenCapturer) {
     images.stopScreenCapturer();
   }
@@ -1689,7 +1695,7 @@ function 解放() {
   ];
   const PATTERN = new RegExp(TASK_LIST.map(({ regStr }) => regStr.source).join('|'));
   let inPage = ocrUntilFound((res, img) => {
-    if (findBackBtn(res,img))
+    if (findBackBtn(res, img))
       return true;
     let nikkeBtn = res.find(e =>
       e.text == '妮姬' && e.bounds != null &&

@@ -1,7 +1,8 @@
 var {
   启动NIKKE, 等待NIKKE加载, 退出NIKKE,
   mostSimilar, 返回首页, 关闭限时礼包,
-  detectNikkes, NikkeToday, checkAuto
+  detectNikkes, NikkeToday, checkAuto,
+  reportEvent
 } = require('./NIKKEutils.js');
 var { 模拟室 } = require('./模拟室.js');
 var {
@@ -16,6 +17,7 @@ if (typeof module === 'undefined') {
   auto.waitFor();
   checkConfig();
   killSameScripts();
+  reportEvent();
   启动NIKKE();
   // 保证申请截屏权限时，屏幕是游戏画面
   let i;
@@ -54,17 +56,21 @@ function 日常() {
   };
   let alreadyRetry = 0;
   const maxRetry = NIKKEstorage.get('maxRetry', 1);
-  let retryFunc = (func) => {
+  let retryFunc = (taskName) => {
     for (; alreadyRetry <= maxRetry; ++alreadyRetry) {
       try {
         等待NIKKE加载();
-        func();
+        taskFunc[taskName]();
         return true;
       } catch (error) {
         if (!error.message.includes('InterruptedException')) {
           toast(error.message);
           console.error(error.message);
           console.error(error.stack);
+          reportEvent('error', {
+            task: taskName,
+            tagName: NIKKEstorage.get('tagName', '无记录'),
+          });
           // 保存出错截图
           let filename = files.path(`./images/nikkerror/${Date.now()}.jpg`);
           images.save(captureScreen(), filename);
@@ -87,7 +93,7 @@ function 日常() {
       console.error(`没有名为"${task}"的任务`);
       continue;
     }
-    if (!retryFunc(taskFunc[task])) {
+    if (!retryFunc(task)) {
       interrupted = true;
       break;
     }

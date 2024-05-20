@@ -5,5 +5,6 @@
 
 新增功能：
 - 脚本开始运行时停止同名脚本；
+- 用户事件统计上报；
 
 具体使用方式详见[README](https://github.com/Zebartin/autoxjs-scripts/blob/master/NIKKE/README.md)。

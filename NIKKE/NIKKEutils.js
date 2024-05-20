@@ -25,6 +25,7 @@ else {
     启动NIKKE: 启动NIKKE,
     等待NIKKE加载: 等待NIKKE加载,
     退出NIKKE: 退出NIKKE,
+    reportEvent: reportEvent,
     返回首页: 返回首页,
     mostSimilar: mostSimilar,
     detectNikkes: detectNikkes,
@@ -191,6 +192,45 @@ function 退出NIKKE() {
   }
 }
 
+function getUserId() {
+  const NIKKEstorage = storages.create("NIKKEconfig");
+  let userId = NIKKEstorage.get('userId', null);
+  if (userId == null) {
+    importClass(java.util.UUID);
+    userId = UUID.randomUUID().toString();
+    NIKKEstorage.put('userId', userId);
+  }
+  console.log('userId: ', userId);
+  return userId;
+}
+function reportEvent(eventName, props) {
+  eventName = eventName || 'pageview';
+  props = props || {};
+  log(`上报事件：${eventName}, ${JSON.stringify(props)}`);
+  props['sdkInt'] = device.sdkInt;
+  props['release'] = device.release;
+  props['userId'] = getUserId();
+  const [w, h] = getDisplaySize();
+  props['screen_width'] = w;
+  props['screen_height'] = h;
+  const u = 'https://plausible.blindfirefly.top/api/event';
+  try {
+    const r = http.postJson(u, {
+      domain: 'nikke-scripts',
+      name: eventName,
+      url: 'app://nikke-scripts',
+      props: props
+    }, {
+      headers: {
+        'User-Agent': props['userId'],
+        'X-Forwarded-For': '127.0.0.1', // 可能涉及到代理，不统计IP
+      }
+    });
+    log(`上报事件${eventName}：${r.body.string()}`);
+  } catch (e) {
+    console.error(`上报事件${eventName}失败：${e.message}`);
+  }
+}
 
 function 返回首页(checkSale, beforeHook) {
   const homeImage = images.read('./images/home.jpg');

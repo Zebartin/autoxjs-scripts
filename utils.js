@@ -42,6 +42,14 @@ function getOcrRes() {
 }
 
 function getDisplaySize(doNotForcePortrait) {
+  try {
+    const img = captureScreen();
+    return [img.width, img.height];
+  } catch (e) {
+    if (!e.message.includes('No screen capture permission')) {
+      throw e;
+    }
+  }
   let { width, height } = device;
   if (width == 0) {
     // console.warn('AutoX.js获取到的设备尺寸为0，可能会影响正常运行，可以尝试重启设备');
@@ -471,18 +479,18 @@ function killApp(packageName) {
 function killSameScripts() {
   const myEngine = engines.myEngine();
   engines.all().forEach(e => {
-      if (e.getId() == myEngine.getId()) {
-          return;
+    if (e.getId() == myEngine.getId()) {
+      return;
+    }
+    if (e.getSource().toString() == myEngine.getSource().toString()) {
+      toastLog(`存在同名脚本，停止其运行：${e}`);
+      for (let i = 0; i < 10; ++i) {
+        e.forceStop();
+        if (e.isDestroyed())
+          break;
+        sleep(500);
       }
-      if (e.getSource().toString() == myEngine.getSource().toString()) {
-          toastLog(`存在同名脚本，停止其运行：${e}`);
-          for (let i = 0; i < 10; ++i) {
-              e.forceStop();
-              if (e.isDestroyed())
-                  break;
-              sleep(500);
-          }
-      }
+    }
   });
 }
 

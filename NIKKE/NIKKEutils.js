@@ -510,7 +510,7 @@ function detectNikkes(originalImg, options) {
     thresh: options.thresh || 200,
     region: options.region,
     rectFilter: rect => {
-      if (rect.width() < 200)
+      if (rect.width() * 5 < originalImg.width)
         return false;
       if (rect.width() * 2.5 < rect.height())
         return false;

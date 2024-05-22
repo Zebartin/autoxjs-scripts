@@ -455,10 +455,17 @@ function killApp(packageName) {
       return false;
     }
   }
-  app.openAppSetting(name);
-  while (text(app.getAppName(name)).findOne(2000) == null) {
-    back();
+  let i = 0;
+  for (i = 0; i < 10; ++i) {
     app.openAppSetting(name);
+    let t = text(app.getAppName(name)).packageName("com.android.settings").findOne(2000);
+    if (t != null)
+      break;
+    home();
+  }
+  if (i == 10) {
+    console.error('无法打开设置页面');
+    return;
   }
   let is_sure = textMatches(/.*(强行|停止|结束).{0,3}/).findOne(2000);
   while (is_sure != null && !is_sure.clickable())
@@ -466,7 +473,7 @@ function killApp(packageName) {
   if (is_sure != null && is_sure.enabled()) {
     is_sure.click();
     sleep(1000);
-    textMatches(/(确[定认]|(强行|停止|结束).{0,3})/).click();
+    textMatches(/(确[定认]|(强行|停止|结束).{0,3})/).findOne(1000).click();
     log(app.getAppName(name) + "应用已被关闭");
     sleep(1000);
     back();

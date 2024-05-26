@@ -1,11 +1,8 @@
 修复以下问题：
 
-- 某些分辨率下无法进入好友页面；
-- 进入解放页面时误入活动页面（修复效果待验证）；
-- 识别妮姬box失败；
+- 结束应用失败；
+- 爬塔战斗结束后卡住；
 
 新增功能：
-- 脚本开始运行时停止同名脚本；
-- 用户事件统计上报；
 
 具体使用方式详见[README](https://github.com/Zebartin/autoxjs-scripts/blob/master/NIKKE/README.md)。

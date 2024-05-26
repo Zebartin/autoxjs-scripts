@@ -445,7 +445,6 @@ function imageColorCount(image, color, threshold) {
   log(`Color count(${color}): ${inRangeCount}/${image.getWidth() * image.getHeight()}`);
   return inRangeCount;
 }
-
 function killApp(packageName) {
   var name = getPackageName(packageName);
   if (!name) {
@@ -461,7 +460,8 @@ function killApp(packageName) {
     let t = text(app.getAppName(name)).packageName("com.android.settings").findOne(2000);
     if (t != null)
       break;
-    home();
+    back();
+    sleep(300);
   }
   if (i == 10) {
     console.error('无法打开设置页面');

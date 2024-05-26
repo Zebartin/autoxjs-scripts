@@ -754,7 +754,7 @@ function 爬塔() {
       let tower = res.find(e =>
         e.text.endsWith('之塔') && e.bounds.top > height / 2
       );
-      let times = res.text.match(/[余关]次[^\d]+(\d)\/3/);
+      let times = res.text.match(/[余关]次[^\d]+(\d)[1\/]3/);
       if (!tower || !times)
         return null;
       return [tower.text, parseInt(times[1])];
@@ -795,29 +795,64 @@ function 爬塔() {
     for (let j = 0; j < cnt; ++j) {
       checkAuto();
       sleep(20 * 1000);
-      ocrUntilFound(res => {
+      let result = ocrUntilFound(res => {
         if (res.text.includes('AUT')) {
           sleep(4000);
           return false;
         }
-        if (res.text.includes('REWARD') || res.text.includes('FAIL'))
-          return true;
+        if (res.text.includes('REWARD'))
+          return 'ok';
+        if (res.text.includes('FAIL'))
+          return 'failed';
       }, 30, 2000);
-      sleep(1000);
-      let endCombat = ocrUntilFound(res => res.find(
-        e => e.text.match(/(下[^步方法]{2}|返回)/) != null
-      ), 30, 500, { maxScale: 4 });
-      if (endCombat.text.includes('返回')) {
-        clickRect(endCombat, 1, 300);
+      if (result == 'failed') {
+        let backBtn = null;
+        for (let k = 0; k < 30; ++k) {
+          let img = captureScreen();
+          let startY = Math.max(img.height * 0.8, img.height - 300);
+          img = images.clip(img, 0, startY, img.width, img.height - startY);
+          let res = gmlkit.ocr(img, 'zh');
+          backBtn = res.find(e=>e.text == '返回');
+          img.recycle();
+          if (backBtn != null) {
+            backBtn.bounds.top += startY;
+            backBtn.bounds.bottom += startY;
+            break;
+          }
+          sleep(700);
+        }
+        clickRect(backBtn, 1, 300);
         toastLog('作战失败');
         break;
+      } else if (result != 'ok') {
+        log('未能识别到战斗结束');
+        clickRect(getRandomArea(img, [0, 0, 1, 0.5]), 0.8, 300);
+        break;
       }
-      if (colors.blue(captureScreen().pixel(endCombat.bounds.left, endCombat.bounds.top)) < 200) {
-        clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 10, 600), 1, 300);
+      let nextBtn = null;
+      for (let k = 0; k < 30; ++k) {
+        let img = captureScreen();
+        let startX = img.width / 2;
+        let startY = Math.max(img.height * 0.8, img.height - 300);
+        img = images.clip(img, startX, startY, img.width - startX, img.height - startY);
+        let res = gmlkit.ocr(img, 'zh');
+        nextBtn = res.find(e=>e.text.match(/下[^步方法]{2}/) != null);
+        img.recycle();
+        if (nextBtn != null) {
+          nextBtn.bounds.left += startX;
+          nextBtn.bounds.right += startX;
+          nextBtn.bounds.top += startY;
+          nextBtn.bounds.bottom += startY;
+          break;
+        }
+        sleep(700);
+      }
+      if (colors.blue(captureScreen().pixel(nextBtn.bounds.left, nextBtn.bounds.top)) < 200) {
+        clickRect(getRandomArea(captureScreen(), [0, 0, 1, 0.5]), 0.8, 300);
         toastLog('每日次数已用完');
         break;
       }
-      clickRect(endCombat);
+      clickRect(nextBtn);
       toastLog('下一关卡');
       successFlag = true;
     }

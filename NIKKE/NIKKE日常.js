@@ -1057,6 +1057,8 @@ function getInterceptionTeams() {
   }, 10, 600);
   let img;
   let contours = [];
+  const regionWidth = info.bounds.right - title.bounds.right;
+  const regionHeight = title.bounds.bottom - info.bounds.bottom;
   for (let t = 0; t < 10; ++t) {
     let thresh = random(180, 210);
     img = captureScreen();
@@ -1069,10 +1071,10 @@ function getInterceptionTeams() {
       ],
       type: "BINARY_INV",
       rectFilter: rect => {
-        if (Math.abs(rect.width() - 100) > 20)
-          return false;
-        if (Math.abs(rect.height() - 80) > 20)
-          return false;
+        if (rect.width() * 5 >= regionWidth || rect.width() * 6.5 <= regionWidth)
+            return false;
+        if (rect.height() * 2.5 <= regionHeight || rect.height() >= regionHeight * 0.9)
+            return false;
         return true;
       },
       // debug: true,

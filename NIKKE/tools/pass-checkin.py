@@ -43,13 +43,13 @@ def main():
             # 签到
             check_count = 0
             while 1:
-                confirm = page.locator('span').get_by_text('确认')
+                confirm = page.locator('div').get_by_text('确认', exact=True)
                 if confirm.count() == 1:
                     logger.info('点击确认')
                     check_count = 0
                     confirm.click()
                 else:
-                    first_quest = page.locator("#app-rewards .quests > div").first
+                    first_quest = page.locator("#app-points > div > div > div > div:nth-child(2) > div.mt-\[var\(--dc-28\)\] > div > div:nth-child(1)").first
                     imgs = first_quest.locator('img')
                     opacity_class = imgs.first.get_attribute('class').split()[-1]
                     if opacity_class == 'opacity-100':

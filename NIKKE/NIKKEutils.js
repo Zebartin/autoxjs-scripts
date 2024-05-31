@@ -110,7 +110,7 @@ function 等待NIKKE加载() {
   if (ocrUntilFound(res => {
     if (res.text.match(/(密|验证)码/) != null) {
       toastLog('未登录游戏，停止运行脚本');
-      退出NIKKE();
+      home();
       exit();
     }
     else if (res.text.includes('不再显')) {

@@ -490,7 +490,7 @@ function killSameScripts() {
       return;
     }
     if (e.getSource().toString() == myEngine.getSource().toString()) {
-      toastLog(`存在同名脚本，停止其运行：${e}`);
+      log(`存在同名脚本，停止其运行：${e}`);
       for (let i = 0; i < 10; ++i) {
         e.forceStop();
         if (e.isDestroyed())
@@ -610,7 +610,7 @@ function requestScreenCaptureAuto(ensureImg) {
     hasPermission = true;
     return;
   }
-  toastLog(`截图权限申请异常，截图大小：${testImg.width}x${testImg.height}`);
+  log(`截图权限申请异常，截图大小：${testImg.width}x${testImg.height}`);
   if (!images.stopScreenCapturer) {
     exit();
   }

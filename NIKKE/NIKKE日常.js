@@ -613,6 +613,26 @@ function dispatch(bulletin) {
         return null;
       return [t1, t2];
     }, 30, 1000);
+    // 选择珍藏品派遣
+    ocrUntilFound((res, img) => {
+      const selectBtns = res.filter(e =>
+        e.text.match(/选/) != null
+      ).toArray();
+      if (selectBtns.length == 0)
+        return true;
+      const confirm = selectBtns.find(e =>
+        e.bounds.top > img.height * 0.5 &&
+        e.bounds.right > img.width * 0.5
+      );
+      if (confirm) {
+        // 可能识别为“取消 >派遣选择”
+        confirm.bounds.left += confirm.bounds.width() * 0.7;
+        clickRect(confirm, 1, 0);
+        return false;
+      }
+      clickRect(selectBtns[0], 1, 0);
+      return false;
+    }, 15, 700);
     if (colors.red(captureScreen().pixel(receive.bounds.right, receive.bounds.top)) < 100) {
       toastLog('全部领取');
       clickRect(receive);
@@ -812,7 +832,7 @@ function 爬塔() {
           let startY = Math.max(img.height * 0.8, img.height - 300);
           img = images.clip(img, 0, startY, img.width, img.height - startY);
           let res = gmlkit.ocr(img, 'zh');
-          backBtn = res.find(e=>e.text == '返回');
+          backBtn = res.find(e => e.text == '返回');
           img.recycle();
           if (backBtn != null) {
             backBtn.bounds.top += startY;
@@ -836,7 +856,7 @@ function 爬塔() {
         let startY = Math.max(img.height * 0.8, img.height - 300);
         img = images.clip(img, startX, startY, img.width - startX, img.height - startY);
         let res = gmlkit.ocr(img, 'zh');
-        nextBtn = res.find(e=>e.text.match(/下[^步方法]{2}/) != null);
+        nextBtn = res.find(e => e.text.match(/下[^步方法]{2}/) != null);
         img.recycle();
         if (nextBtn != null) {
           nextBtn.bounds.left += startX;
@@ -1072,9 +1092,9 @@ function getInterceptionTeams() {
       type: "BINARY_INV",
       rectFilter: rect => {
         if (rect.width() * 5 >= regionWidth || rect.width() * 6.5 <= regionWidth)
-            return false;
+          return false;
         if (rect.height() * 2.5 <= regionHeight || rect.height() >= regionHeight * 0.9)
-            return false;
+          return false;
         return true;
       },
       // debug: true,

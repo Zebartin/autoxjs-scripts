@@ -51,7 +51,9 @@ function getDisplaySize(doNotForcePortrait) {
     const img = captureScreen();
     return [img.width, img.height];
   } catch (e) {
-    if (!e.message.includes('No screen capture permission')) {
+    const errorStr = e.toString();
+    if (!errorStr.includes('No screen capture permission') &&
+      !errorStr.includes('ScreenCapturer is not available')) {
       throw e;
     }
   }
@@ -551,7 +553,25 @@ function enterPwd(pwd) {
 }
 
 function requestScreenCaptureAuto(ensureImg) {
+  let testImg;
+  try {
+    testImg = captureScreen();
+    if (!ensureImg || ensureImg(testImg))
+      return;
+    log(`截图异常，截图大小：${testImg.width}x${testImg.height}`);
+    if (!images.stopScreenCapturer) {
+      exit();
+    }
+    images.stopScreenCapturer();
+  } catch (e) {
+    const errorStr = e.toString();
+    if (!errorStr.includes('No screen capture permission') &&
+      !errorStr.includes('ScreenCapturer is not available')) {
+      throw e;
+    }
+  }
   let hasPermission = false;
+  const [w, h] = getDisplaySize();
   let confirmRequest = () => {
     //安卓版本高于Android 9
     if (hasPermission || device.sdkInt <= 28) {
@@ -574,13 +594,15 @@ function requestScreenCaptureAuto(ensureImg) {
         log('找到取消按钮');
         const cancelBounds = cancel.get(0).bounds();
         t = new android.graphics.Rect(
-          device.width - cancelBounds.right,
+          w - cancelBounds.right,
           cancelBounds.top,
-          device.width - cancelBounds.left,
+          w - cancelBounds.left,
           cancelBounds.bottom
         );
       }
-      if (t.top < t.bottom && (device.height == 0 || t.bottom <= device.height)) {
+      if (t)
+        log(t);
+      if (t && t.top < t.bottom && (h == 0 || t.top <= h + 200)) {
         target = { bounds: t };
         break;
       }
@@ -589,7 +611,6 @@ function requestScreenCaptureAuto(ensureImg) {
       console.error('处理截图权限弹窗失败');
       return;
     }
-    log(`点击区域：${target.bounds}`);
     for (let i = 0; i < 10; ++i) {
       if (hasPermission)
         return;
@@ -612,7 +633,7 @@ function requestScreenCaptureAuto(ensureImg) {
     hasPermission = true;
     return;
   }
-  const testImg = captureScreen();
+  testImg = captureScreen();
   if (ensureImg(testImg)) {
     hasPermission = true;
     return;

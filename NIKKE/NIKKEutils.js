@@ -2,7 +2,7 @@ var {
   ocrUntilFound, clickRect, unlockIfNeed,
   requestScreenCaptureAuto, getDisplaySize,
   killApp, findImageByFeature, findContoursRect,
-  rgbToGray
+  rgbToGray, getRandomArea, ocrInfo
 } = require('./utils.js');
 var firstBoot = true;
 var firstCheckAuto = true;
@@ -22,6 +22,7 @@ if (typeof module === 'undefined') {
 }
 else {
   module.exports = {
+    saveError: saveError,
     启动NIKKE: 启动NIKKE,
     等待NIKKE加载: 等待NIKKE加载,
     退出NIKKE: 退出NIKKE,
@@ -34,9 +35,30 @@ else {
     checkAuto: checkAuto,
   };
 }
+function saveError(error) {
+  const errorPath = files.path(`./nikkerror/${Date.now()}/`);
+  const errorStrs = [
+    `当前脚本版本：${NIKKEstorage.get('tagName', '无记录')}`,
+    error.message,
+    error.stack
+  ];
+  files.ensureDir(errorPath);
+  if (ocrInfo.img) {
+    images.save(ocrInfo.img, files.join(errorPath, 'error.png'));
+  }
+  if (ocrInfo.result) {
+    errorStrs.push('');
+    const res = ocrInfo.result.toArray(3);
+    for (let i = 0; i < res.length; ++i) {
+      errorStrs.push(`${res[i].bounds}\t"${res[i].text}"`);
+    }
+  }
+  files.write(files.join(errorPath, 'log.txt'), errorStrs.join('\n'));
+  log(`出错日志已保存到${errorPath}`);
+}
 function 启动NIKKE() {
   let NIKKEstorage = storages.create("NIKKEconfig");
-  let errorPath = files.path('./images/nikkerror/');
+  let errorPath = files.path('./nikkerror/');
   files.ensureDir(errorPath);
   if (firstBoot && NIKKEstorage.get('alreadyInGame', false)) {
     toastLog('已勾选“游戏已启动”选项\n请确保游戏此时正处于前台画面');
@@ -48,12 +70,19 @@ function 启动NIKKE() {
   home();
   sleep(500);
   // 保证错误截图不要过多
-  let maxErr = 20;
-  let errorImages = files.listDir(errorPath);
-  if (errorImages.length >= maxErr) {
-    errorImages.sort((a, b) => parseInt(b.split('.')[0]) - parseInt(a.split('.')[0]));
-    for (let f of errorImages.slice(maxErr))
-      files.remove(files.join(errorPath, f));
+  let maxErr = 10;
+  let errorDirs = files.listDir(errorPath);
+  if (errorDirs.length >= maxErr) {
+    errorDirs.sort((a, b) => parseInt(b.split('.')[0]) - parseInt(a.split('.')[0]));
+    for (let f of errorDirs.slice(maxErr)) {
+      log(`删除过期错误日志：${f}`);
+      let fp = files.join(errorPath, f);
+      if (files.isFile(fp)) {
+        files.remove(fp);
+      } else if (files.isDir(fp)) {
+        files.removeDir(files.join(errorPath, f));
+      }
+    }
   }
   if (NIKKEstorage.get('mute', false)) {
     try {
@@ -107,6 +136,8 @@ function 启动NIKKE() {
 function 等待NIKKE加载() {
   let [width, height] = getDisplaySize();
   let manuallyEnter = true;
+  const continueBtn = getRandomArea(captureScreen(), [0.2, 0.2, 0.8, 0.8]);
+  continueBtn.text = 'TOUCH TO CONTINUE';
   if (ocrUntilFound(res => {
     if (res.text.match(/(密|验证)码/) != null) {
       toastLog('未登录游戏，停止运行脚本');
@@ -137,7 +168,7 @@ function 等待NIKKE加载() {
       sleep(20000);
     }
     else if (res.text.match(/(登出|T.UCH|C.NT.NUE)/) != null) {
-      click(width / 2, height / 2);
+      clickRect(continueBtn, 1, 0);
       manuallyEnter = false;
     }
     else if (res.text.match(/(大厅|员招|物品栏)/) != null) {

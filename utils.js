@@ -1,9 +1,14 @@
 const 手机锁屏密码 = '';
+var ocrInfo = {
+  result: null,
+  img: null
+};
 if (typeof module === 'undefined') {
   getOcrRes();
 }
 else {
   module.exports = {
+    ocrInfo: ocrInfo,
     scaleBack: scaleBack,
     ocrUntilFound: ocrUntilFound,
     clickRect: clickRect,
@@ -97,11 +102,13 @@ function ocrUntilFound(found, retry, interval, options) {
       img && img.recycle();
       img = newImg;
     }
-    let ocrRes = gmlkit.ocr(img, "zh");
-    if (ocrRes == null || ocrRes.text == null)
+    // 回收上一张图
+    ocrInfo.img && ocrInfo.img.recycle();
+    ocrInfo.img = img;
+    ocrInfo.result = gmlkit.ocr(img, "zh");
+    if (ocrInfo.result == null || ocrInfo.result.text == null)
       continue;
-    let res = found(ocrRes, img, scale);
-    img && img.recycle();
+    let res = found(ocrInfo.result, img, scale);
     if (res || res === 0) {
       if (scale > 1) {
         if (Array.isArray(res)) {

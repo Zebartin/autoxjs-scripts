@@ -2,7 +2,7 @@ var {
   启动NIKKE, 等待NIKKE加载, 退出NIKKE,
   mostSimilar, 返回首页, 关闭限时礼包,
   detectNikkes, NikkeToday, checkAuto,
-  reportEvent
+  reportEvent, saveError
 } = require('./NIKKEutils.js');
 var { 模拟室 } = require('./模拟室.js');
 var {
@@ -67,15 +67,14 @@ function 日常() {
           toast(error.message);
           console.error(error.message);
           console.error(error.stack);
-          reportEvent('error', {
-            task: taskName,
-            tagName: NIKKEstorage.get('tagName', '无记录'),
-          });
-          // 保存出错截图
-          let filename = files.path(`./images/nikkerror/${Date.now()}.jpg`);
-          images.save(captureScreen(), filename);
-          log(`出错截图已保存到${filename}`);
-          log(`当前脚本版本：${NIKKEstorage.get('tagName', '无记录')}`)
+          if (!error.message.includes('加载')) {
+            reportEvent('error', {
+              task: taskName,
+              tagName: NIKKEstorage.get('tagName', '无记录'),
+            });
+            // 保存出错内容
+            saveError(error);
+          }
           if (alreadyRetry != maxRetry) {
             toastLog(`脚本出错，即将重试(${alreadyRetry + 1}/${maxRetry})`);
             sleep(3000);

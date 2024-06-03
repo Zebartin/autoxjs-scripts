@@ -855,8 +855,16 @@ function 爬塔() {
         let startY = Math.max(img.height * 0.8, img.height - 300);
         img = images.clip(img, startX, startY, img.width - startX, img.height - startY);
         let res = gmlkit.ocr(img, 'zh');
-        nextBtn = res.find(e => e.text.match(/下[^步方法]{2}/) != null);
         img.recycle();
+        nextBtn = res.find(e => e.text.match(/下[^步方法]{2}/) != null);
+        if (nextBtn == null) {
+          nextBtn = res.find(e => e.text.match(/余/) != null);
+          if (nextBtn != null) {
+            const h = nextBtn.bounds.height();
+            nextBtn.bounds.top -= h;
+            nextBtn.bounds.bottom -= h;
+          }
+        }
         if (nextBtn != null) {
           nextBtn.bounds.left += startX;
           nextBtn.bounds.right += startX;
@@ -865,6 +873,12 @@ function 爬塔() {
           break;
         }
         sleep(700);
+      }
+      if (!nextBtn) {
+        console.error('找不到下一关卡按钮');
+        saveError(new Error('找不到下一关卡按钮'));
+        clickRect(getRandomArea(captureScreen(), [0, 0, 1, 0.5]), 0.8, 300);
+        break;
       }
       if (colors.blue(captureScreen().pixel(nextBtn.bounds.left, nextBtn.bounds.top)) < 200) {
         clickRect(getRandomArea(captureScreen(), [0, 0, 1, 0.5]), 0.8, 300);
@@ -1650,7 +1664,7 @@ function 单次咨询() {
         log('识别到单选选项，点击消除');
         clickRect({ bounds: resultSingle[0] }, 0.8, 0);
       } else
-        clickRect(getRandomArea(img, [0, 0.1, 1, 0.4]), 0.8, 0);
+        clickRect(getRandomArea(img, [0, 0.1, 1, 0.4]), 0.6, 0);
       sleep(random(300, 1500));
     }
     let options = ocrUntilFound(res => {
@@ -1671,7 +1685,7 @@ function 单次咨询() {
     }, 10, 300) || ["", ""];
     let whichOne = null, similarOne = -1;
     for (let k = 0; k < 2; ++k) {
-      options[k] = options[k].replace(/[❤,，:：\.。…\?\!？！、「」～~☆【】《》♪\s-\—]/g, '');
+      options[k] = options[k].replace(/["❤♥,，:：\.。…\?\!？！、「」～~☆【】《》♪\s-\—]/g, '');
       let t = mostSimilar(options[k], advise[name]);
       log(`选项${k + 1}："${options[k]}"`);
       log(`匹配："${t.result}"，相似度${t.similarity.toFixed(2)}`);
@@ -1721,7 +1735,7 @@ function 单次咨询() {
         e.text.match(/[LAUTOG]/) == null && e.text.match(/SK.P/) != null
       );
       if (skipBtn == null) {
-        clickRect(getRandomArea(img, [0, 0.1, 1, 0.4]), 0.8, 0);
+        clickRect(getRandomArea(img, [0, 0.1, 1, 0.4]), 0.6, 0);
         sleep(random(0, 1000));
       }
       else

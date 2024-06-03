@@ -143,7 +143,95 @@ function 启动NIKKE() {
   log("打开NIKKE");
   // waitForActivity('com.shiftup.nk.MainActivity');
 }
-
+function checkInLIP() {
+  const today = NikkeToday();
+  const lastChecked = NIKKEstorage.get('checkInLIP', null);
+  if (today == lastChecked) {
+    log('今日LIP已签到');
+    return;
+  }
+  // 领取超值好礼 -> tap to enter
+  const enterLIP = ocrUntilFound(res => {
+    const tapToEnter = res.find(e =>
+      e.text.match(/tap\s*t.\s*enter/i) != null
+    );
+    if (tapToEnter) {
+      return tapToEnter;
+    }
+    const annoucementBtn = res.find(e =>
+      e.text.match(/(系[统統]|活动)公告/) != null
+    );
+    if (!annoucementBtn) {
+      return false;
+    }
+    const entrance = res.find(e =>
+      e.text.match(/(.[取]..好.)/) != null &&
+      e.bounds != null &&
+      e.bounds.top > annoucementBtn.bounds.bottom
+    );
+    if (entrance) {
+      clickRect(entrance, 1, 0);
+      return false;
+    }
+  }, 3, 700);
+  if (!enterLIP) {
+    log('没有找到Level Infinite Pass入口');
+    return;
+  }
+  // tap to enter -> 奖励页面
+  ocrUntilFound(res => {
+    const tapToEnter = res.find(e =>
+      e.text.match(/tap\s*t.\s*enter/i) != null
+    );
+    if (tapToEnter) {
+      clickRect(tapToEnter, 1, 0);
+      return false;
+    }
+    return true;
+  }, 10, 1000);
+  sleep(3000);
+  // 反复点“每日签到/确认”
+  const checked = ocrUntilFound(res => {
+    const confirm = text('确认').findOnce();
+    if (confirm) {
+      clickRect({
+        bounds: confirm.bounds(),
+        text: confirm.text()
+      }, 1, 0);
+      return false;
+    }
+    if (res.text.match(/(请明日|明日再)/) != null) {
+      return true;
+    }
+    const checkIn = text('每日签到').findOnce();
+    if (!checkIn) {
+      sleep(2200);
+      return false;
+    }
+    clickRect({
+      bounds: checkIn.bounds(),
+      text: checkIn.text()
+    }, 1, 0);
+  }, 30, 800);
+  if (checked) {
+    log('签到成功');
+    NIKKEstorage.put('checkInLIP', today);
+  }
+  else {
+    log('签到失败');
+  }
+  // 返回公告页面
+  ocrUntilFound(res => {
+    const annoucementBtn = res.find(e =>
+      e.text.match(/(系[统統]|活动)公告/) != null
+    );
+    if (annoucementBtn) {
+      return true;
+    }
+    back();
+    sleep(1600);
+  }, 10, 800);
+}
 function 等待NIKKE加载() {
   let [width, height] = getDisplaySize();
   let manuallyEnter = true;
@@ -217,6 +305,7 @@ function 等待NIKKE加载() {
     return false;
   }, 20, 4000) == null)
     throw new Error('没有出现游戏公告');
+  checkInLIP();
   sleep(1000);
   back();
   toastLog('关闭公告');

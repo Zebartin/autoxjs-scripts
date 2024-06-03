@@ -269,6 +269,7 @@ function 等待NIKKE加载() {
     else if (res.text.match(/(登出|T.UCH|C.NT.NUE)/) != null) {
       clickRect(continueBtn, 1, 0);
       manuallyEnter = false;
+      sleep(3000);
     }
     else if (res.text.match(/(大厅|员招|物品栏)/) != null) {
       if (manuallyEnter == false)

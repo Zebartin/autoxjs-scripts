@@ -597,7 +597,7 @@ function dispatch(bulletin) {
     let ret = res.text.match(/(时间|完成|目前)/);
     if (ret == null) {
       clickRect(bulletin, 0.3, 0);
-      sleep(500);
+      sleep(1500);
     }
     return ret;
   }, 20, 500);
@@ -630,6 +630,7 @@ function dispatch(bulletin) {
         return false;
       }
       clickRect(selectBtns[0], 1, 0);
+      sleep(1300);
       return false;
     }, 15, 700);
     if (colors.red(captureScreen().pixel(receive.bounds.right, receive.bounds.top)) < 100) {

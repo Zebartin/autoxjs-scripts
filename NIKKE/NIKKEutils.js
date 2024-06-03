@@ -96,11 +96,22 @@ function 启动NIKKE() {
   }
   // 自行启动v2rayNG科学上网
   if (NIKKEstorage.get('v2rayNG', false) && app.launchApp("v2rayNG")) {
+    let i;
+    const maxRetry = 10;
+    for (i = 0; i < maxRetry; ++i) {
+      let t = id('tv_test_state').findOne(2000);
+      if (t != null)
+        break;
+      app.launchApp("v2rayNG");
+      sleep(1000);
+    }
+    if (i == maxRetry) {
+      throw new Error('无法打开v2rayNG');
+    }
+    log('已打开v2rayNG');
     // 关闭连接，否则会影响真连接测试
     if (id('tv_test_state').findOne().text() != '未连接')
       id('fab').click();
-    let i;
-    const maxRetry = 10;
     for (i = 0; i < maxRetry; ++i) {
       desc('更多选项').click();
       text('测试全部配置真连接').waitFor();

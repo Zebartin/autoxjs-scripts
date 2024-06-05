@@ -2,7 +2,7 @@ var {
   ocrUntilFound, clickRect, unlockIfNeed,
   requestScreenCaptureAuto, getDisplaySize,
   killApp, findImageByFeature, findContoursRect,
-  rgbToGray, getRandomArea, ocrInfo
+  rgbToGray, getRandomArea, swipeRandom, ocrInfo
 } = require('./utils.js');
 var firstBoot = true;
 var firstCheckAuto = true;
@@ -151,7 +151,7 @@ function checkInLIP() {
     return;
   }
   // 领取超值好礼 -> tap to enter
-  const enterLIP = ocrUntilFound(res => {
+  const enterLIP = ocrUntilFound((res, img) => {
     const tapToEnter = res.find(e =>
       e.text.match(/tap\s*t.\s*enter/i) != null
     );
@@ -173,7 +173,11 @@ function checkInLIP() {
       clickRect(entrance, 1, 0);
       return false;
     }
-  }, 3, 700);
+    swipeRandom(new android.graphics.Rect(
+      img.width * 0.2, annoucementBtn.bounds.bottom,
+      img.width * 0.8, random(img.height * 0.4, img.height * 0.6)
+    ), 'up');
+  }, 6, 700);
   if (!enterLIP) {
     log('没有找到Level Infinite Pass入口');
     return;

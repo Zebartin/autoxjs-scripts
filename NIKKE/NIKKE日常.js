@@ -612,34 +612,40 @@ function dispatch(bulletin) {
         return null;
       return [t1, t2];
     }, 30, 1000);
-    // 选择珍藏品派遣
-    ocrUntilFound((res, img) => {
-      const selectBtns = res.filter(e =>
-        e.text.match(/选/) != null
-      ).toArray();
-      if (selectBtns.length == 0)
-        return true;
-      const confirm = selectBtns.find(e =>
-        e.bounds.top > img.height * 0.5 &&
-        e.bounds.right > img.width * 0.5
-      );
-      if (confirm) {
-        // 可能识别为“取消 >派遣选择”
-        confirm.bounds.left += confirm.bounds.width() * 0.7;
-        clickRect(confirm, 1, 0);
-        return false;
-      }
-      clickRect(selectBtns[0], 1, 0);
-      sleep(1300);
-      return false;
-    }, 15, 700);
     if (colors.red(captureScreen().pixel(receive.bounds.right, receive.bounds.top)) < 100) {
       toastLog('全部领取');
       clickRect(receive);
       clickRect(ocrUntilFound(res => res.find(e => e.text.includes('点击')), 20, 1000), 1, 300);
       ocrUntilFound(res => res.text.match(/(时间|目前)/), 20, 500);
     }
-    if (colors.red(captureScreen().pixel(send.bounds.right, send.bounds.top)) > 240) {
+    let sendColor = colors.red(captureScreen().pixel(send.bounds.right, send.bounds.top));
+    if (sendColor <= 240) {
+      // 选择珍藏品派遣
+      ocrUntilFound((res, img) => {
+        const selectBtns = res.filter(e =>
+          e.text.match(/[迷选迭港]择/) != null
+        ).toArray();
+        if (selectBtns.length == 0) {
+          log(res.text);
+          return true;
+        }
+        const confirm = selectBtns.find(e =>
+          e.bounds.top > img.height * 0.5 &&
+          e.bounds.right > img.width * 0.5
+        );
+        if (confirm) {
+          // 可能识别为“取消 >派遣选择”
+          confirm.bounds.left += confirm.bounds.width() * 0.7;
+          clickRect(confirm, 1, 0);
+          sendColor = 255;
+          return false;
+        }
+        clickRect(selectBtns[0], 1, 0);
+        sleep(500);
+        return false;
+      }, 15, 700);
+    }
+    if (sendColor > 240) {
       clickRect(send);
       sleep(1000);
       target = ocrUntilFound(res => {
@@ -909,6 +915,10 @@ function 新人竞技场(rookieTarget) {
   clickRect(ocrUntilFound(res => res.find(e => e.text.match(/R[OD][OD]K.E/) != null), 30, 1000));
   toastLog('进入新人竞技场');
   const targetFight = ocrUntilFound((res, img) => {
+    const seasonOver = res.find(e => e.text.match(/(敬请|期待)/) != null);
+    if (seasonOver) {
+      return 'seasonOver';
+    }
     if (res.text.match(/(入战|群组|更新|目录)/) == null) {
       let rookie = res.find(e => e.text.match(/R[OD][OD]K.E/) != null);
       if (rookie)
@@ -924,6 +934,10 @@ function 新人竞技场(rookieTarget) {
     t.sort((a, b) => a.bounds.top - b.bounds.top);
     return t[rookieTarget - 1];
   }, 10, 700);
+  if (targetFight == 'seasonOver') {
+    log('新人竞技场赛季结束');
+    return;
+  }
   if (targetFight == null) {
     log('无法进入新人竞技场');
     return;
@@ -972,6 +986,10 @@ function 特殊竞技场() {
   // 如果识别出了百分号，直接点百分号
   // 没有就点上方中央“特殊竞技场”下方位置，可能能点到
   let specialRewardBtn = ocrUntilFound(res => {
+    const seasonOver = res.find(e => e.text.match(/(敬请|期待)/) != null);
+    if (seasonOver) {
+      return 'seasonOver';
+    }
     let atk = res.find(e => e.text.match(/(ATK|DEF)/) != null);
     if (!atk) {
       let enterSpecial = res.find(e => e.text.includes('SPECIAL'));
@@ -1012,6 +1030,10 @@ function 特殊竞技场() {
     }
     return ret;
   }, 10, 1000);
+  if (specialRewardBtn == 'seasonOver') {
+    log('特殊竞技场赛季结束');
+    return;
+  }
   if (specialRewardBtn != null) {
     if (specialRewardBtn.text == '0%') {
       log('奖励进度0%，跳过');

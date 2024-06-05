@@ -214,11 +214,11 @@ function checkInLIP() {
     }, 1, 0);
   }, 30, 800);
   if (checked) {
-    log('签到成功');
+    log('LIP签到成功');
     NIKKEstorage.put('checkInLIP', today);
   }
   else {
-    log('签到失败');
+    log('LIP签到失败');
   }
   // 返回公告页面
   ocrUntilFound(res => {

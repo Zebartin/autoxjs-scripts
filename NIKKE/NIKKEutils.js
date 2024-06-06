@@ -196,7 +196,7 @@ function checkInLIP() {
   sleep(3000);
   // 反复点“每日签到/确认”
   const checked = ocrUntilFound(res => {
-    const confirm = text('确认').findOnce();
+    const confirm = textMatches(/(确认|確認)/).findOnce();
     if (confirm) {
       clickRect({
         bounds: confirm.bounds(),
@@ -204,10 +204,10 @@ function checkInLIP() {
       }, 1, 0);
       return false;
     }
-    if (res.text.match(/(请明日|明日再)/) != null) {
+    if (res.text.match(/([请請]明日|明日再)/) != null) {
       return true;
     }
-    const checkIn = text('每日签到').findOnce();
+    const checkIn = textMatches(/每日[签簽]到/).findOnce();
     if (!checkIn) {
       sleep(2200);
       return false;

@@ -2047,7 +2047,7 @@ function 强化装备(repeatCnt) {
   let targetNikkeReg = new RegExp(targetNikke);
   let target = null;
   let ubBtn = ocrUntilFound((res, img) => {
-    let ret = res.find(e => e.text.match(/看同伴/) != null);
+    let ret = res.find(e => e.text.match(/看同[伴件]/) != null);
     if (ret != null)
       return ret;
     let nikkeBtn = res.find(e =>

@@ -527,7 +527,7 @@ function doWithOption(option, status) {
       if (!res.text.includes('机会'))
         return null;
       let t1 = res.find(e => e.text.match(/不[迷选迭港]择$/) != null);
-      let t2 = res.find(e => e.text == '确认');
+      let t2 = res.find(e => e.text.includes('确认'));
       let t3 = null;
       if (!t1 || !t2)
         return null;

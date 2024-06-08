@@ -116,16 +116,17 @@ function 启动NIKKE() {
       desc('更多选项').click();
       text('测试全部配置真连接').waitFor();
       click('测试全部配置真连接');
-      sleep(1000);
-      textEndsWith('ms').waitFor();
+      textMatches(/^\d+ms$/).findOne(4000);
       desc('更多选项').click();
       text('按测试结果排序').waitFor();
       click('按测试结果排序');
-      let firstCard = id("info_container").findOne();
-      let firstDelay = firstCard.findOne(textEndsWith('ms'));
-      if (firstDelay != null && firstDelay.text() != '-1ms') {
-        firstCard.click();
-        break;
+      let firstCard = id("info_container").findOne(500);
+      if (firstCard != null) {
+        let firstDelay = firstCard.findOne(textEndsWith('ms'));
+        if (firstDelay != null && firstDelay.text() != '-1ms') {
+          firstCard.click();
+          break;
+        }
       }
       desc('更多选项').click();
       text('更新订阅').waitFor();
@@ -308,12 +309,15 @@ function 等待NIKKE加载() {
     if (res.text.match(/(REWARD|点击|奖励)/) != null)
       click(width / 2, height * 0.8);
     return false;
-  }, 20, 4000) == null)
-    throw new Error('没有出现游戏公告');
-  checkInLIP();
-  sleep(1000);
-  back();
-  toastLog('关闭公告');
+  }, 20, 4000) == null) {
+    console.error('没有出现游戏公告');
+  }
+  else {
+    checkInLIP();
+    sleep(1000);
+    back();
+    toastLog('关闭公告');
+  }
   等待每日签到();
   关闭限时礼包();
 }

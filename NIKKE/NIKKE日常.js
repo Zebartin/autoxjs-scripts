@@ -622,6 +622,11 @@ function dispatch(bulletin) {
     if (sendColor <= 240) {
       // 选择珍藏品派遣
       ocrUntilFound((res, img) => {
+        const confirm = res.find(e => e.text.match(/确认/) != null);
+        if (confirm) {
+          clickRect(confirm, 1, 0);
+          return false;
+        }
         const selectBtns = res.filter(e =>
           e.text.match(/[迷选迭港]择/) != null
         ).toArray();
@@ -629,14 +634,14 @@ function dispatch(bulletin) {
           log(res.text);
           return true;
         }
-        const confirm = selectBtns.find(e =>
+        const confirmSelect = selectBtns.find(e =>
           e.bounds.top > img.height * 0.5 &&
           e.bounds.right > img.width * 0.5
         );
-        if (confirm) {
+        if (confirmSelect) {
           // 可能识别为“取消 >派遣选择”
-          confirm.bounds.left += confirm.bounds.width() * 0.7;
-          clickRect(confirm, 1, 0);
+          confirmSelect.bounds.left += confirmSelect.bounds.width() * 0.7;
+          clickRect(confirmSelect, 1, 0);
           sendColor = 255;
           return false;
         }

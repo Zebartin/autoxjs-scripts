@@ -175,8 +175,8 @@ function checkInLIP() {
       return false;
     }
     swipeRandom(new android.graphics.Rect(
-      img.width * 0.2, annoucementBtn.bounds.bottom,
-      img.width * 0.8, random(img.height * 0.4, img.height * 0.6)
+      img.width * 0.2, annoucementBtn.bounds.bottom, img.width * 0.8,
+      annoucementBtn.bounds.bottom + random(img.height * 0.1, img.height * 0.2)
     ), 'up');
   }, 6, 700);
   if (!enterLIP) {

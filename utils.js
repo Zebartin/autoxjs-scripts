@@ -481,9 +481,13 @@ function killApp(packageName) {
     is_sure = is_sure.parent()
   if (is_sure != null && is_sure.enabled()) {
     is_sure.click();
-    sleep(1000);
-    textMatches(/(确[定认]|(强行|停止|结束).{0,3})/).findOne(1000).click();
-    log(app.getAppName(name) + "应用已被关闭");
+    let confirm = textMatches(/(确[定认]|(强行|停止|结束).{0,3})/).findOne(3000);
+    if (confirm != null) {
+      confirm.click();
+      log(app.getAppName(name) + "应用已被关闭");
+    } else {
+      console.error('没有找到确认关闭按钮');
+    }
     sleep(1000);
     back();
   } else {

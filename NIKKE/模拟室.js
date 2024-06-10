@@ -42,7 +42,8 @@ if (typeof module === 'undefined') {
           退出NIKKE();
           启动NIKKE();
         }
-      }
+      } else
+        break;
     }
   }
   if (images.stopScreenCapturer) {
@@ -169,7 +170,7 @@ function oneSimulation(status) {
   if ('tryDiff' in status)
     clickIntoDiffArea(status.tryDiff, status.tryArea, false);
   else
-    clickIntoDiffArea('3', null, false);
+    clickIntoDiffArea('3', 0, false);
   clickRect(ocrUntilFound(res => res.find(e => e.text.includes('开始')), 10, 300));
   for (status.layer = 0; status.layer < 7; ++status.layer) {
     selectOption(status);
@@ -178,18 +179,18 @@ function oneSimulation(status) {
   }
   // 一轮模拟结束
   if (status.earlyStop) {
-    clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('结束')), 20, 300));
+    clickRect(ocrUntilFound(res => res.find(e => e.text.match(/结[束東]$/) != null), 20, 300));
     clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('确认')), 10, 300));
   } else {
     log(`bestBuffToKeep = ${status.bestBuffToKeep.name}(${status.bestBuffToKeep.level})`);
     clickRect(ocrUntilFound((res, img) => res.find(e =>
-      e.text.endsWith('结束') &&
+      e.text.match(/结[束東]$/) != null &&
       e.bounds != null &&
       e.bounds.bottom > img.height / 2
     ), 20, 1000));
     sleep(600);
     clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('确认')), 10, 300));
-    ocrUntilFound(res => res.text.match(/[迷选迭港]择/) != null, 10, 1000);
+    ocrUntilFound(res => res.text.match(/[迷选迭港遗]择/) != null, 10, 1000);
     sleep(600);
     let buff = null;
     if (!status.bestBuffToKeep.name) {
@@ -203,7 +204,7 @@ function oneSimulation(status) {
     let [chosenTarget, confirmBtn] = ocrUntilFound(res => {
       let t1 = buff;
       if (t1 == null)
-        t1 = res.find(e => e.text.match(/不[迷选迭港]择/) != null);
+        t1 = res.find(e => e.text.match(/不[迷选迭港遗]择/) != null);
       let t2 = res.find(e => e.text.includes('确认'));
       if (!t1 || !t2)
         return null;
@@ -266,7 +267,7 @@ function quitPrevSim() {
   if (pageState == 'combat')
     clickRect(getRandomArea(captureScreen(), [0.2, 0.3, 0.8, 0.7]), 1, 0);
   else if (pageState != 'selectOption') {
-    clickRect(ocrUntilFound(res => res.find(e => e.text.match(/(不[迷选迭港]择$|体力)/) != null), 10, 500));
+    clickRect(ocrUntilFound(res => res.find(e => e.text.match(/(不[迷选迭港遗]择$|体力)/) != null), 10, 500));
     clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('确认')), 10, 500));
     if (pageState == 'ICU')
       ocrUntilFound(res => res.text.match(/[已己巳]/) != null, 10, 1000);
@@ -298,7 +299,7 @@ function quitPrevSim() {
   }, 20, 1000);
   clickRect(confirmBtn);
   if (keepBuff) {
-    clickRect(ocrUntilFound(res => res.find(e => e.text.match(/不[迷选迭港]择/) != null), 10, 500));
+    clickRect(ocrUntilFound(res => res.find(e => e.text.match(/不[迷选迭港遗]择/) != null), 10, 500));
     clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('确认')), 10, 500));
     clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('确认')), 10, 1000));
   }
@@ -314,38 +315,143 @@ function getBuffLoaded() {
   return ret;
 }
 
+function getSelectedDiffArea(ocrRes) {
+  const diffText = ocrRes.find(e => e.text.match(/^.{0,2}难度.{0,2}$/) != null);
+  const areaText = ocrRes.find(e => e.text.match(/^.{0,2}地区.{0,2}$/) != null);
+  const rewardText = ocrRes.find(e => e.text.match(/^.{0,2}奖励.{0,2}$/) != null);
+  if (!diffText || !areaText || !rewardText) {
+    log('没有找到难度、地区、奖励的文字');
+    return null;
+  }
+  const startBtn = ocrRes.find(e =>
+    e.text.includes('开始') && e.bounds != null &&
+    e.bounds.top > rewardText.bounds.bottom
+  );
+  if (!startBtn)
+    return null;
+  const finished = ocrRes.find(e =>
+    e.bounds != null && e.bounds.top >= rewardText.bounds.bottom &&
+    e.bounds.bottom <= startBtn.bounds.top &&
+    e.text.match(/[该地区已通关重置后可获得奖励]{3,}/) != null
+  );
+  let diffs = ocrRes.toArray(3).toArray().filter(e =>
+    e.text.match(/^[12345]$/) != null && e.bounds != null &&
+    e.bounds.bottom > diffText.bounds.bottom &&
+    e.bounds.top < areaText.bounds.top
+  );
+  if (diffs.length != 5) {
+    diffs = ocrRes.toArray(3).toArray().filter(e =>
+      e.text.match(/^[difculty\s]{5,}/) != null && e.bounds != null &&
+      e.bounds.bottom > diffText.bounds.bottom &&
+      e.bounds.top < areaText.bounds.top
+    );
+    if (diffs.length != 5) {
+      log('没有找到表示难度的5个选项');
+      return null;
+    }
+  }
+  const areas = ocrRes.toArray(3).toArray().filter(e =>
+    e.text.match(/[\d\s+,\.]{4,10}/) != null && e.bounds != null &&
+    e.bounds.bottom > areaText.bounds.bottom &&
+    e.bounds.top < rewardText.bounds.top
+  );
+  if (areas.length != 3) {
+    log('没有找到表示地区的3个选项');
+    return null;
+  }
+  diffs.sort((a, b) => {
+    let t = a.bounds.top - b.bounds.top;
+    if (Math.abs(t) < 20)
+      return a.bounds.left - b.bounds.left;
+    return t;
+  });
+  areas.sort((a, b) => a.bounds.left - b.bounds.left);
+  for (let i = 0; i < 5; ++i) {
+    if (diffs[i].text != i + 1 + '') {
+      diffs[i].text = i + 1 + '';
+      // 可能识别成'difficulty 3'等
+      diffs[i].bounds.right -= diffs[i].bounds.width() / 2;
+    }
+  }
+  for (let i = 0; i < 3; ++i) {
+    areas[i].text = 'ABC'[i];
+  }
+  ret = { diffs: diffs, areas: areas, finished: finished != null };
+  const diffSelectedText = ocrRes.find(e =>
+    e.text.match(/[SELCTD]{4,}/) != null && e.bounds != null &&
+    e.bounds.bottom > diffText.bounds.bottom &&
+    e.bounds.top < areaText.bounds.top
+  );
+  const areaSelectedText = ocrRes.find(e =>
+    e.text.match(/[SELCTD]{4,}/) != null && e.bounds != null &&
+    e.bounds.bottom > areaText.bounds.bottom &&
+    e.bounds.top < rewardText.bounds.top
+  );
+  if (!diffSelectedText || !areaSelectedText) {
+    log('没有找到SELECTED');
+    return ret;
+  }
+  // ES5 没有findLast
+  let diffSelected = null;
+  for (let i = 4; i >= 0; --i) {
+    let b = diffs[i].bounds;
+    if (b.left < diffSelectedText.bounds.right + diffSelectedText.bounds.width() / 2 &&
+      b.bottom < diffSelectedText.bounds.bottom) {
+      diffSelected = diffs[i];
+      break;
+    }
+  }
+  const areaSelected = areas.find(x =>
+    x.bounds.left > areaSelectedText.bounds.left
+  );
+  if (!diffSelected || !areaSelected) {
+    log('没有找到选中的选项');
+    return ret;
+  }
+  ret.diffSelected = diffSelected.text;
+  ret.areaSelected = areaSelected.text;
+  return ret;
+}
+/*
+ * diff: '1', '2', '3', '4', '5'
+ * area: 0, 1, 2
+ */
 function clickIntoDiffArea(diff, area, checkFinished) {
-  clickRect(ocrUntilFound(res => res.find(e => e.text.startsWith('开始')), 10, 300));
-  clickRect(ocrUntilFound(res => res.find(e => e.text == diff), 20, 300));
-  if (area == null)
+  // 开始 -> 选择
+  const intoSelect = ocrUntilFound(res => {
+    const checked = res.find(e => e.text.match(/^.{0,2}(地区|难度|奖励).{0,2}$/) != null);
+    if (checked != null)
+      return true;
+    const begin = res.find(e => e.text.startsWith('开始'));
+    if (begin != null)
+      clickRect(begin, 1, 0);
     return false;
-  let [areaChoice, startBtn] = ocrUntilFound(res => {
-    let upper = res.find(e => e.text == '地区');
-    let start = res.find(e => e.text.includes('开始'));
-    if (!upper || !start)
-      return null;
-    let numbers = res.filter(e =>
-      e.bounds != null && e.bounds.top > upper.bounds.bottom &&
-      e.bounds.bottom < start.bounds.top &&
-      e.text.match(/[\d\s+,]{4,10}/) != null && e.level == 3
-    ).toArray();
-    if (numbers.length != 3)
-      return null;
-    numbers.sort((a, b) => a.bounds.left - b.bounds.left);
-    return [numbers[area], start];
-  }, 20, 500);
-  clickRect(areaChoice);
+  }, 5, 500);
+  if (!intoSelect) {
+    throw new Error('无法开始模拟');
+  }
+  const [finished] = ocrUntilFound(res => {
+    const selected = getSelectedDiffArea(res);
+    if (!selected)
+      return false;
+    log(`当前选择：${selected.diffSelected}${selected.areaSelected}`);
+    if (selected.diffSelected != diff) {
+      clickRect(selected.diffs[parseInt(diff) - 1], 1, 0);
+      if (area)
+        clickRect(selected.areas[area], 1, 500);
+      return false;
+    }
+    if (selected.areaSelected != 'ABC'[area]) {
+      clickRect(selected.areas[area], 1, 0);
+      return false;
+    }
+    return [selected.finished];
+  }, 10, 700) || [false];
   if (checkFinished == true) {
-    let finishedText = ocrUntilFound(res => res.find(e =>
-      e.bounds != null && e.bounds.top >= areaChoice.bounds.bottom &&
-      e.bounds.bottom <= startBtn.bounds.top &&
-      e.text.match(/[该地区已通关重置后可获得奖励]{3,}/) != null
-    ), 3, 300);
     back();
     ocrUntilFound(res => res.text.includes('开始'), 30, 1000);
-    return finishedText != null;
   }
-  return false;
+  return finished;
 }
 
 function selectOption(status) {
@@ -443,7 +549,7 @@ function doWithOption(option, status) {
   sleep(1000);
   if (option.type == 'abilitiesTest') {
     let keywords = [
-      /不[迷选迭港]/,
+      /不[迷选迭港遗]/,
       /体力/,
       /第[一二三]个/
     ];
@@ -477,11 +583,11 @@ function doWithOption(option, status) {
     }, 30, 1000));
     let roomCnt = 0;
     let testDone = ocrUntilFound(res => {
-      if (keywordType == 0 && res.text.match(/不[迷选迭港]/) != null)
+      if (keywordType == 0 && res.text.match(/不[迷选迭港遗]/) != null)
         return null;
       if (res.text.match(/ON[\s\S]*ROOM[\s\S]*RESET/) != null)
         return roomCnt++ >= 3;
-      let t = res.find(e => e.text.match(/不[迷选迭港].$/) != null);
+      let t = res.find(e => e.text.match(/不[迷选迭港遗].$/) != null);
       if (t != null)
         clickRect(t, 1, 0);
       if (res.text.includes('确认'))
@@ -526,7 +632,7 @@ function doWithOption(option, status) {
     const [cancelBtn, confirmBtn, ssrOption] = ocrUntilFound(res => {
       if (!res.text.includes('机会'))
         return null;
-      let t1 = res.find(e => e.text.match(/不[迷选迭港]择$/) != null);
+      let t1 = res.find(e => e.text.match(/不[迷选迭港遗]择$/) != null);
       let t2 = res.find(e => e.text.includes('确认'));
       let t3 = null;
       if (!t1 || !t2)
@@ -632,7 +738,7 @@ function doWithOption(option, status) {
   }
   if (option.effect.match(/[模拟通关]+/) != null)
     return;
-  ocrUntilFound(res => res.text.match(/[迷选迭港]择/) != null, 30, 1000);
+  ocrUntilFound(res => res.text.match(/[迷选迭港遗]择/) != null, 30, 1000);
   selectBuff(option.buffType, status);
 }
 
@@ -672,7 +778,7 @@ function selectBuff(buffType, status) {
     log('选择：', bestBuff);
   }
   const [cancelBtn, confirmBtn] = ocrUntilFound(res => {
-    let t1 = res.find(e => e.text.match(/不[迷选迭港]择$/) != null);
+    let t1 = res.find(e => e.text.match(/不[迷选迭港遗]择$/) != null);
     let t2 = res.find(e => e.text.endsWith('确认'));
     if (!t1 || !t2)
       return null;
@@ -712,7 +818,7 @@ function selectBuff(buffType, status) {
       doCancel();
       if (!(bestBuff.name in status.newBuffs)) {
         status.loaded[bestBuff.name] = bestBuff;
-        status.loaded[bestBuff.name].level = 'SSR'; 
+        status.loaded[bestBuff.name].level = 'SSR';
       }
     }
   }

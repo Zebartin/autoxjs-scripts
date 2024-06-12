@@ -476,24 +476,29 @@ function killApp(packageName) {
     console.error('无法打开设置页面');
     return;
   }
-  let is_sure = textMatches(/.*(强行|停止|结束).{0,3}/).findOne(2000);
-  while (is_sure != null && !is_sure.clickable())
-    is_sure = is_sure.parent()
-  if (is_sure != null && is_sure.enabled()) {
-    is_sure.click();
-    let confirm = textMatches(/(确[定认]|(强行|停止|结束).{0,3})/).findOne(3000);
-    if (confirm != null) {
-      confirm.click();
-      log(app.getAppName(name) + "应用已被关闭");
-    } else {
-      console.error('没有找到确认关闭按钮');
+  for (i = 0; i < 30; ++i) {
+    if (i > 0)
+      sleep(500);
+    let dialog = textMatches(/.*导致.*异常.*/).findOnce();
+    if (dialog != null) {
+      let confirmBtn = textMatches(/(确[定认]|(强行|停止|结束).{0,3})/).findOne(1000);
+      if (confirmBtn != null) {
+        confirmBtn.click();
+      }
+      continue;
     }
-    sleep(1000);
-    back();
-  } else {
-    log(app.getAppName(name) + "应用不能被正常关闭或不在后台运行");
-    back();
+    let killBtn = textMatches(/.*(强行|停止|结束).{0,3}/).findOnce();
+    while (killBtn != null && !killBtn.clickable())
+      killBtn = killBtn.parent();
+    if (killBtn != null && killBtn.enabled()) {
+      killBtn.click();
+      continue;
+    } else {
+      log(app.getAppName(name) + "应用已被关闭");
+      break;
+    }
   }
+  back();
 }
 
 function killSameScripts() {

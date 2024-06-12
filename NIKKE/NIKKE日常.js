@@ -307,7 +307,7 @@ function cashShop() {
     let [free, color] = ocrUntilFound((res, img) => {
       if (handlePopUp(res))
         return null;
-      let t = res.find(e => e.text.includes(name + '免'));
+      let t = res.find(e => e.text.match(new RegExp(name + '[免兔]')) != null);
       if (!t) {
         clickRect(btn, 1, 0);
         return null;

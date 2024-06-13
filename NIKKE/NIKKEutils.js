@@ -54,7 +54,8 @@ function saveError(error) {
     }
   }
   files.write(files.join(errorPath, 'log.txt'), errorStrs.join('\n'));
-  log(`出错日志已保存到${errorPath}`);
+  console.error(`出错日志已保存到${errorPath}`);
+  console.error('上报问题时请务必附上上述出错日志目录中的内容');
 }
 function 启动NIKKE() {
   let NIKKEstorage = storages.create("NIKKEconfig");
@@ -145,6 +146,9 @@ function 启动NIKKE() {
   // waitForActivity('com.shiftup.nk.MainActivity');
 }
 function checkInLIP() {
+  if (NIKKEstorage.get('doCheckInLIP', true) != true) {
+    return;
+  }
   const today = NikkeToday();
   const lastChecked = NIKKEstorage.get('checkInLIP', null);
   if (today == lastChecked) {
@@ -309,7 +313,7 @@ function 等待NIKKE加载() {
     if (res.text.match(/(REWARD|点击|奖励)/) != null)
       click(width / 2, height * 0.8);
     return false;
-  }, 20, 4000) == null) {
+  }, 5, 1200) == null) {
     console.error('没有出现游戏公告');
   }
   else {

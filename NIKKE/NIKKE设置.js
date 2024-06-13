@@ -37,6 +37,7 @@ ui.layout(
             <Switch text="静音运行（需要修改系统设置权限）" id="mute" textSize="16sp" margin="10 2" />
             <Switch text="已启动游戏且位于首页或正在加载" id="alreadyInGame" textSize="16sp" margin="10 2" />
             <Switch text="打开本界面时自动检查更新" id="checkUpdateAuto" textSize="16sp" margin="10 2" />
+            <Switch text="Level Infinite Pass签到" id="doCheckInLIP" textSize="16sp" margin="10 2" />
             <Switch text="游戏中会出现限时礼包" id="checkSale" textSize="16sp" margin="10 2" />
             <Switch text="运行结束后退出游戏" id="exitGame" textSize="16sp" margin="10 2" />
             <Switch text="检查自动瞄准及爆裂" id="checkGameAuto" textSize="16sp" margin="10 2" />
@@ -574,7 +575,7 @@ for (let generalOption of [
 ])
   ui.findView(generalOption).setChecked(NIKKEstorage.get(generalOption, false));
 for (let generalOption of [
-  'checkSale', 'checkGameAuto'
+  'checkSale', 'checkGameAuto', 'doCheckInLIP'
 ])
   ui.findView(generalOption).setChecked(NIKKEstorage.get(generalOption, true));
 
@@ -671,7 +672,7 @@ ui.save.on("click", function () {
   NIKKEstorage.put('dailyMission', dailyMission);
 
   for (let generalOption of [
-    'mute', 'alreadyInGame', 'checkUpdateAuto', 'checkSale',
+    'mute', 'alreadyInGame', 'doCheckInLIP', 'checkUpdateAuto', 'checkSale',
     'exitGame', 'checkGameAuto', 'alwaysCheckDailyLogin', 'v2rayNG'
   ])
     NIKKEstorage.put(generalOption, ui.findView(generalOption).isChecked());

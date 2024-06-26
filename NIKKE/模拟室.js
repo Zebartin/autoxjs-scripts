@@ -320,7 +320,7 @@ function getSelectedDiffArea(ocrRes) {
   const areaText = ocrRes.find(e => e.text.match(/^.{0,2}地区.{0,2}$/) != null);
   const rewardText = ocrRes.find(e => e.text.match(/^.{0,2}奖励.{0,2}$/) != null);
   if (!diffText || !areaText || !rewardText) {
-    log('没有找到难度、地区、奖励的文字');
+    console.error('没有找到难度、地区、奖励的文字');
     return null;
   }
   const startBtn = ocrRes.find(e =>
@@ -341,12 +341,12 @@ function getSelectedDiffArea(ocrRes) {
   );
   if (diffs.length != 5) {
     diffs = ocrRes.toArray(3).toArray().filter(e =>
-      e.text.match(/^[difculty\s]{5,}/) != null && e.bounds != null &&
+      e.text.match(/(^[difculty\s]{5,}|^L[OCKED]{2,})/) != null && e.bounds != null &&
       e.bounds.bottom > diffText.bounds.bottom &&
       e.bounds.top < areaText.bounds.top
     );
     if (diffs.length != 5) {
-      log('没有找到表示难度的5个选项');
+      console.error('没有找到表示难度的5个选项');
       return null;
     }
   }
@@ -356,7 +356,7 @@ function getSelectedDiffArea(ocrRes) {
     e.bounds.top < rewardText.bounds.top
   );
   if (areas.length != 3) {
-    log('没有找到表示地区的3个选项');
+    console.error('没有找到表示地区的3个选项');
     return null;
   }
   diffs.sort((a, b) => {
@@ -388,7 +388,7 @@ function getSelectedDiffArea(ocrRes) {
     e.bounds.top < rewardText.bounds.top
   );
   if (!diffSelectedText || !areaSelectedText) {
-    log('没有找到SELECTED');
+    console.error('没有找到SELECTED');
     return ret;
   }
   // ES5 没有findLast
@@ -405,7 +405,7 @@ function getSelectedDiffArea(ocrRes) {
     x.bounds.left > areaSelectedText.bounds.left
   );
   if (!diffSelected || !areaSelected) {
-    log('没有找到选中的选项');
+    console.error('没有找到选中的选项');
     return ret;
   }
   ret.diffSelected = diffSelected.text;

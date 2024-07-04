@@ -704,7 +704,7 @@ function 基地收菜(doDailyMission) {
 }
 function 好友() {
   // 一个好友都没有的话会出问题
-  let [sendBtn, someFriend] = ocrUntilFound((res, img) => {
+  let sendBtn = ocrUntilFound((res, img) => {
     let send = res.find(e => e.text.endsWith('赠送') && e.text.match(/[每日发上限]/) == null);
     let upper = res.find(e => e.text.includes('可以'));
     if (send && upper) {
@@ -714,7 +714,7 @@ function 好友() {
         e.bounds.bottom < send.bounds.top
       );
       if (f)
-        return [send, f];
+        return send;
     }
     let enterBtn = res.find(e =>
       e.text.includes('好友') && e.bounds != null &&
@@ -726,17 +726,6 @@ function 好友() {
     }
     return null;
   }, 30, 1000);
-  // 等待列表加载
-  ocrUntilFound(res => {
-    if (res.text.match(/(日期|代表|进度)/) != null) {
-      sleep(500);
-      return true;
-    }
-    clickRect(someFriend, 1, 0);
-    return false;
-  }, 30, 500);
-  back();
-  ocrUntilFound(res => res.text.match(/(可以|目录|搜寻|赠送)/) != null, 20, 1500);
   let btnColor = colors.toString(captureScreen().pixel(sendBtn.bounds.left, sendBtn.bounds.top));
   log(`赠送按钮颜色：${btnColor}`)
   if (colors.isSimilar('#1aaff7', btnColor, 75)) {

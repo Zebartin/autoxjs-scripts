@@ -145,6 +145,19 @@ function 启动NIKKE() {
   log("打开NIKKE");
   // waitForActivity('com.shiftup.nk.MainActivity');
 }
+function backToAnnouncement() {
+  // 返回公告页面
+  ocrUntilFound(res => {
+    const announcementBtn = res.find(e =>
+      e.text.match(/(系[统統]|活动)公告/) != null
+    );
+    if (announcementBtn) {
+      return true;
+    }
+    back();
+    sleep(1600);
+  }, 10, 800);
+}
 function checkInLIP() {
   if (NIKKEstorage.get('doCheckInLIP', true) != true) {
     return;
@@ -163,28 +176,30 @@ function checkInLIP() {
     if (tapToEnter) {
       return tapToEnter;
     }
-    const annoucementBtn = res.find(e =>
+    const announcementBtn = res.find(e =>
       e.text.match(/(系[统統]|活动)公告/) != null
     );
-    if (!annoucementBtn) {
+    if (!announcementBtn) {
       return false;
     }
     const entrance = res.find(e =>
-      e.text.match(/(.[取]..好.)/) != null &&
+      e.text.match(/.[取]..好./) != null &&
       e.bounds != null &&
-      e.bounds.top > annoucementBtn.bounds.bottom
+      e.bounds.top > announcementBtn.bounds.bottom
     );
     if (entrance) {
       clickRect(entrance, 1, 0);
       return false;
     }
     swipeRandom(new android.graphics.Rect(
-      img.width * 0.2, annoucementBtn.bounds.bottom, img.width * 0.8,
-      annoucementBtn.bounds.bottom + random(img.height * 0.1, img.height * 0.2)
+      img.width * 0.2, announcementBtn.bounds.bottom, img.width * 0.8,
+      announcementBtn.bounds.bottom + random(img.height * 0.2, img.height * 0.3)
     ), 'up');
+    sleep(300);
   }, 6, 700);
   if (!enterLIP) {
     log('没有找到Level Infinite Pass入口');
+    backToAnnouncement();
     return;
   }
   // tap to enter -> 奖励页面
@@ -229,17 +244,7 @@ function checkInLIP() {
   else {
     log('LIP签到失败');
   }
-  // 返回公告页面
-  ocrUntilFound(res => {
-    const annoucementBtn = res.find(e =>
-      e.text.match(/(系[统統]|活动)公告/) != null
-    );
-    if (annoucementBtn) {
-      return true;
-    }
-    back();
-    sleep(1600);
-  }, 10, 800);
+  backToAnnouncement();
 }
 function 等待NIKKE加载() {
   let [width, height] = getDisplaySize();
@@ -281,6 +286,8 @@ function 等待NIKKE加载() {
       sleep(3000);
     }
     else if (res.text.match(/(大厅|员招|物品栏)/) != null) {
+      if (res.text.match(/(系[统統]|活动)公告/) != null)
+        manuallyEnter = false;
       if (manuallyEnter == false)
         return true;
       if (res.text.match(/(基地|商店)/) != null)

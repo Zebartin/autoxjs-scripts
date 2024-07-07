@@ -153,7 +153,7 @@ function main() {
         }
         if (match(image, 甩杆)) {
             clickRect(甩杆, 1, 甩杆延迟);
-            sleep(1000);
+            sleep(700);
             continue;
         }
         if (match(image, 确认)) {

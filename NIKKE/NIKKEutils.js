@@ -193,10 +193,10 @@ function checkInLIP() {
     }
     swipeRandom(new android.graphics.Rect(
       img.width * 0.2, announcementBtn.bounds.bottom, img.width * 0.8,
-      announcementBtn.bounds.bottom + random(img.height * 0.2, img.height * 0.3)
+      announcementBtn.bounds.bottom + random(img.height * 0.3, img.height * 0.4)
     ), 'up');
     sleep(300);
-  }, 6, 700);
+  }, 10, 700);
   if (!enterLIP) {
     log('没有找到Level Infinite Pass入口');
     backToAnnouncement();

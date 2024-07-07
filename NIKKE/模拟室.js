@@ -867,8 +867,8 @@ function scanBuffs(wantedBuffName) {
 
 function getOptions(expectedOptionNumber) {
   const optionReg = {
-    normal: /N[DO]RMAL/,
-    hard: /HAR[DO]/,
+    normal: /N[DO]R[NMI]{1,2}AL/,
+    hard: /HAR[TDO]/,
     abilitiesTest: /[測测]试$/,
     ICU: /归队$/,
     specUp: /^强化/

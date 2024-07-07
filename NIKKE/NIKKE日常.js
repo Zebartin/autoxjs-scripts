@@ -820,7 +820,7 @@ function 爬塔() {
           sleep(4000);
           return false;
         }
-        if (res.text.includes('REWARD'))
+        if (res.text.includes('REWAR'))
           return 'ok';
         if (res.text.includes('FAIL'))
           return 'failed';
@@ -846,7 +846,7 @@ function 爬塔() {
         break;
       } else if (result != 'ok') {
         log('未能识别到战斗结束');
-        clickRect(getRandomArea(img, [0, 0, 1, 0.5]), 0.8, 300);
+        clickRect(getRandomArea(captureScreen(), [0, 0, 1, 0.5]), 0.8, 300);
         break;
       }
       let nextBtn = null;

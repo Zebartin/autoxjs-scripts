@@ -1,14 +1,15 @@
 // 模拟器：720x1280
 // 在活动页面位置处开始脚本
 // 开始前需要保证“钓鱼图鉴”出现在活动页面右上角，如果没有可以去岛屿探险里看一眼再出来
-// 卡顿时表现很差
+// 卡顿时表现差
 // 视情况酌情调整以下数字
 
 // 窗口宽度：预判窗口，宽度越大表示提前考虑得越多
 // 感觉点快了就调小，点慢了可以调大一点
-const 窗口宽度 = 150;
+// 祈愿渔竿钓大鱼参考（祈愿、超祈愿、真超、极真）：126（容易超时）、118、110、100
+const 窗口宽度 = 100;
 // 甩杆延迟：识别到甩杆图标后，延迟X毫秒再点击
-const 甩杆延迟 = 900;
+const 甩杆延迟 = 840;
 
 // const 提前结束 = 4600;
 
@@ -19,7 +20,7 @@ requestScreenCaptureAuto();
 // mnt/shared/Pictures/xxx/
 const 图鉴 = {
     text: '图鉴',
-    point: [630, 400],
+    region: [630, 300, 80, 200],
     image: images.read('./images/图鉴.png')
 };
 const 图鉴内页 = {
@@ -97,6 +98,7 @@ let image, screenMat;
 
 image = captureScreen();
 if (image.width != 720 || image.height != 1280) {
+    toast('模拟器分辨率不是720x1280');
     console.error('模拟器分辨率不是720x1280');
     if (images.stopScreenCapturer) {
         images.stopScreenCapturer();
@@ -106,7 +108,7 @@ if (image.width != 720 || image.height != 1280) {
 // init opencv
 let t = images.grayscale(image);
 t.recycle();
-
+toast('⚠️注意：\n1. 须在活动页面启动\n2. 须保证“钓鱼图鉴”在右上角');
 for (let b of [左, 右, 上, 下]) {
     let channels = new java.util.ArrayList();
     Core.split(b.image.getMat(), channels);
@@ -143,7 +145,7 @@ try {
 }
 function main() {
     while (true) {
-        sleep(30);
+        // sleep(30);
         image = images.captureScreen();
         screenMat && screenMat.release();
         screenMat = null;
@@ -152,7 +154,7 @@ function main() {
             continue;
         }
         if (match(image, 甩杆)) {
-            clickRect(甩杆, 1, 甩杆延迟);
+            clickRect(甩杆, 1, 甩杆延迟+100);
             sleep(700);
             continue;
         }
@@ -168,7 +170,7 @@ function main() {
             //         continue;
             //     }
             // }
-            let cropped = images.clip(image, 660 - 窗口宽度, 300, 窗口宽度, 90);
+            let cropped = images.clip(image, 630 - 窗口宽度, 315, 窗口宽度, 50);
             let channels = new java.util.ArrayList();
             Core.split(cropped.getMat(), channels);
             cropped.recycle();
@@ -203,7 +205,7 @@ function leftright() {
         bounds: new android.graphics.Rect(500, 1030, 580, 1110)
     };
     while (true) {
-        sleep(10);
+        // sleep(10);
         if (matchTemplateJava(screenMat, 左.image, 0.6)) {
             clickRect(leftBtn, 1, 0);
             continue;
@@ -224,7 +226,7 @@ function updown() {
         bounds: new android.graphics.Rect(320, 1130, 400, 1210)
     };
     while (true) {
-        sleep(10);
+        // sleep(10);
         if (matchTemplateJava(screenMat, 上.image, 0.6)) {
             clickRect(upBtn, 1, 0);
             continue;
@@ -388,8 +390,8 @@ function clickRect(rect, scale, delay) {
     let x = Math.round((random() - 0.5) * rect.bounds.width() * scale + rect.bounds.centerX());
     let y = Math.round((random() - 0.5) * rect.bounds.height() * scale + rect.bounds.centerY());
     logText += `(${x}, ${y})`;
-    log(`点击${logText}`);
     click(x, y);
+    log(`点击${logText}`);
 }
 
 function requestScreenCaptureAuto(ensureImg) {

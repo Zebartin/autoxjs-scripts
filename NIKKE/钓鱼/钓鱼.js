@@ -94,6 +94,22 @@ const 下 = {
     image: images.read('./images/下.png')
 };
 
+const leftBtn = {
+    text: '左',
+    bounds: new android.graphics.Rect(140, 1030, 220, 1110)
+};
+const rightBtn = {
+    text: '右',
+    bounds: new android.graphics.Rect(500, 1030, 580, 1110)
+};
+const upBtn = {
+    text: '上',
+    bounds: new android.graphics.Rect(320, 930, 400, 1010)
+};
+const downBtn = {
+    text: '下',
+    bounds: new android.graphics.Rect(320, 1130, 400, 1210)
+};
 let image, screenMat;
 
 image = captureScreen();
@@ -118,15 +134,15 @@ for (let b of [左, 右, 上, 下]) {
     b.image = channels[1];
 }
 
-threads.start(leftright);
-threads.start(updown);
+// threads.start(leftright);
+// threads.start(updown);
 try {
     main();
 } catch (error) {
     if (!error.message.includes('InterruptedException'))
         log(error);
 } finally {
-    threads.shutDownAll();
+    // threads.shutDownAll();
     for (let button of [
         图鉴, 图鉴内页, 立即前往,
         钓鱼入口, 开始钓鱼1, 开始钓鱼2,
@@ -175,6 +191,22 @@ function main() {
             Core.split(cropped.getMat(), channels);
             cropped.recycle();
             screenMat = channels[1];
+            if (matchTemplateJava(screenMat, 左.image, 0.6)) {
+                clickRect(leftBtn, 1, 0);
+                continue;
+            }
+            if (matchTemplateJava(screenMat, 右.image, 0.6)) {
+                clickRect(rightBtn, 1, 0);
+                continue;
+            }
+            if (matchTemplateJava(screenMat, 上.image, 0.6)) {
+                clickRect(upBtn, 1, 0);
+                continue;
+            }
+            if (matchTemplateJava(screenMat, 下.image, 0.6)) {
+                clickRect(downBtn, 1, 0);
+                continue;
+            }
             continue;
         }
         if (match(image, 钓鱼入口, 1000, 0, 0.6)) {

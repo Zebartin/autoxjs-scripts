@@ -683,7 +683,7 @@ function 基地收菜(doDailyMission) {
       e.bounds.bottom > img.height / 2
     );
     if (enter != null) {
-      clickRect(enter, 1, 0);
+      clickRect(enter, 0.7, 0);
       sleep(1000);
       return null;
     }
@@ -2148,7 +2148,7 @@ function 强化装备(repeatCnt) {
       thresh: 180 - i * 8,
       region: [0, equipUpperBound, img.width, enhanceConfirm.bounds.top - equipUpperBound],
       rectFilter: rect => {
-        if (rect.width() < 100)
+        if (rect.width() < img.width / 10)
           return false;
         if (Math.abs(rect.width() - rect.height()) > 20)
           return false;

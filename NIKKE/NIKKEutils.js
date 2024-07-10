@@ -398,7 +398,12 @@ function 返回首页(checkSale, beforeHook) {
         threshold: 0.6,
         region: [0, img.height * 0.8, img.width / 2, img.height * 0.2]
       });
-      if (homeBtn === null) {
+      if (homeBtn === null || homeBtn.bounds.left < 0 ||
+        homeBtn.bounds.right > img.width ||
+        homeBtn.bounds.top < 0 ||
+        homeBtn.bounds.bottom > img.height
+      ) {
+        back();
         sleep(500);
         return null;
       }

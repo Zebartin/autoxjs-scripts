@@ -204,7 +204,7 @@ function oneSimulation(status) {
     let [chosenTarget, confirmBtn] = ocrUntilFound(res => {
       let t1 = buff;
       if (t1 == null)
-        t1 = res.find(e => e.text.match(/不.{0,2}[迷选迭港遗]择/) != null);
+        t1 = res.find(e => e.text.match(/不[^管]{0,2}[迷选迭港遗]择/) != null);
       let t2 = res.find(e => e.text.includes('确认'));
       if (!t1 || !t2)
         return null;
@@ -267,7 +267,7 @@ function quitPrevSim() {
   if (pageState == 'combat')
     clickRect(getRandomArea(captureScreen(), [0.2, 0.3, 0.8, 0.7]), 1, 0);
   else if (pageState != 'selectOption') {
-    clickRect(ocrUntilFound(res => res.find(e => e.text.match(/(不.{0,2}[迷选迭港遗]择$|体力)/) != null), 10, 500));
+    clickRect(ocrUntilFound(res => res.find(e => e.text.match(/(不[^管]{0,2}[迷选迭港遗]择$|体力)/) != null), 10, 500));
     clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('确认')), 10, 500));
     if (pageState == 'ICU')
       ocrUntilFound(res => res.text.match(/[已己巳]/) != null, 10, 1000);
@@ -299,7 +299,7 @@ function quitPrevSim() {
   }, 20, 1000);
   clickRect(confirmBtn);
   if (keepBuff) {
-    clickRect(ocrUntilFound(res => res.find(e => e.text.match(/不.{0,2}[迷选迭港遗]择/) != null), 10, 500));
+    clickRect(ocrUntilFound(res => res.find(e => e.text.match(/不[^管]{0,2}[迷选迭港遗]择/) != null), 10, 500));
     clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('确认')), 10, 500));
     clickRect(ocrUntilFound(res => res.find(e => e.text.endsWith('确认')), 10, 1000));
   }
@@ -549,7 +549,7 @@ function doWithOption(option, status) {
   sleep(1000);
   if (option.type == 'abilitiesTest') {
     let keywords = [
-      /不.{0,2}[迷选迭港遗]/,
+      /不[^管]{0,2}[迷选迭港遗]/,
       /体力/,
       /第[一二三]个/
     ];
@@ -577,17 +577,16 @@ function doWithOption(option, status) {
     clickRect(ocrUntilFound(res => {
       if (keywordType == 0 && res.text.match(/[什么都没有发生3分之2]{3}/) == null) {
         clickRect(choice, 1, 0);
-        return null;
       }
       return res.find(e => e.text.includes('确认'));
     }, 30, 1000));
     let roomCnt = 0;
     let testDone = ocrUntilFound(res => {
-      if (keywordType == 0 && res.text.match(/不.{0,2}[迷选迭港遗]/) != null)
+      if (keywordType == 0 && res.text.match(/不[^管]{0,2}[迷选迭港遗]/) != null)
         return null;
       if (res.text.match(/ON[\s\S]*ROOM[\s\S]*RESET/) != null)
         return roomCnt++ >= 3;
-      let t = res.find(e => e.text.match(/不.{0,2}[迷选迭港遗].$/) != null);
+      let t = res.find(e => e.text.match(/不[^管]{0,2}[迷选迭港遗].$/) != null);
       if (t != null)
         clickRect(t, 1, 0);
       if (res.text.includes('确认'))
@@ -632,7 +631,7 @@ function doWithOption(option, status) {
     const [cancelBtn, confirmBtn, ssrOption] = ocrUntilFound(res => {
       if (!res.text.includes('机会'))
         return null;
-      let t1 = res.find(e => e.text.match(/不.{0,2}[迷选迭港遗]择$/) != null);
+      let t1 = res.find(e => e.text.match(/不[^管]{0,2}[迷选迭港遗]择$/) != null);
       let t2 = res.find(e => e.text.includes('确认'));
       let t3 = null;
       if (!t1 || !t2)
@@ -778,7 +777,7 @@ function selectBuff(buffType, status) {
     log('选择：', bestBuff);
   }
   const [cancelBtn, confirmBtn] = ocrUntilFound(res => {
-    let t1 = res.find(e => e.text.match(/不.{0,2}[迷选迭港遗]择$/) != null);
+    let t1 = res.find(e => e.text.match(/不[^管]{0,2}[迷选迭港遗]择$/) != null);
     let t2 = res.find(e => e.text.endsWith('确认'));
     if (!t1 || !t2)
       return null;

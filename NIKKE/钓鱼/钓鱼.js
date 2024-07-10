@@ -10,6 +10,8 @@
 const 窗口宽度 = 100;
 // 甩杆延迟：识别到甩杆图标后，延迟X毫秒再点击
 const 甩杆延迟 = 840;
+// 全王冠，true / false，对应 开启 / 关闭
+const 全王冠 = true;
 
 // const 提前结束 = 4600;
 
@@ -93,6 +95,51 @@ const 下 = {
     region: [0, 0],
     image: images.read('./images/下.png')
 };
+const 小型_CLICK = {
+    text: '小型',
+    point: [160, 150],
+    image: images.read('./images/小型_CLICK.png')
+};
+const 小型_CHECK = {
+    text: '小型_CHECK',
+    point: [160, 120],
+    image: images.read('./images/小型_CHECK.png')
+};
+const 中型_CLICK = {
+    text: '中型',
+    point: [330, 150],
+    image: images.read('./images/中型_CLICK.png')
+};
+const 中型_CHECK = {
+    text: '中型_CHECK',
+    point: [330, 120],
+    image: images.read('./images/中型_CHECK.png')
+};
+const 大型_CLICK = {
+    text: '大型',
+    point: [505, 145],
+    image: images.read('./images/大型_CLICK.png')
+};
+const 大型_CHECK = {
+    text: '大型_CHECK',
+    point: [505, 124],
+    image: images.read('./images/大型_CHECK.png')
+};
+const 无王冠小鱼 = {
+    text: '无王冠小鱼',
+    region: [150, 380, 510, 520],
+    image: images.read('./images/无王冠小鱼.png')
+};
+const 无王冠中鱼 = {
+    text: '无王冠中鱼',
+    region: 无王冠小鱼.region,
+    image: images.read('./images/无王冠中鱼.png')
+};
+const 无王冠大鱼 = {
+    text: '无王冠大鱼',
+    region: 无王冠小鱼.region,
+    image: images.read('./images/无王冠大鱼.png')
+};
 
 const leftBtn = {
     text: '左',
@@ -111,6 +158,15 @@ const downBtn = {
     bounds: new android.graphics.Rect(320, 1130, 400, 1210)
 };
 let image, screenMat;
+let largestDone = [true, true, true];
+if (全王冠) {
+    largestDone = [false, false, false];
+    for (let x of [无王冠小鱼, 无王冠中鱼, 无王冠大鱼]) {
+        let t = images.grayscale(x.image);
+        x.image.recycle();
+        x.image = t;
+    }
+}
 
 image = captureScreen();
 if (image.width != 720 || image.height != 1280) {
@@ -146,7 +202,10 @@ try {
     for (let button of [
         图鉴, 图鉴内页, 立即前往,
         钓鱼入口, 开始钓鱼1, 开始钓鱼2,
-        甩杆, 剩余时间, 确认, 结束, 暂停
+        甩杆, 剩余时间, 确认, 结束, 暂停,
+        大型_CHECK, 大型_CLICK, 无王冠大鱼,
+        中型_CHECK, 中型_CLICK, 无王冠中鱼,
+        小型_CHECK, 小型_CLICK, 无王冠小鱼
     ]) {
         button.image.recycle();
     }
@@ -170,7 +229,7 @@ function main() {
             continue;
         }
         if (match(image, 甩杆)) {
-            clickRect(甩杆, 1, 甩杆延迟+100);
+            clickRect(甩杆, 1, 甩杆延迟 + 100);
             sleep(700);
             continue;
         }
@@ -299,6 +358,53 @@ function findNext() {
     }
     if (i == 300)
         return false;
+    const btns = [
+        [大型_CHECK, 大型_CLICK, 无王冠大鱼],
+        [中型_CHECK, 中型_CLICK, 无王冠中鱼],
+        [小型_CHECK, 小型_CLICK, 无王冠小鱼]
+    ];
+    let someFish = null;
+    for (let i = 0; i < 3; ++i) {
+        if (largestDone[i])
+            continue;
+        let [checkBtn, clickBtn, matchBtn] = btns[i];
+        while (true) {
+            sleep(100);
+            image = images.captureScreen();
+            if (match(image, checkBtn))
+                break;
+            if (match(image, clickBtn, 1000)) {
+                clickRect(clickBtn, 1, 0);
+                continue;
+            }
+        }
+        sleep(1000); // 偷懒sleep等加载
+        image = images.captureScreen();
+        let gimg = images.grayscale(image);
+        let result = images.matchTemplate(gimg, matchBtn.image, {
+            region: matchBtn.region,
+            max: 25
+        });
+        toastLog(`${matchBtn.text}数量：${result.points.length}`);
+        if (result.points.length > 0) {
+            let index = random(0, result.points.length - 1);
+            matchBtn.bounds = imgToBounds(matchBtn.image, result.points[index]).bounds;
+            someFish = matchBtn;
+        }
+        gimg && gimg.recycle();
+        if (someFish != null)
+            break;
+        largestDone[i] = true;
+    }
+    if (someFish === null) {
+        log('wtf已全图鉴王冠？');
+        someFish = 图鉴随机区域;
+    } else {
+        someFish.bounds.left -= 50;
+        someFish.bounds.right -= 50;
+        someFish.bounds.top += 20;
+        someFish.bounds.bottom += 20;
+    }
     for (i = 0; i < 20; ++i) {
         if (i != 0)
             sleep(1000);
@@ -309,7 +415,7 @@ function findNext() {
             continue;
         }
         if (match(image, 图鉴内页, 1000)) {
-            clickRect(图鉴随机区域, 1, 0);
+            clickRect(someFish, 1, 0);
             continue;
         }
         if (match(image, 钓鱼入口, 500, 0, 0.6)) {

@@ -8,18 +8,21 @@
 // 感觉点快了就调小，点慢了可以调大一点
 // 祈愿渔竿钓大鱼参考（祈愿、超祈愿、真超、极真）：126（容易超时）、118、110、100
 const 窗口宽度 = 100;
-// 甩杆延迟：识别到甩杆图标后，延迟X毫秒再点击
-const 甩杆延迟 = 840;
-// 全王冠，true / false，对应 开启 / 关闭
-const 全王冠 = true;
-
-// const 提前结束 = 4600;
+// 甩杆延迟：识别到甩杆图标后，延迟X毫秒再点击，为0时根据目标鱼种自动检测
+const 甩杆延迟 = 0;
+// 全王冠，1 / 0，对应 开启 / 关闭
+const 全王冠 = 1;
 
 importPackage(org.opencv.core);
 importPackage(org.opencv.imgproc);
 requestScreenCaptureAuto();
 
-// mnt/shared/Pictures/xxx/
+// /mnt/shared/Pictures/xxx/
+const 活动入口 = {
+    text: '活动入口',
+    point: [567, 1040],
+    image: images.read('./images/活动入口.png')
+};
 const 图鉴 = {
     text: '图鉴',
     region: [630, 300, 80, 200],
@@ -54,6 +57,31 @@ const 甩杆 = {
     text: '甩杆',
     point: [540, 1080],
     image: images.read('./images/甩杆.png')
+};
+const 浮标 = {
+    text: '浮标',
+    region: [580, 225, 70, 810],
+    image: images.read('./images/浮标.png')
+};
+const 血量50 = {
+    text: '血量50',
+    point: [360, 220],
+    image: images.read('./images/50.png')
+};
+const 血量60 = {
+    text: '血量60',
+    point: 血量50.point,
+    image: images.read('./images/60.png')
+};
+const 血量70 = {
+    text: '血量70',
+    point: 血量50.point,
+    image: images.read('./images/70.png')
+};
+const 血量80 = {
+    text: '血量80',
+    point: 血量50.point,
+    image: images.read('./images/80.png')
 };
 const 剩余时间 = {
     text: '剩余时间',
@@ -159,6 +187,18 @@ const downBtn = {
 };
 let image, screenMat;
 let largestDone = [true, true, true];
+
+image = captureScreen();
+if (image.width != 720 || image.height != 1280) {
+    toast('模拟器分辨率不是720x1280或者不是竖屏');
+    console.error('模拟器分辨率不是720x1280或者不是竖屏');
+    if (images.stopScreenCapturer) {
+        images.stopScreenCapturer();
+    }
+    exit();
+}
+toast('⚠️注意：\n1. 须在活动页面启动\n2. 须保证“钓鱼图鉴”在右上角');
+
 if (全王冠) {
     largestDone = [false, false, false];
     for (let x of [无王冠小鱼, 无王冠中鱼, 无王冠大鱼]) {
@@ -166,21 +206,11 @@ if (全王冠) {
         x.image.recycle();
         x.image = t;
     }
+} else {
+    // init opencv
+    let t = images.grayscale(图鉴.image);
+    t && t.recycle();
 }
-
-image = captureScreen();
-if (image.width != 720 || image.height != 1280) {
-    toast('模拟器分辨率不是720x1280');
-    console.error('模拟器分辨率不是720x1280');
-    if (images.stopScreenCapturer) {
-        images.stopScreenCapturer();
-    }
-    exit();
-}
-// init opencv
-let t = images.grayscale(image);
-t.recycle();
-toast('⚠️注意：\n1. 须在活动页面启动\n2. 须保证“钓鱼图鉴”在右上角');
 for (let b of [左, 右, 上, 下]) {
     let channels = new java.util.ArrayList();
     Core.split(b.image.getMat(), channels);
@@ -200,9 +230,10 @@ try {
 } finally {
     // threads.shutDownAll();
     for (let button of [
-        图鉴, 图鉴内页, 立即前往,
-        钓鱼入口, 开始钓鱼1, 开始钓鱼2,
-        甩杆, 剩余时间, 确认, 结束, 暂停,
+        活动入口, 图鉴, 图鉴内页, 立即前往,
+        钓鱼入口, 开始钓鱼1, 开始钓鱼2, 甩杆,
+        浮标, 血量50, 血量60, 血量70, 血量80,
+        剩余时间, 确认, 结束, 暂停,
         大型_CHECK, 大型_CLICK, 无王冠大鱼,
         中型_CHECK, 中型_CLICK, 无王冠中鱼,
         小型_CHECK, 小型_CLICK, 无王冠小鱼
@@ -224,13 +255,11 @@ function main() {
         image = images.captureScreen();
         screenMat && screenMat.release();
         screenMat = null;
-        if (match(image, 结束, 500)) {
-            clickRect(结束, 1, 0);
+        if (match(image, 甩杆) && castRod()) {
             continue;
         }
-        if (match(image, 甩杆)) {
-            clickRect(甩杆, 1, 甩杆延迟 + 100);
-            sleep(700);
+        if (match(image, 结束, 1500)) {
+            clickRect(结束, 1, 0);
             continue;
         }
         if (match(image, 确认)) {
@@ -238,13 +267,6 @@ function main() {
             continue;
         }
         if (match(image, 剩余时间, 0)) {
-            // if (match(image, 暂停, 0)) {
-            //     if (mayFail(image)) {
-            //         clickRect(暂停, 1, 0);
-            //         sleep(500);
-            //         continue;
-            //     }
-            // }
             let cropped = images.clip(image, 630 - 窗口宽度, 315, 窗口宽度, 50);
             let channels = new java.util.ArrayList();
             Core.split(cropped.getMat(), channels);
@@ -277,11 +299,16 @@ function main() {
             clickRect(开始钓鱼1, 1, 0);
             continue;
         }
-        if (match(image, 开始钓鱼2)) {
+        if (match(image, 开始钓鱼2, 2000)) {
             clickRect(开始钓鱼2, 1, 0);
             continue;
         }
         if (match(image, 图鉴, 3000) && findNext()) {
+            continue;
+        }
+        if (match(image, 活动入口, 10000, 20, 0.6)) {
+            clickRect(活动入口);
+            sleep(10000);
             continue;
         }
     }
@@ -328,16 +355,84 @@ function updown() {
         }
     }
 }
-function mayFail(img) {
-    let cropped = images.clip(img, 570, 175, 90, 70);
-    let count = imageColorCount(cropped, '#414230', 170);
-    log(count);
-    if (count < 提前结束) {
-        images.save(img, `/mnt/shared/Pictures/debug/${Date.now()}.png`)
-        images.save(cropped, `/mnt/shared/Pictures/debug/${Date.now()}c.png`)
+function castRod() {
+    const BLUE = '#00AEFF';
+    const PURPLE = '#D651FF';
+    const GOLD = '#FFC731';
+    const targetColors = [GOLD, PURPLE, BLUE];
+    const resultBtns = [
+        [血量80, [0]],
+        [血量70, [0, 1]],
+        [血量60, [2]],
+        [血量50, [2]],
+    ]
+    let i;
+    let target = null, result = null;
+    let castBingo = false;
+    if (甩杆延迟 === 0) {
+        for (i = 0; i < 3; ++i) {
+            if (!largestDone[i]) {
+                target = i;
+                break;
+            }
+        }
+        if (target === null)
+            target = 0;
     }
-    cropped.recycle();
-    return count < 提前结束;
+    for (i = 0; i < 1000; ++i) {
+        // sleep(10);
+        image = images.captureScreen();
+        if (match(image, 浮标, 0, 20, 0.6)) {
+            if (target === null) {
+                clickRect(甩杆, 1, 甩杆延迟);
+                continue;
+            }
+            let c = image.pixel(浮标.bounds.left - 20, 浮标.bounds.bottom);
+            // log(`color: ${colors.toString(c)}`);
+            if (colors.isSimilar(c, targetColors[target])) {
+                castBingo = true;
+                clickRect(甩杆, 1, 0);
+                continue;
+            } else {
+                castBingo = false;
+            }
+        }
+        for (let [btn, l] of resultBtns) {
+            if (match(image, btn)) {
+                result = l;
+                if (l.length === 1)
+                    castBingo = true;
+                log(`甩杆结果：${btn.text}`);
+                break;
+            }
+        }
+        if (result != null)
+            break;
+    }
+    if (i >= 1000) {
+        return false;
+    }
+    if (target === null || (castBingo && result.includes(target))) {
+        return true;
+    }
+    if (!castBingo) {
+        toastLog('甩杆晚了，重试');
+    } else if (!result.includes(target)) {
+        toastLog('血量不符合预期，重试');
+    }
+    for (i = 0; i < 50; ++i) {
+        sleep(200);
+        image = images.captureScreen();
+        if (match(image, 结束)) {
+            结束.lastMatched = 0;
+            return false;
+        }
+        if (match(image, 暂停, 600)) {
+            clickRect(暂停, 1, 0);
+            continue;
+        }
+    }
+    return false;
 }
 function findNext() {
     const 图鉴随机区域 = {
@@ -397,7 +492,8 @@ function findNext() {
         largestDone[i] = true;
     }
     if (someFish === null) {
-        log('wtf已全图鉴王冠？');
+        if (全王冠)
+            toastLog('wtf已全图鉴王冠？');
         someFish = 图鉴随机区域;
     } else {
         someFish.bounds.left -= 50;

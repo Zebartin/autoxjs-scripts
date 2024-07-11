@@ -134,11 +134,12 @@ function 废铁商店() {
   const GOODS = {
     "珠宝": /珠宝/,
     "成长套组": /成长套组/,
-    "好感券-通用": /[通逼]/,
+    "简介个性化礼包": /[简介个性化礼包]{3,}/,
+    "好感券-通用": /([通逼]|[自由使用券]{3,})/,
     "好感券-极乐净土": /极/,
     "好感券-米西利斯": /米/,
     "好感券-泰特拉": /特/,
-    "好感券-朝圣者": /(朝|补给|交换)/,
+    "好感券-朝圣者": /(朝|补[给绘]|[^长]套组|交换)/,
     "好感券-反常": /反/,
     "芯尘盒": /尘盒$/,
     "信用点盒": /点盒$/,
@@ -151,7 +152,7 @@ function 废铁商店() {
   const userPattern = new RegExp(`(${userSetting.map(x => GOODS[x].source).join('|')})`);
   if (userSetting.length == 0)
     return;
-  const checkInterval = NIKKEstorage.get('recyclingShopInterval', 3);
+  const checkInterval = NIKKEstorage.get('recyclingShopInterval', 2);
   const lastChecked = NIKKEstorage.get('recyclingShopLastChecked', null);
   let diffMillSec = new Date(NikkeToday()) - new Date(lastChecked);
   let diffDay = Math.round(diffMillSec / 1000 / 60 / 60 / 24);
@@ -374,7 +375,7 @@ function buyGood(good, doMax) {
     }
     if (res.text.match(/(距离|更新|还有)/) != null) {
       confirmCount++;
-      if (confirmCount >= 3)
+      if (confirmCount >= 2)
         return true;
     }
     let reward = res.find(e => e.text.match(/(REW|点击|奖励)/) != null);
@@ -395,7 +396,7 @@ function buyGood(good, doMax) {
         let count = imageColorCount(cropped, '#6b6b6b', 221);
         let ratio = count / (maxBtn.bounds.width() * maxBtn.bounds.height());
         cropped.recycle();
-        if (ratio < 0.15) {
+        if (ratio < 0.32) {
           scaleBack(maxBtn, scale);
           clickRect(maxBtn, 0.6, 0);
           sleep(400);

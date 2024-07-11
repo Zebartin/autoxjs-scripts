@@ -101,7 +101,7 @@ ui.layout(
               </horizontal>
             </vertical>
             <vertical margin="0 10">
-              <text text="购买以下废铁商店物品（每隔3天检查一次）" textColor="#222222" textSize="16sp" />
+              <text text="购买以下废铁商店物品（每隔2天检查一次）" textColor="#222222" textSize="16sp" />
               <horizontal>
                 <checkbox text="珠宝" id="废铁商店.珠宝" textSize="14sp" margin="8 0" w="0" layout_weight="1" />
                 <checkbox text="成长套组" id="废铁商店.成长套组" textSize="14sp" margin="8 0" w="0" layout_weight="1" />
@@ -125,6 +125,10 @@ ui.layout(
               <horizontal>
                 <checkbox text="战斗数据辑盒" id="废铁商店.战斗数据辑盒" textSize="14sp" margin="8 0" w="0" layout_weight="1" />
                 <checkbox text="信用点" id="废铁商店.信用点" textSize="14sp" margin="8 0" w="0" layout_weight="1" />
+              </horizontal>
+              <horizontal>
+                <checkbox text="简介个性化礼包" id="废铁商店.简介个性化礼包" textSize="14sp" margin="8 0" w="0" layout_weight="1" />
+                <horizontal textSize="14sp" margin="8 0" w="0" layout_weight="1" />
               </horizontal>
             </vertical>
           </vertical>
@@ -625,7 +629,7 @@ ui.save.on("click", function () {
   for (let good of [
     '珠宝', '成长套组', '好感券-通用', '好感券-极乐净土',
     '好感券-米西利斯', '好感券-泰特拉', '好感券-朝圣者', '好感券-反常',
-    '芯尘盒', '信用点盒', '战斗数据辑盒', '信用点'
+    '芯尘盒', '信用点盒', '战斗数据辑盒', '信用点', '简介个性化礼包'
   ])
     if (ui.findView(`废铁商店.${good}`).isChecked())
       recyclingShopList.push(good);

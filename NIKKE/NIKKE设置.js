@@ -398,8 +398,11 @@ ui.buyBondItem.setChecked(NIKKEstorage.get('buyBondItem', false));
 ui.buyProfileCustomPack.setChecked(NIKKEstorage.get('buyProfileCustomPack', false));
 ui.buyProfileCustomPackArena.setChecked(NIKKEstorage.get('buyProfileCustomPackArena', false));
 ui.buyCodeManual.setProgress(NIKKEstorage.get('buyCodeManual', 3));
-for (let recyclingGood of NIKKEstorage.get('recyclingShopList', ['珠宝', '芯尘盒']))
-  ui.findView(`废铁商店.${recyclingGood}`).setChecked(true);
+for (let recyclingGood of NIKKEstorage.get('recyclingShopList', ['珠宝', '芯尘盒'])) {
+  let t = ui.findView(`废铁商店.${recyclingGood}`);
+  if (t !== null)
+    t.setChecked(true);
+}
 
 ui.adviseLimit.setMax(10);
 ui.adviseLimit.setOnSeekBarChangeListener({

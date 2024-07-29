@@ -169,10 +169,10 @@ function checkInLIP() {
   }
   const today = NikkeToday();
   const lastChecked = NIKKEstorage.get('checkInLIP', null);
-  // if (today == lastChecked) {
-  //   log('今日LIP已签到');
-  //   return;
-  // }
+  if (today == lastChecked) {
+    log('今日LIP已签到');
+    return;
+  }
   // 领取超值好礼 -> tap to enter
   const enterLIP = ocrUntilFound((res, img) => {
     const tapToEnter = res.find(e =>
@@ -874,6 +874,9 @@ function startFromOurPlay() {
       if (appear(GAME_SWITCH, 2000)) {
         if (GAME_SWITCH.text) {
           log(GAME_SWITCH.text);
+          if (GAME_SWITCH.text.startsWith('正在')) {
+            continue;
+          }
         }
       }
       if (appearThenClick(CLICK_TO_START, 5000)) {

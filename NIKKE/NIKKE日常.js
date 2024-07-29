@@ -71,10 +71,10 @@ function 日常() {
           console.error(error.message);
           console.error(error.stack);
           if (!error.message.includes('加载')) {
-            reportEvent('error', {
-              task: taskName,
-              tagName: NIKKEstorage.get('tagName', '无记录'),
-            });
+            // reportEvent('error', {
+            //   task: taskName,
+            //   tagName: NIKKEstorage.get('tagName', '无记录'),
+            // });
             // 保存出错内容
             saveError(error);
           }
@@ -396,10 +396,10 @@ function buyGood(good, doMax) {
           img, maxBtn.bounds.left, maxBtn.bounds.top,
           maxBtn.bounds.width(), maxBtn.bounds.height()
         );
-        let count = imageColorCount(cropped, '#6b6b6b', 221);
+        let count = imageColorCount(cropped, '#434343', 221);
         let ratio = count / (maxBtn.bounds.width() * maxBtn.bounds.height());
         cropped.recycle();
-        if (ratio < 0.32) {
+        if (ratio < 0.3) {
           scaleBack(maxBtn, scale);
           clickRect(maxBtn, 0.6, 0);
           sleep(400);
@@ -836,7 +836,7 @@ function 爬塔() {
           let startY = Math.max(img.height * 0.8, img.height - 300);
           img = images.clip(img, 0, startY, img.width, img.height - startY);
           let res = gmlkit.ocr(img, 'zh');
-          backBtn = res.find(e => e.text == '返回');
+          backBtn = res.find(e => e.text.match(/返[回迴]+/) != null);
           img.recycle();
           if (backBtn != null) {
             backBtn.bounds.top += startY;
@@ -1664,7 +1664,7 @@ function 单次咨询() {
     for (let j = 0; j < 30; ++j) {
       img = captureScreen();
       thresh = random(35, 55);
-      rectFilter = (rect) => rect.width() > width * 0.7 && rect.left < width * 0.5 && rect.right > width * 0.5 && rect.height() < 200
+      rectFilter = (rect) => rect.width() > width * 0.7 && rect.left < width * 0.5 && rect.right > width * 0.5 && rect.height() < 350
       result = findContoursRect(img, {
         thresh: thresh,
         type: "BINARY",

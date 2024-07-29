@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v3
       
       - name: Compress
-        run: 7z a -t7z NIKKE-scripts-${{ github.ref_name }}.7z * ../utils.js -x!*.md -x!tools -x!archive -x!utils.js
+        run: rm ./utils.js && mv ../utils.js . && 7z a -t7z NIKKE-scripts-${{ github.ref_name }}.7z * -x!*.md -x!tools -x!archive
         working-directory: ./NIKKE
 
       - uses: softprops/action-gh-release@v1

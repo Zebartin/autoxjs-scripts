@@ -2,9 +2,9 @@ var {
   ocrUntilFound, clickRect, unlockIfNeed,
   requestScreenCaptureAuto, getDisplaySize,
   killApp, findImageByFeature, findContoursRect,
-  rgbToGray, getRandomArea, swipeRandom, ocrInfo
+  rgbToGray, getRandomArea, swipeRandom, ocrInfo,
+  screenshot, appear, appearThenClick
 } = require('./utils.js');
-var firstBoot = true;
 var firstCheckAuto = true;
 var homeBtn = null;
 if (typeof module === 'undefined') {
@@ -61,15 +61,6 @@ function 启动NIKKE() {
   let NIKKEstorage = storages.create("NIKKEconfig");
   let errorPath = files.path('./nikkerror/');
   files.ensureDir(errorPath);
-  if (firstBoot && NIKKEstorage.get('alreadyInGame', false)) {
-    toastLog('已勾选“游戏已启动”选项\n请确保游戏此时正处于前台画面');
-    firstBoot = false;
-    return;
-  }
-  firstBoot = false;
-  unlockIfNeed();
-  home();
-  sleep(500);
   // 保证错误截图不要过多
   let maxErr = 10;
   let errorDirs = files.listDir(errorPath);
@@ -95,8 +86,14 @@ function 启动NIKKE() {
         toastLog(error);
     }
   }
+  const launchMethod = NIKKEstorage.get('launchMethod', 'NIKKE');
+  if (launchMethod != 'Manually') {
+    unlockIfNeed();
+    home();
+    sleep(500);
+  }
   // 自行启动v2rayNG科学上网
-  if (NIKKEstorage.get('v2rayNG', false) && app.launchApp("v2rayNG")) {
+  if (launchMethod == 'NIKKE' && NIKKEstorage.get('v2rayNG', false) && app.launchApp("v2rayNG")) {
     let i;
     const maxRetry = 10;
     for (i = 0; i < maxRetry; ++i) {
@@ -140,10 +137,17 @@ function 启动NIKKE() {
     }
     id('fab').click();
   }
-
-  app.launchApp("NIKKE");
-  log("打开NIKKE");
-  // waitForActivity('com.shiftup.nk.MainActivity');
+  if (launchMethod == 'NIKKE') {
+    app.launchApp("NIKKE");
+    // waitForActivity('com.shiftup.nk.MainActivity');
+    log("打开NIKKE");
+  } else if (launchMethod == 'OurPlay') {
+    startFromOurPlay();
+  } else if (launchMethod == 'Manually') {
+      toastLog('已勾选“游戏已启动”选项\n请确保游戏此时正处于前台画面');
+  } else {
+    throw new Error(`未知启动方式${launchMethod}`);
+  }
 }
 function backToAnnouncement() {
   // 返回公告页面
@@ -159,15 +163,16 @@ function backToAnnouncement() {
   }, 10, 800);
 }
 function checkInLIP() {
+  let NIKKEstorage = storages.create("NIKKEconfig");
   if (NIKKEstorage.get('doCheckInLIP', true) != true) {
     return;
   }
   const today = NikkeToday();
   const lastChecked = NIKKEstorage.get('checkInLIP', null);
-  if (today == lastChecked) {
-    log('今日LIP已签到');
-    return;
-  }
+  // if (today == lastChecked) {
+  //   log('今日LIP已签到');
+  //   return;
+  // }
   // 领取超值好礼 -> tap to enter
   const enterLIP = ocrUntilFound((res, img) => {
     const tapToEnter = res.find(e =>
@@ -335,11 +340,21 @@ function 等待NIKKE加载() {
 
 function 退出NIKKE() {
   home();
-  killApp('NIKKE');
-  if (storages.create("NIKKEconfig").get('v2rayNG', false) && app.launchApp("v2rayNG")) {
-    if (id('tv_test_state').findOne().text() != '未连接')
-      id('fab').click();
-    killApp('v2rayNG');
+  const launchMethod = NIKKEstorage.get('launchMethod', 'NIKKE');
+  if (launchMethod == 'NIKKE') {
+    killApp('NIKKE');
+    if (storages.create("NIKKEconfig").get('v2rayNG', false) && app.launchApp("v2rayNG")) {
+      if (id('tv_test_state').findOne().text() != '未连接')
+        id('fab').click();
+      killApp('v2rayNG');
+    }
+  } else if (launchMethod == 'OurPlay') {
+    quitOurPlay();
+  } else if (launchMethod == 'Manually') {
+    toastLog('已设置手动启动游戏，\n无法确定如何关闭');
+    NIKKEstorage.put('exitGame', false)
+  } else {
+    throw new Error(`未知启动方式${launchMethod}`);
   }
 }
 
@@ -814,4 +829,116 @@ function checkAuto() {
   }
   if (i == 2)
     firstCheckAuto = false;
+}
+
+const GAME_TITLE = {
+  selector: id('game_title').textContains('妮姬')
+};
+const RUNNING_CHECK = {
+  selector: id('tv_title').textContains('妮姬')
+}
+const GAME_SWITCH = {
+  selector: id('btn_start_game')
+};
+
+function startFromOurPlay() {
+  requestScreenCaptureAuto();
+  const CLICK_TO_START = {
+    selector: text('点击打开游戏')
+  };
+  let i = 0;
+  app.launchApp('OurPlay');
+  for (i = 0; i < 50; ++i) {
+    sleep(1000);
+    screenshot();
+    if (appear(RUNNING_CHECK)) {
+      break;
+    }
+    if (appearThenClick(GAME_TITLE)) {
+      continue;
+    }
+    if (closeAds()) {
+      continue;
+    }
+    if (currentPackage() != 'com.excean.gspace')
+      app.launchApp('OurPlay');
+  }
+  if (i == 50) {
+    throw new Error('无法打开OurPlay或没有在OurPlay中找到游戏');
+  }
+  for (let i = 0; i < 50; ++i) {
+    if (i != 0) {
+      sleep(500);
+    }
+    if (appear(RUNNING_CHECK, 0)) {
+      if (appear(GAME_SWITCH, 2000)) {
+        if (GAME_SWITCH.text) {
+          log(GAME_SWITCH.text);
+        }
+      }
+      if (appearThenClick(CLICK_TO_START, 5000)) {
+        continue;
+      }
+    } else {
+      break;
+    }
+  }
+  log('进入游戏');
+}
+function quitOurPlay() {
+  app.launchApp('OurPlay');
+  for (let i = 0; i < 50; ++i) {
+    sleep(1000);
+    if (appear(GAME_TITLE)) {
+      break;
+    }
+    if (appear(RUNNING_CHECK) && appearThenClick(GAME_SWITCH)) {
+      continue;
+    }
+    if (currentPackage() != 'com.excean.gspace')
+      app.launchApp('OurPlay');
+  }
+  killApp('OurPlay');
+}
+
+function closeAds() {
+  const [width, height] = getDisplaySize();
+  const SKIP_AD = {
+    text: '跳过',
+    selector: textMatches(/^跳过([\s\d]+)?$/),
+    regex: /^跳过/
+  };
+  const CLOSE_AD_0 = {
+    text: '关闭广告',
+    selector: id('close_render_ad')
+  };
+  const CLOSE_AD_1 = {
+    text: '关闭广告图标',
+    selector: packageName('com.excean.gspace')
+      .classNameContains('Image')
+      .boundsInside(0, 0, width, height / 2)
+      .filter((w) => {
+        if (w.bounds().width() > 80 || w.bounds().height() > 80)
+          return false;
+        const p = w.parent();
+        if (!p || !p.parent())
+          return false;
+        const pp = p.parent();
+        if (pp.bounds().width() < width * 0.5) {
+          if (!pp.parent() || pp.parent().bounds().width() < width * 0.5)
+            return false;
+        }
+        return true;
+      })
+  }
+  if (appearThenClick(SKIP_AD)) {
+    return true;
+  }
+  if (appearThenClick(CLOSE_AD_0)) {
+    return true;
+  }
+  if (appearThenClick(CLOSE_AD_1)) {
+    return true;
+  }
+  return false;
 }

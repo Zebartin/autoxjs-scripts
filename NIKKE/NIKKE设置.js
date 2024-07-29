@@ -35,7 +35,6 @@ ui.layout(
           <vertical margin="8 50 0 0">
             <text textSize="14sp" margin="0 0 0 4">通用设置</text>
             <Switch text="静音运行（需要修改系统设置权限）" id="mute" textSize="16sp" margin="10 2" />
-            <Switch text="已启动游戏且位于首页或正在加载" id="alreadyInGame" textSize="16sp" margin="10 2" />
             <Switch text="打开本界面时自动检查更新" id="checkUpdateAuto" textSize="16sp" margin="10 2" />
             <Switch text="Level Infinite Pass签到" id="doCheckInLIP" textSize="16sp" margin="10 2" />
             <Switch text="游戏中会出现限时礼包" id="checkSale" textSize="16sp" margin="10 2" />
@@ -50,6 +49,10 @@ ui.layout(
             <horizontal margin="10 2" gravity="center_vertical|left" weightSum="10" h="0" layout_weight="1">
               <text id="maxRetryText" textSize="16sp" textColor="#222222" w="0" layout_weight="6">脚本出错时不重试</text>
               <seekbar id="maxRetry" w="0" layout_weight="4" layout_gravity="center" />
+            </horizontal>
+            <horizontal margin="10 2" gravity="center_vertical|left" weightSum="10" h="0" layout_weight="1">
+              <text textSize="16sp" textColor="#222222" w="0" layout_weight="4">游戏启动方式</text>
+              <spinner id="launchMethod" entries="启动游戏本体|通过OurPlay启动|自行手动进入游戏" spinnerMode="dialog" w="0" layout_weight="6" />
             </horizontal>
           </vertical>
           <horizontal margin="6 15">
@@ -576,9 +579,43 @@ ui.maxRetry.setOnSeekBarChangeListener({
 
 ui.maxRetry.setMax(5);
 ui.maxRetry.setProgress(NIKKEstorage.get('maxRetry', 1));
+
+let launchMethod = NIKKEstorage.get('launchMethod', 'NIKKE');
+if (NIKKEstorage.get('alreadyInGame', false)) {
+  launchMethod = 'Manually';
+  NIKKEstorage.remove('alreadyInGame');
+}
+const launchMethodsList = [
+  {
+    value: 'NIKKE',
+    displayValue: '启动游戏本体'
+  },
+  {
+    value: 'OurPlay',
+    displayValue: '通过OurPlay启动'
+  },
+  {
+    value: 'Manually',
+    displayValue: '自行手动进入游戏'
+  }
+];
+for (let i = 0; i < launchMethodsList.length; ++i) {
+  if (launchMethodsList[i].value == launchMethod) {
+    ui.launchMethod.setSelection(i);
+    break;
+  }
+}
+ui.launchMethod.setOnItemSelectedListener({
+  onItemSelected: function (parent, view, position, id) {
+    const selected = ui.launchMethod.getSelectedItem();
+    if (selected.toString() == '自行手动进入游戏') {
+      toast('自行手动进入游戏时，\n“退出游戏”及“重试”设置将不生效');
+    }
+  }
+});
 for (let generalOption of [
-  'mute', 'alreadyInGame', 'checkUpdateAuto',
-  'exitGame', 'alwaysCheckDailyLogin', 'v2rayNG'
+  'mute', 'checkUpdateAuto', 'exitGame',
+  'alwaysCheckDailyLogin', 'v2rayNG'
 ])
   ui.findView(generalOption).setChecked(NIKKEstorage.get(generalOption, false));
 for (let generalOption of [
@@ -679,12 +716,18 @@ ui.save.on("click", function () {
   NIKKEstorage.put('dailyMission', dailyMission);
 
   for (let generalOption of [
-    'mute', 'alreadyInGame', 'doCheckInLIP', 'checkUpdateAuto', 'checkSale',
+    'mute', 'doCheckInLIP', 'checkUpdateAuto', 'checkSale',
     'exitGame', 'checkGameAuto', 'alwaysCheckDailyLogin', 'v2rayNG'
   ])
     NIKKEstorage.put(generalOption, ui.findView(generalOption).isChecked());
   NIKKEstorage.put('checkDailyLogin', ui.checkDailyLogin.getProgress());
   NIKKEstorage.put('maxRetry', ui.maxRetry.getProgress());
+  for (let lm of launchMethodsList) {
+    if (lm.displayValue == ui.launchMethod.getSelectedItem().toString()) {
+      NIKKEstorage.put('launchMethod', lm.value);
+      break;
+    }
+  }
 
   ui.finish();
   toastLog('设置已保存');

@@ -10,8 +10,11 @@ else {
   module.exports = {
     ocrInfo: ocrInfo,
     scaleBack: scaleBack,
+    screenshot: screenshot,
     ocrUntilFound: ocrUntilFound,
     clickRect: clickRect,
+    appear: appear,
+    appearThenClick: appearThenClick,
     swipeRandom: swipeRandom,
     imgToBounds: imgToBounds,
     getRandomArea: getRandomArea,
@@ -79,12 +82,33 @@ function scaleBack(x, scale) {
   x.bounds.top /= scale;
   x.bounds.bottom /= scale;
 }
-
-/*
-options:
-- maxScale: 最大放大系数，默认1
-- gray: 是否灰度化处理后再OCR，默认false
-*/
+/**
+ * 
+ * @param {boolean} [ocr] 
+ */
+function screenshot(ocr) {
+  if (ocr === undefined) {
+    ocr = true;
+  }
+  // 回收上一张图
+  ocrInfo.img && ocrInfo.img.recycle();
+  ocrInfo.img = images.copy(captureScreen());
+  if (ocr) {
+    ocrInfo.result = gmlkit.ocr(ocrInfo.img, "zh");
+  } else {
+    ocrInfo.result = null;
+  }
+}
+/**
+ * 
+ * @param {Function} found 
+ * @param {number} retry 
+ * @param {number} interval 
+ * @param {Object} [options]
+ * @param {number} [options.maxScale] - 最大放大系数，默认1
+ * @param {boolean} [options.gray] - 是否灰度化处理后再OCR，默认false
+ * @returns 
+ */
 function ocrUntilFound(found, retry, interval, options) {
   options = options || {};
   maxScale = options.maxScale || 1;
@@ -143,10 +167,76 @@ function clickRect(rect, scale, delay) {
   log(`点击${logText}`);
   click(x, y);
 }
-
+/**
+ * @callback buttonFilter
+ * @param {android.graphics.Rect} bounds
+ * @param {Image} img
+ * @returns {boolean}
+ */
 /**
  * 
- * @param {Rect} area 
+ * @param {Object} button
+ * @param {number} [button.lastMatched]
+ * @param {UiSelector} [button.selector]
+ * @param {RegExp} [button.regex]
+ * @param {buttonFilter} [button.filter]
+ * @param {number} [interval] 
+ * @returns {boolean}
+ */
+function appear(button, interval) {
+  if (interval === undefined) {
+    interval = 1000;
+  }
+  if (button.lastMatched && Date.now() - button.lastMatched < interval) {
+    return false;
+  }
+  if (button.selector) {
+    let b = button.selector.filter(w=>
+      w.bounds().width() > 0 && w.bounds().height() > 0
+    ).findOnce();
+    if (b != null) {
+      button.lastMatched = Date.now();
+      button.button = b;
+      button.bounds = b.bounds();
+      if (b.text())
+        button.text = b.text();
+      return true;
+    }
+  }
+  if (ocrInfo.result === null || !button.regex)
+    return false;
+  let result = ocrInfo.result.find(e => {
+    if (!button.regex.test(e.text))
+      return false;
+    if (button.filter && !button.filter(e.bounds, ocrInfo.img))
+      return false;
+    return true;
+  });
+  if (result !== null) {
+    button.lastMatched = Date.now();
+    button.bounds = result.bounds;
+    return true;
+  }
+  return false;
+}
+/**
+ * 
+ * @param {Object} button
+ * @param {number} [button.lastMatched]
+ * @param {UiSelector} [button.selector]
+ * @param {RegExp} [button.regex]
+ * @param {buttonFilter} [button.filter]
+ * @param {number} [interval] 
+ * @returns {boolean}
+ */
+function appearThenClick(button, interval) {
+  if (appear(button, interval)) {
+    clickRect(button, 1, 0);
+  }
+}
+/**
+ * 
+ * @param {android.graphics.Rect} area 
  * @param {string} direction up/down/left/right
  * @param {number} duration 
  */

@@ -56,6 +56,9 @@ function 日常() {
   };
   let alreadyRetry = 0;
   const maxRetry = NIKKEstorage.get('maxRetry', 1);
+  if (NIKKEstorage.get('launchMethod', 'NIKKE') == 'Manually') {
+    alreadyRetry = maxRetry;
+  }
   let retryFunc = (taskName) => {
     for (; alreadyRetry <= maxRetry; ++alreadyRetry) {
       try {

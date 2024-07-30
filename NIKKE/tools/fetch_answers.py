@@ -135,7 +135,11 @@ def get_from_gamekee_wiki(skip_names: set[str]):
 
     def is_valid(nikke_entry):
         for attr in entry_filter['data']['entry_filter_attr'].get(str(nikke_entry['id']), []):
-            if (attr['input_id'], attr['value']) in invalid_pair:
+            if len(attr['value']) != 1:
+                print(nikke_entry)
+                print(entry_filter['data']['entry_filter_attr'].get(str(nikke_entry['id'])))
+                raise Exception('gamekee wiki parsing failed')
+            if (attr['input_id'], int(attr['value'][0])) in invalid_pair:
                 return False
         return True
 
@@ -158,11 +162,14 @@ def get_from_gamekee_wiki(skip_names: set[str]):
             if len(line_strs) != 4:
                 continue
             answer = ''
-            if line_strs[0] == '120':
-                answer = line_strs[1]
-            elif line_strs[-1] == '120':
-                answer = line_strs[-2]
-            else:
+            try:
+                lv = int(line_strs[0])
+                rv = int(line_strs[-1])
+                if lv > rv:
+                    answer = line_strs[1]
+                else:
+                    answer = line_strs[-2]
+            except ValueError:
                 print(f'无法解析：{line_strs}')
                 continue
             answer = punctuation_pattern.sub('', answer)
@@ -233,8 +240,12 @@ if __name__ == '__main__':
     if not zh_cn_data:
         print('Cannot get data from netcut, quit here')
         exit(1)
-    zh_cn_data_extra = get_from_gamekee_wiki(set(zh_cn_data.keys()))
-    zh_cn_data.update(zh_cn_data_extra)
+    try:
+        zh_cn_data_extra = get_from_gamekee_wiki(set(zh_cn_data.keys()))
+        zh_cn_data.update(zh_cn_data_extra)
+    except Exception as e:
+        print(e)
+        print()
     if len(sys.argv) > 1:
         zh_tw_data = get_from_google_sheet(sys.argv[1])
     else:

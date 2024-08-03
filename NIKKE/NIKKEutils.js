@@ -173,7 +173,7 @@ function checkInLIP() {
     log('今日LIP已签到');
     return;
   }
-  // 领取超值好礼 -> tap to enter
+  // 领取超值好礼/签到领珠宝 -> tap to enter
   const enterLIP = ocrUntilFound((res, img) => {
     const tapToEnter = res.find(e =>
       e.text.match(/tap\s*t.\s*enter/i) != null
@@ -188,7 +188,7 @@ function checkInLIP() {
       return false;
     }
     const entrance = res.find(e =>
-      e.text.match(/.[取]..好./) != null &&
+      e.text.match(/[领取超值好礼签到领珠宝]{3,}/) != null &&
       e.bounds != null &&
       e.bounds.top > announcementBtn.bounds.bottom
     );

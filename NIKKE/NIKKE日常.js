@@ -1410,21 +1410,50 @@ function 拦截战() {
   log('拦截战已完成');
   返回首页();
 }
+function isAdviseOutdated(advisePath) {
+  importClass(java.io.File);
+  const f = new File(advisePath);
+  if (!f.exists()) {
+    return true;
+  }
+  const u = 'https://api.github.com/repos/Zebartin/autoxjs-scripts/commits';
+  const params = {
+    ref: 'dev',
+    path: 'NIKKE/nikke.json',
+    since: new Date(f.lastModified()).toISOString()
+  };
+  const paramsStr = Object.entries(params).map(x => `${x[0]}=${x[1]}`).join('&');
+  try {
+    const resp = http.get(`${u}?${paramsStr}`, {
+      headers: {
+        accept: 'application/vnd.github+json'
+      }
+    });
+    return resp.body.json().length > 0;
+  } catch (error) {
+    console.error(`获取更新情况失败：${error.message}`);
+    return true;
+  }
+}
 function 下载咨询文本() {
   if (advise != null)
     return;
-  if (NIKKEstorage.get('fetchLatestNikkeJson', true))
+  const advisePath = files.path('./nikke.json');
+  if (isAdviseOutdated(advisePath)) {
     try {
       log('正在下载最新咨询文本');
       let respStr = http.get('https://github.blindfirefly.top/https://raw.githubusercontent.com/Zebartin/autoxjs-scripts/dev/NIKKE/nikke.json').body.string();
-      files.write('./nikke.json', respStr);
+      files.write(advisePath, respStr);
       advise = JSON.parse(respStr);
       log('下载完成');
     } catch (error) {
       log(`获取最新咨询文本失败：${error.message}`);
     }
+  } else {
+    log('当前咨询文本已是最新');
+  }
   if (advise == null)
-    advise = JSON.parse(files.read('./nikke.json'));
+    advise = JSON.parse(files.read(advisePath));
 }
 
 function 咨询() {

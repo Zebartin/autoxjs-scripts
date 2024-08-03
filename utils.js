@@ -86,13 +86,16 @@ function scaleBack(x, scale) {
  * 
  * @param {boolean} [ocr] 
  */
-function screenshot(ocr) {
+function screenshot(img, ocr) {
+  if (img === undefined) {
+    img = images.copy(captureScreen());
+  }
   if (ocr === undefined) {
     ocr = true;
   }
   // 回收上一张图
   ocrInfo.img && ocrInfo.img.recycle();
-  ocrInfo.img = images.copy(captureScreen());
+  ocrInfo.img = img;
   if (ocr) {
     ocrInfo.result = gmlkit.ocr(ocrInfo.img, "zh");
   } else {
@@ -128,10 +131,7 @@ function ocrUntilFound(found, retry, interval, options) {
       img && img.recycle();
       img = newImg;
     }
-    // 回收上一张图
-    ocrInfo.img && ocrInfo.img.recycle();
-    ocrInfo.img = img;
-    ocrInfo.result = gmlkit.ocr(img, "zh");
+    screenshot(img, true);
     if (ocrInfo.result == null || ocrInfo.result.text == null)
       continue;
     let res = found(ocrInfo.result, img, scale);
@@ -191,7 +191,7 @@ function appear(button, interval) {
     return false;
   }
   if (button.selector) {
-    let b = button.selector.filter(w=>
+    let b = button.selector.filter(w =>
       w.bounds().width() > 0 && w.bounds().height() > 0
     ).findOnce();
     if (b != null) {

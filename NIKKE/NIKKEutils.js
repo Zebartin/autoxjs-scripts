@@ -144,7 +144,7 @@ function 启动NIKKE() {
   } else if (launchMethod == 'OurPlay') {
     startFromOurPlay();
   } else if (launchMethod == 'Manually') {
-      toastLog('已勾选“游戏已启动”选项\n请确保游戏此时正处于前台画面');
+    toastLog('已勾选“游戏已启动”选项\n请确保游戏此时正处于前台画面');
   } else {
     throw new Error(`未知启动方式${launchMethod}`);
   }
@@ -908,9 +908,13 @@ function closeAds() {
   const [width, height] = getDisplaySize();
   const SKIP_AD = {
     text: '跳过',
-    selector: textMatches(/^跳过([\s\d]+)?$/),
-    regex: /^跳过/
+    selector: textMatches(/^.{0,3}跳过([\s\d]+)?$/),
+    regex: /^.{0,3}跳过/
   };
+  const COUPON = {
+    text: '优惠券',
+    selector: id('draw_coupon_now')
+  }
   const CLOSE_AD_0 = {
     text: '关闭广告',
     selector: id('close_render_ad')
@@ -923,18 +927,26 @@ function closeAds() {
       .filter((w) => {
         if (w.bounds().width() > 80 || w.bounds().height() > 80)
           return false;
-        const p = w.parent();
-        if (!p || !p.parent())
-          return false;
-        const pp = p.parent();
-        if (pp.bounds().width() < width * 0.5) {
-          if (!pp.parent() || pp.parent().bounds().width() < width * 0.5)
-            return false;
+        const isAd = x => x != null &&
+          x.bounds().width() < width &&
+          x.bounds().width() >= width * 0.5 &&
+          x.bounds().height() >= Math.min(300, height * 0.5);
+        let p = w.parent();
+        for (let _ = 0; _ < 3; ++_) {
+          if (isAd(p)) {
+            return true;
+          }
+          p = p.parent();
         }
-        return true;
+        return false;
       })
   }
   if (appearThenClick(SKIP_AD)) {
+    return true;
+  }
+  if (appear(COUPON)) {
+    log(`出现${COUPON.text}，返回`);
+    back();
     return true;
   }
   if (appearThenClick(CLOSE_AD_0)) {

@@ -936,6 +936,9 @@ function closeAds() {
           if (isAd(p)) {
             return true;
           }
+          if (!p) {
+            break;
+          }
           p = p.parent();
         }
         return false;

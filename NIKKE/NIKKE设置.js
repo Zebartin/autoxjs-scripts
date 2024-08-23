@@ -165,54 +165,10 @@ ui.layout(
         <vertical>
           <vertical margin="16 8">
             <Switch id="拦截战TAB" text="未启用" textSize="16sp" />
-            <text text="需自行准备可以自动打满的高练队伍" textColor="#999999" textSize="14sp" />
-            <text text="特拦火车队伍参考：" textColor="#999999" textSize="14sp" />
-            <text text="❄ 鲁德米拉，技能114，充能魔方，T9装备" textColor="#999999" textSize="14sp" />
-            <text text="👑 皇冠，满技能，换弹魔方" textColor="#999999" textSize="14sp" />
-            <text text="😠 红莲：暗影，满技能，换弹魔方" textColor="#999999" textSize="14sp" />
-            <text text="🌸 樱花，技能444，充能魔方，T9装备" textColor="#999999" textSize="14sp" />
-            <text text="👒 小红帽，满技能，换弹魔方" textColor="#999999" textSize="14sp" />
-            <horizontal margin="0 20">
-              <text id="interceptionTypeText" textColor="#222222" textSize="16sp" w="0" layout_weight="4" >选择特殊目标拦截战</text>
-              <seekbar id="interceptionType" w="0" layout_weight="6" layout_gravity="center" />
+            <horizontal margin="0 8" gravity="center_vertical|left" weightSum="10" h="0" layout_weight="1">
+              <text textSize="16sp" textColor="#222222" w="0" layout_weight="4">异常拦截战目标</text>
+              <spinner id="interceptionBoss" entries="镜像容器|茵迪维利亚|过激派|死神|克拉肯" w="0" layout_weight="6" />
             </horizontal>
-            <vertical margin="0 10">
-              <horizontal margin="0 4" id="火车">
-                <horizontal w="0" layout_weight="4">
-                  <text textColor="#222222" textSize="16sp" >火车：</text>
-                  <text id="interceptionTeamText" textColor="#222222" textSize="16sp" >不打</text>
-                </horizontal>
-                <seekbar id="interceptionTeam" w="0" layout_weight="6" layout_gravity="center" />
-              </horizontal>
-              <horizontal margin="0 4" id="钻头">
-                <horizontal w="0" layout_weight="4">
-                  <text textColor="#222222" textSize="16sp" >钻头：</text>
-                  <text id="interceptionTeamText" textColor="#222222" textSize="16sp" >不打</text>
-                </horizontal>
-                <seekbar id="interceptionTeam" w="0" layout_weight="6" layout_gravity="center" />
-              </horizontal>
-              <horizontal margin="0 4" id="铁匠">
-                <horizontal w="0" layout_weight="4">
-                  <text textColor="#222222" textSize="16sp" >铁匠：</text>
-                  <text id="interceptionTeamText" textColor="#222222" textSize="16sp" >不打</text>
-                </horizontal>
-                <seekbar id="interceptionTeam" w="0" layout_weight="6" layout_gravity="center" />
-              </horizontal>
-              <horizontal margin="0 4" id="嚣嘈">
-                <horizontal w="0" layout_weight="4">
-                  <text textColor="#222222" textSize="16sp" >嚣嘈：</text>
-                  <text id="interceptionTeamText" textColor="#222222" textSize="16sp" >不打</text>
-                </horizontal>
-                <seekbar id="interceptionTeam" w="0" layout_weight="6" layout_gravity="center" />
-              </horizontal>
-              <horizontal margin="0 4" id="神罚">
-                <horizontal w="0" layout_weight="4">
-                  <text textColor="#222222" textSize="16sp" >神罚：</text>
-                  <text id="interceptionTeamText" textColor="#222222" textSize="16sp" >不打</text>
-                </horizontal>
-                <seekbar id="interceptionTeam" w="0" layout_weight="6" layout_gravity="center" />
-              </horizontal>
-            </vertical>
           </vertical>
         </vertical>
       </ScrollView>
@@ -442,43 +398,18 @@ ui.rookieArenaTarget.setOnSeekBarChangeListener({
 ui.rookieArenaTarget.setProgress(NIKKEstorage.get('rookieArenaTarget', 1));
 
 let interception = NIKKEstorage.get('interception', {
-  type: 2,
-  config: {
-    火车: { team: 1 },
-    钻头: { team: 1 },
-    铁匠: { team: 1 },
-    嚣嘈: { team: 1 },
-    神罚: { team: 1 }
-  }
+  boss: '克拉肯'
 });
-ui.interceptionType.setMax(2);
-ui.interceptionType.setOnSeekBarChangeListener({
-  onProgressChanged: function (seekbar, p, fromUser) {
-    if (p == 0)
-      ui.interceptionTypeText.setText('选择LEVEL D普通拦截');
-    else if (p == 1)
-      ui.interceptionTypeText.setText(`选择LEVEL S普通拦截`);
-    else if (p == 2)
-      ui.interceptionTypeText.setText(`选择特殊目标拦截战`);
+if (!interception.boss) {
+  interception.boss = '克拉肯';
+}
+const interceptionBosses = ['镜像容器', '茵迪维利亚', '过激派', '死神', '克拉肯'];
+for (let i = 0; i < interceptionBosses.length; ++i) {
+  if (interceptionBosses[i] == interception.boss) {
+    ui.interceptionBoss.setSelection(i, true);
+    break;
   }
-});
-ui.interceptionType.setProgress(interception.type);
-
-for (let interceptionID of [
-  "火车", "钻头", "铁匠", "嚣嘈", "神罚"
-]) {
-  let ele = ui.findView(interceptionID);
-  ele.interceptionTeam.setMax(5);
-  ele.interceptionTeam.setOnSeekBarChangeListener({
-    onProgressChanged: function (seekbar, p, fromUser) {
-      if (p == 0)
-        ele.interceptionTeamText.setText('不打');
-      else
-        ele.interceptionTeamText.setText(`选择${p}号队伍`);
-    }
-  });
-  ele.interceptionTeam.setProgress(interception.config[interceptionID].team);
-};
+}
 
 ui.maxPass.setMax(50);
 ui.maxPass.setOnSeekBarChangeListener({
@@ -684,14 +615,9 @@ ui.save.on("click", function () {
   NIKKEstorage.put('specialArenaClaim', ui.specialArenaClaim.isChecked());
   NIKKEstorage.put('rookieArenaTarget', ui.rookieArenaTarget.getProgress());
 
-  let interception = { type: ui.interceptionType.getProgress(), config: {} };
-  for (let interceptionID of [
-    "火车", "钻头", "铁匠", "嚣嘈", "神罚"
-  ]) {
-    let ele = ui.findView(interceptionID);
-    interception.config[interceptionID] = { team: ele.interceptionTeam.getProgress() };
-  }
-  NIKKEstorage.put('interception', interception);
+  NIKKEstorage.put('interception', {
+    boss: ui.interceptionBoss.getSelectedItem().toString()
+  });
 
   let simulationRoom = {};
   simulationRoom.team = team;

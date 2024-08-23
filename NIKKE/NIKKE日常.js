@@ -1088,65 +1088,70 @@ function 竞技场() {
   返回首页();
 }
 
-function getInterceptionTeams() {
-  const [title, info] = ocrUntilFound((res, img) => {
-    const qb = res.find(e =>
-      e.text.match(/快.战/) != null && e.bounds != null &&
-      e.bounds.bottom > img.height / 2 &&
-      e.bounds.left > img.width / 2
+function switchBoss(bossName) {
+  const names = [{
+    name: '镜像容器',
+    regex: /(镜像容器|手臂|电击)/
+  }, {
+    name: '茵迪维利亚',
+    regex: /(茵迪维利亚|躯体|燃烧)/
+  }, {
+    name: '过激派',
+    regex: /(过激派|头部|铁甲)/
+  }, {
+    name: '死神',
+    regex: /(死神|腿部|水冷)/
+  }, {
+    name: '克拉肯',
+    regex: /(克拉肯|制模组|风压)/
+  }];
+  const targetIndex = names.findIndex(x => x.name == bossName);
+  const [backward, forward] = ocrUntilFound((res, img) => {
+    let rewards = res.toArray(3).toArray().filter(e =>
+      e.text.match(/[REWARDO]{3,}/) != null && e.bounds != null &&
+      e.bounds.top < img.height / 2
     );
-    const info = res.find(e =>
-      e.text.match(/资讯$/) != null && e.bounds != null &&
-      e.bounds.left > img.width / 2 && e.bounds.bottom > img.height / 2
-    );
-    if (qb && info) {
-      const title = res.find(e =>
-        e.text.match(/战$/) != null && e.bounds != null &&
-        e.bounds.left < img.width / 2 &&
-        e.bounds.bottom > info.bounds.bottom &&
-        e.bounds.bottom < qb.bounds.top
-      );
-      return [title, info];
+    if (rewards.length != 3) {
+      return null;
     }
-  }, 10, 600);
-  let img;
-  let contours = [];
-  const regionWidth = info.bounds.right - title.bounds.right;
-  const regionHeight = title.bounds.bottom - info.bounds.bottom;
-  for (let t = 0; t < 10; ++t) {
-    let thresh = random(180, 210);
-    img = captureScreen();
-    contours = findContoursRect(img, {
-      thresh: thresh,
-      region: [
-        title.bounds.right, info.bounds.bottom + title.bounds.height(),
-        info.bounds.right - title.bounds.right,
-        title.bounds.bottom - info.bounds.bottom
-      ],
-      type: "BINARY_INV",
-      rectFilter: rect => {
-        if (rect.width() * 5 >= regionWidth || rect.width() * 6.5 <= regionWidth)
-          return false;
-        if (rect.height() * 2.5 <= regionHeight || rect.height() >= regionHeight * 0.9)
-          return false;
-        return true;
-      },
-      // debug: true,
-    });
-    if (contours.length == 5)
-      break;
+    rewards.sort((a, b) => a.bounds.left - b.bounds.left);
+    return [rewards[0], rewards[2]];
+  }, 5, 600);
+  for (let i = 0; i < 20; ++i) {
+    if (i != 0)
+      sleep(800);
+    let curIndex = ocrUntilFound((res, img) => {
+      for (let i = 0; i < names.length; ++i) {
+        if (names[i].regex.test(res.text)) {
+          return i;
+        }
+      }
+      return null;
+    }, 5, 800);
+    if (curIndex === null) {
+      console.warn('无法识别当前目标');
+      clickRect(forward, 1, 0);
+      continue;
+    }
+    log(`当前目标：${names[curIndex].name}`);
+    let backStep = (curIndex - targetIndex + names.length) % names.length;
+    let forStep = names.length - backStep;
+    let switchBtn = backward, step = backStep;
+    if (backStep > forStep) {
+      switchBtn = forward;
+      step = forStep;
+    }
+    if (step == 0) {
+      return true;
+    }
+    for (let j = 0; j < step; ++j) {
+      if (j != 0)
+        sleep(random(0, 300));
+      clickRect(switchBtn, 1, 0);
+    }
   }
-  if (contours.length != 5)
-    return null;
-  return contours.map(ct => {
-    const color = img.pixel(ct.left + 10, ct.centerY());
-    return {
-      bounds: ct,
-      selected: colors.blue(color) > 100
-    }
-  });
+  return false;
 }
-
 function interceptBattle(battleBtn, checkDamage) {
   let damageNumber = null;
   let confirmCnt = 0;
@@ -1167,7 +1172,7 @@ function interceptBattle(battleBtn, checkDamage) {
         return true;
       }
       const t = res.find(e =>
-        e.text.match(/\d{2}[\d,]+/) != null && e.bounds != null &&
+        e.text.match(/\d{1,3}[\d,]+/) != null && e.bounds != null &&
         e.bounds.top > damage.bounds.top &&
         e.bounds.bottom < phase.bounds.bottom
       );
@@ -1193,7 +1198,7 @@ function interceptBattle(battleBtn, checkDamage) {
     if (autoBtn != null) {
       log('战斗中……');
       skipped = true;
-      sleep(6000);
+      sleep(7000);
       return null;
     }
     // 进入战斗
@@ -1226,7 +1231,7 @@ function interceptBattle(battleBtn, checkDamage) {
     }
     // 跳过动画
     clickRect(getRandomArea(img, [0, 0, 1, 1]), 0.7, 0);
-  }, 40, 1000);
+  }, 50, 1000);
   ocrUntilFound((res, img) => {
     const b = res.find(e =>
       e.text.match(/入战/) != null && e.bounds != null &&
@@ -1250,21 +1255,13 @@ function interceptBattle(battleBtn, checkDamage) {
 }
 
 function 拦截战() {
-  const nameDict = {
-    火车: /(火车|古[铁鉄]|夺走|小心)/,
-    钻头: /(掘墓|钻头|阻止|冲击)/,
-    铁匠: /(铁匠|报仇|雪恨|到了)/,
-    嚣嘈: /(嚣嘈|人类|思考|说话)/,
-    神罚: /(神罚|出手|改造|致命)/,
-  }
   const interception = NIKKEstorage.get('interception', null);
   if (interception == null) {
     console.error('未配置拦截战');
     return;
   }
-  const interceptionType = interception.type;
   let confirmCnt = 0;
-  const [enemyName, battle, quickBattle, simBattle] = ocrUntilFound((res, img) => {
+  const [battle, quickBattle, simBattle] = ocrUntilFound((res, img) => {
     let b = res.find(e =>
       e.text.match(/入战/) != null && e.bounds != null &&
       e.bounds.bottom > img.height / 2 &&
@@ -1285,15 +1282,7 @@ function 拦截战() {
       if (confirmCnt < 2) {
         return null;
       }
-      for (let n of Object.keys(nameDict)) {
-        if (nameDict[n].test(res.text)) {
-          return [n, b, qb, sb];
-        }
-      }
-      for (let c of res.children) {
-        console.log(`${c.bounds}\t${c.text}`);
-      }
-      return [null, b, qb, sb];
+      return [b, qb, sb];
     }
     confirmCnt = 0;
     // 误入编队
@@ -1318,76 +1307,32 @@ function 拦截战() {
     }
     let interceptionBtn = res.find(e =>
       e.text.match(/^[拦推][截载戯戲]*战/) != null && e.bounds != null &&
-      e.bounds.bottom > img.height / 2
+      e.bounds.bottom > img.height / 2 &&
+      e.bounds.left < img.width / 2
     );
     if (interceptionBtn != null) {
       clickRect(interceptionBtn, 1, 0);
       return null;
     }
-    let entrance = null;
-    if (interceptionType == 0) {
-      entrance = res.find(e =>
-        e.text.match(/LEVEL/i) != null && e.bounds != null &&
-        e.bounds.left < img.width / 2 &&
-        e.bounds.top < img.height / 2
-      );
-    } else if (interceptionType == 1) {
-      entrance = res.find(e =>
-        e.text.match(/LEVEL/i) != null && e.bounds != null &&
-        e.bounds.right > img.width / 2
-      );
-    } else if (interceptionType == 2) {
-      entrance = res.find(e =>
-        e.text.match(/[特殊目标]{2,}/i) != null && e.bounds != null &&
-        e.bounds.bottom > img.height / 2
-      );
-    }
+    const entrance = res.find(e =>
+      e.text.match(/(挑战|余次)/) != null && e.bounds != null &&
+      e.bounds.bottom > img.height / 2
+    );
     if (entrance != null) {
       clickRect(entrance, 1, 0);
       return null;
     }
-  }, 30, 800) || [null, null, null, null];
+  }, 30, 800) || [null, null, null];
   if (battle === null) {
     console.error('无法进入拦截页面，放弃');
     返回首页();
     return;
   }
-  if (enemyName === null) {
-    console.error('未匹配到目标名字，放弃');
+  if (!switchBoss(interception.boss)) {
+    console.error('无法切换boss，放弃');
     返回首页();
     return;
   }
-  log(`目标：${enemyName}`);
-  // 切换队伍
-  const teamIndex = interception.config[enemyName].team - 1;
-  if (teamIndex == -1) {
-    log('已设置不打该目标');
-    返回首页();
-    return;
-  }
-  let indexSelected = -1;
-  for (let i = 0; i < 5; ++i) {
-    let teams = getInterceptionTeams();
-    if (!teams) {
-      sleep(1000);
-      continue;
-    }
-    indexSelected = teams.findIndex(t => t.selected);
-    log(`当前队伍：${indexSelected + 1}`);
-    if (indexSelected == teamIndex)
-      break;
-    clickRect(teams[teamIndex], 0.5, 0);
-    sleep(1000);
-  }
-  if (indexSelected != teamIndex) {
-    console.error('选择队伍失败，放弃');
-    return;
-  }
-  const threshold = [
-    4000000,
-    19300000,
-    62000000
-  ];
   const enterBattle = battle;
   // const enterBattle = simBattle;
   for (let i = 0; i < 5; ++i) {
@@ -1399,10 +1344,6 @@ function 拦截战() {
     } else if (colors.red(bColor) > 150 || colors.blue(bColor) > 150) {
       let damage = interceptBattle(enterBattle, true);
       log(`TOTAL DAMAGE：${damage}`);
-      if (!damage || damage < threshold[interceptionType]) {
-        console.error('拦截伤害未达预期，放弃');
-        break;
-      }
     } else {
       break;
     }

@@ -196,11 +196,12 @@ function checkInLIP() {
       clickRect(entrance, 1, 0);
       return false;
     }
-    swipeRandom(new android.graphics.Rect(
+    let swipeArea = new android.graphics.Rect(
       img.width * 0.2, announcementBtn.bounds.bottom, img.width * 0.8,
       announcementBtn.bounds.bottom + random(img.height * 0.3, img.height * 0.4)
-    ), 'up');
-    sleep(300);
+    );
+    swipeRandom(swipeArea, 'up');
+    swipeRandom(swipeArea, 'right', 200);
   }, 10, 700);
   if (!enterLIP) {
     log('没有找到Level Infinite Pass入口');
@@ -344,8 +345,15 @@ function 退出NIKKE() {
   if (launchMethod == 'NIKKE') {
     killApp('NIKKE');
     if (storages.create("NIKKEconfig").get('v2rayNG', false) && app.launchApp("v2rayNG")) {
-      if (id('tv_test_state').findOne().text() != '未连接')
-        id('fab').click();
+      for (let i = 0; i < 5; ++i) {
+        let st = id('tv_test_state').findOne(2000);
+        if (st != null) {
+          if (st.text() != '未连接')
+            id('fab').click();
+          break;
+        }
+        app.launchApp("v2rayNG");
+      }
       killApp('v2rayNG');
     }
   } else if (launchMethod == 'OurPlay') {

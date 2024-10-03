@@ -138,6 +138,10 @@ function 启动NIKKE() {
     id('fab').click();
   }
   if (launchMethod == 'NIKKE') {
+    if (NIKKEstorage.get('startGooglePlayFirst', false)) {
+      app.launchApp('Google Play 商店');
+      sleep(50);
+    }
     app.launchApp("NIKKE");
     // waitForActivity('com.shiftup.nk.MainActivity');
     log("打开NIKKE");

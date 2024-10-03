@@ -55,7 +55,8 @@ ui.layout(
               <spinner id="launchMethod" entries="启动游戏本体|通过OurPlay启动|自行手动进入游戏" spinnerMode="dialog" w="0" layout_weight="6" />
             </horizontal>
           </vertical>
-          <horizontal margin="6 15">
+          <button id="configureAccount" text="配置游戏账号密码" margin="6 15 6 0" />
+          <horizontal margin="6 2">
             <button id="update" text="更新脚本" layout_weight="1" />
             <button id="save" text="保存设置" layout_weight="1" />
           </horizontal>
@@ -577,6 +578,35 @@ if (NIKKEstorage.get('checkUpdateAuto', false)) {
   ui.updateText.attr('visibility', 'visible');
   log('自动检查更新完成');
 }
+const dialogView = ui.inflate(
+  <vertical padding="16">
+    <text textSize="12sp" text="明文存储，可能有安全风险" />
+    <text textSize="12sp" text="如果使用密码管理软件，可能需要对NIKKE禁用自动填充" />
+    <input id="email" hint="邮箱账号" inputType="textEmailAddress" />
+    <input id="password" hint="密码" inputType="textPassword" />
+  </vertical>, null, false
+);
+const configureAccountDialog = dialogs.build({
+  title: "配置游戏账号密码",
+  customView: dialogView
+}).on("dismiss", (dialog) => {
+  try {
+    const account = dialogView.email.text();
+    const password = dialogView.password.text();
+    if (account && password) {
+      toast('已设置账号密码，记得保存设置');
+    }
+  } catch (error) {
+    log(error);
+  }
+});
+
+let { email, password } = NIKKEstorage.get('account', {});
+dialogView.email.setText(email || '');
+dialogView.password.setText(password || '');
+ui.configureAccount.on("click", function () {
+  configureAccountDialog.show();
+});
 
 ui.save.on("click", function () {
   let team = ui.simTeam.text().split(/[,\s，]/g).filter(x => x.length > 0);
@@ -654,9 +684,19 @@ ui.save.on("click", function () {
       break;
     }
   }
-
-  ui.finish();
-  toastLog('设置已保存');
+  let email = dialogView.account.text();
+  let password = dialogView.password.text();
+  if (email && password) {
+    NIKKEstorage.put('account', {
+      email: email,
+      password: password
+    })
+    ui.finish();
+    toastLog('设置已保存');
+  }
+  else if (account || password) {
+    toast("已配置部分账号密码，请补充完整或全部留空");
+  }
 });
 
 ui.update.on("click", function () {

@@ -252,6 +252,133 @@ function checkInLIP() {
   }
   backToAnnouncement();
 }
+function tryLogin() {
+  const NIKKEstorage = storages.create("NIKKEconfig");
+  const { email, password } = NIKKEstorage.get('account', {});
+  if (!email || !password) {
+    console.error('未配置游戏账号密码，无法登录游戏');
+    return false;
+  }
+  const 忘记密码 = {
+    text: "忘记密码",
+    regex: /[忘记]/
+  };
+  const 邮箱地址输入框 = {
+    text: "邮箱地址输入框",
+    regex: /邮?箱?[地址]+/
+  };
+  const 密码输入框 = {
+    text: "密码输入框",
+    regex: /[密码]/,
+    filter: (bounds, img) =>
+      bounds &&
+      bounds.top < 忘记密码.bounds.top &&
+      bounds.bottom > 邮箱地址输入框.bounds.bottom
+  };
+  const 邮箱登录 = {
+    text: "邮箱登录",
+    regex: /[邮箱]+[登录]+/,
+  };
+  const 密码登录 = {
+    text: "密码登录",
+    regex: /[密码]+[登录]+/,
+  };
+  const 确认登录 = {
+    text: "确认登录",
+    regex: /^[^邮箱密码第三方]{0,1}[登录]+/,
+    filter: (bounds, img) =>
+      bounds &&
+      bounds.top > 忘记密码.bounds.top &&
+      bounds.bottom < 邮箱登录.bounds.bottom
+  };
+  let i;
+  for (i = 0; i < 20; ++i) {
+    if (i != 0) {
+      sleep(500);
+      screenshot();
+    }
+    if (appearThenClick(密码登录)) {
+      continue;
+    }
+    if (
+      appear(邮箱登录) && appear(忘记密码) &&
+      appear(邮箱地址输入框) &&
+      appear(密码输入框) && appear(确认登录)
+    ) {
+      break;
+    }
+  }
+  if (i == 20) {
+    throw new Error('未找到邮箱登录按钮，无法登录游戏');
+  }
+  const operations = [{
+    entryButton: 邮箱地址输入框,
+    text: email
+  }, {
+    entryButton: 密码输入框,
+    text: password
+  }];
+  const 输入框 = {
+    selector: packageNameContains('nikke').className('EditText')
+  };
+  const 输入确定 = {
+    selector: packageNameContains('nikke').className('Button'),
+    regex: /[确定]+/
+  };
+  for (let oper of operations) {
+    for (i = 0; i < 30; ++i) {
+      if (i != 0) {
+        sleep(500);
+        screenshot();
+      }
+      if (appear(输入确定)) {
+        if (appear(输入框)) {
+          输入框.button.setText(oper.text);
+          sleep(100);
+          输入确定.button.click();
+          break;
+        } else {
+          const dis = 输入确定.bounds.width() / 2;
+          const mayBeEdit = {
+            bounds: android.graphics.Rect(
+              ocrInfo.img.width() - dis,
+              输入确定.bounds.top,
+              ocrInfo.img.width() + dis,
+              输入确定.bounds.bottom,
+            )
+          };
+          clickRect(mayBeEdit, 1, 0);
+          continue;
+        }
+      }
+      if (appearThenClick(oper.entryButton)) {
+        continue;
+      }
+    }
+    if (i == 30) {
+      throw new Error('未能输入账号密码，无法登录游戏');
+    }
+  }
+  const 进入游戏 = {
+    regex: /(登出|T.UCH|C.NT.NUE|[12]\/2)/
+  }
+  for (i = 0; i < 10; ++i) {
+    if (i != 0) {
+      sleep(2000);
+      screenshot();
+    }
+    if (appear(进入游戏)) {
+      break;
+    }
+    if (appearThenClick(确认登录, 5000)) {
+      continue;
+    }
+  }
+  if (i == 10) {
+    throw new Error('进入游戏超时');
+  }
+  return true;
+}
 function 等待NIKKE加载() {
   let [width, height] = getDisplaySize();
   let manuallyEnter = true;
@@ -259,9 +386,11 @@ function 等待NIKKE加载() {
   continueBtn.text = 'TOUCH TO CONTINUE';
   if (ocrUntilFound(res => {
     if (res.text.match(/(密|验证)码/) != null) {
-      toastLog('未登录游戏，停止运行脚本');
-      home();
-      exit();
+      if (!tryLogin()) {
+        toastLog('未登录游戏，停止运行脚本');
+        home();
+        exit();
+      }
     }
     else if (res.text.includes('不再显')) {
       let target = res.find(e => e.text.match(/.{0,4}不再显/) != null);

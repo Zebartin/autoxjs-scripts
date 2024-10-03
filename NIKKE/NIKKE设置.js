@@ -684,7 +684,7 @@ ui.save.on("click", function () {
       break;
     }
   }
-  let email = dialogView.account.text();
+  let email = dialogView.email.text();
   let password = dialogView.password.text();
   if (email && password) {
     NIKKEstorage.put('account', {

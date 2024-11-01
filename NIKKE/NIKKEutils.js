@@ -192,7 +192,7 @@ function checkInLIP() {
       return false;
     }
     const entrance = res.find(e =>
-      e.text.match(/[领取超值好礼签到领珠宝]{3,}/) != null &&
+      e.text.match(/[领取超值好礼签到领珠宝送]{3,}/) != null &&
       e.bounds != null &&
       e.bounds.top > announcementBtn.bounds.bottom
     );
@@ -259,8 +259,13 @@ function checkInLIP() {
 function tryLogin() {
   const NIKKEstorage = storages.create("NIKKEconfig");
   const { email, password } = NIKKEstorage.get('account', {});
+  const launchMethod = NIKKEstorage.get('launchMethod', null);
   if (!email || !password) {
     console.error('未配置游戏账号密码，无法登录游戏');
+    return false;
+  }
+  if (launchMethod != 'NIKKE') {
+    console.error('不是通过游戏本体启动，无法输入账号密码');
     return false;
   }
   const 忘记密码 = {
@@ -345,9 +350,9 @@ function tryLogin() {
           const dis = 输入确定.bounds.width() / 2;
           const mayBeEdit = {
             bounds: android.graphics.Rect(
-              ocrInfo.img.width() - dis,
+              ocrInfo.img.width - dis,
               输入确定.bounds.top,
-              ocrInfo.img.width() + dis,
+              ocrInfo.img.width + dis,
               输入确定.bounds.bottom,
             )
           };
@@ -474,6 +479,7 @@ function 等待NIKKE加载() {
 
 function 退出NIKKE() {
   home();
+  const NIKKEstorage = storages.create("NIKKEconfig");
   const launchMethod = NIKKEstorage.get('launchMethod', 'NIKKE');
   if (launchMethod == 'NIKKE') {
     killApp('NIKKE');

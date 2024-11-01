@@ -581,6 +581,7 @@ if (NIKKEstorage.get('checkUpdateAuto', false)) {
 const dialogView = ui.inflate(
   <vertical padding="16">
     <text textSize="12sp" text="明文存储，可能有安全风险" />
+    <text textSize="12sp" text="仅在通过游戏本体启动时可以自动输入账号密码" />
     <text textSize="12sp" text="如果使用密码管理软件，可能需要对NIKKE禁用自动填充" />
     <input id="email" hint="邮箱账号" inputType="textEmailAddress" />
     <input id="password" hint="密码" inputType="textPassword" />

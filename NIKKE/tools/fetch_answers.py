@@ -253,7 +253,7 @@ if __name__ == '__main__':
         zh_tw_data = dict()
     # 在gamekee数据基础上，补充繁中服的数据
     for k in zh_tw_data:
-        if len(zh_cn_data.get(k, [])) > 0:
+        if len(zh_cn_data.get(k, [])) >= len(zh_tw_data[k]):
             continue
         print(f'补充：{k}')
         zh_cn_data[k] = zh_tw_data[k]

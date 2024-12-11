@@ -230,9 +230,11 @@ function appear(button, interval) {
  * @returns {boolean}
  */
 function appearThenClick(button, interval) {
-  if (appear(button, interval)) {
+  const a = appear(button, interval);
+  if (a) {
     clickRect(button, 1, 0);
   }
+  return a;
 }
 /**
  * 

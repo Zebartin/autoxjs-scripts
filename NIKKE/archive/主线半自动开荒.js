@@ -6,17 +6,79 @@
 */
 let {
   requestScreenCaptureAuto,
-  clickRect
+  clickRect,
+  appear,
+  appearThenClick,
+  screenshot,
+  imageColorCount,
+  ocrInfo
 } = require('./utils.js');
 requestScreenCaptureAuto();
 sleep(1000);
 半自动();
+
+function saveError(error) {
+  let NIKKEstorage = storages.create("NIKKEconfig");
+  const errorPath = files.path(`./nikkerror/${Date.now()}/`);
+  const errorStrs = [
+    `当前脚本版本：${NIKKEstorage.get('tagName', '无记录')}`,
+    error.message,
+    error.stack
+  ];
+  files.ensureDir(errorPath);
+  if (ocrInfo.img) {
+    images.save(ocrInfo.img, files.join(errorPath, 'error.png'));
+  }
+  if (ocrInfo.result) {
+    errorStrs.push('');
+    const res = ocrInfo.result.toArray(3);
+    for (let i = 0; i < res.length; ++i) {
+      errorStrs.push(`${res[i].bounds}\t"${res[i].text}"`);
+    }
+  }
+  files.write(files.join(errorPath, 'log.txt'), errorStrs.join('\n'));
+  console.error(`出错日志已保存到${errorPath}`);
+  console.error('上报问题时请务必附上上述出错日志目录中的内容');
+}
 function 半自动() {
+  const confirm = {
+    text: '确认',
+    regex: /[確确][認认定]/
+  };
+  const backBtn = {
+    text: '返回',
+    regex: /返回/,
+    filter: (bounds, img) =>
+      bounds &&
+      bounds.bottom > img.height * 0.7 &&
+      bounds.right <= img.width / 2
+  };
+  const failed = {
+    text: '作战失败',
+    regex: /FA.LED/
+  };
+  const enterCombat = {
+    text: '进入战斗',
+    regex: /入战/,
+    filter: (bounds, img) =>
+      bounds &&
+      bounds.bottom > img.height * 0.7 &&
+      bounds.left >= img.width / 2
+  };
+  const autoBtn = {
+    regex: /AUT/
+  };
+  const skipBtn = {
+    text: 'SKIP',
+    regex: /^[^LAUTOG]*SK.P[^LAUTOG]*$/
+  }
+  const reward = {
+    regex: /(REWARD|下.步|任意处)/
+  };
   let randomArea = { bounds: null };
-  let combatCnt = 0;
   while (true) {
-    let img = captureScreen();
-    let res = gmlkit.ocr(img, 'zh');
+    screenshot();
+    let img = ocrInfo.img;
     if (randomArea.bounds === null) {
       randomArea.bounds = new android.graphics.Rect();
       randomArea.bounds.left = img.width * 0.1;
@@ -24,54 +86,75 @@ function 半自动() {
       randomArea.bounds.top = img.height * 0.4;
       randomArea.bounds.bottom = img.height * 0.6;
     }
-    let backBtn = res.find(e =>
-      e.text.includes('返回') && e.bounds != null &&
-      e.bounds.bottom > img.height * 0.7 && e.bounds.right <= img.width / 2
-    );
-    if (backBtn) {
-      if (res.text.match(/FA.LED/) != null) {
-        log('Combat Failed');
+    if (appearThenClick(confirm)) {
+      continue;
+    }
+    if (appear(backBtn)) {
+      if (appear(failed)) {
+        log('战斗失败');
         clickRect(backBtn, 1, 0);
       }
       sleep(2000);
       continue;
     }
-    let enterCombat = res.find(e =>
-      e.text.includes('入战') && e.bounds != null &&
-      e.bounds.bottom > img.height * 0.7 && e.bounds.left >= img.width / 2
-    );
-    if (enterCombat) {
-      clickRect(enterCombat, 1, 0);
-      combatCnt = 0;
+    if (appearThenClick(enterCombat)) {
       sleep(2000);
       continue;
     }
-    let autoBtn = res.find(e => e.text.includes('AUT'));
-    if (autoBtn && autoBtn.bounds.right < img.width / 2) {
-      if (combatCnt == 0)
-        log('In Combat');
-      sleep(7000);
-      combatCnt = (combatCnt + 1) % 5;
+    if (appear(autoBtn)) {
+      if (autoBtn.bounds.right < img.width / 2) {
+        log('战斗中');
+        sleep(7000);
+        continue;
+      }
+      if (appearThenClick(skipBtn)) {
+        sleep(1000);
+        continue;
+      }
+      clickRect(randomArea, 1, 0);
+      sleep(1000);
       continue;
     }
-    if (autoBtn) {
-      let skipBtn = res.find(e =>
-        e.text.match(/[LAUTOG]/) == null && e.text.match(/SK.P/) != null
-      );
-      if (skipBtn != null) {
-        clickRect(skipBtn, 0.1, 0);
-        sleep(1000);
+    if (appear(reward)) {
+      log('战斗胜利');
+      sleep(300);
+      screenshot(undefined, false);
+      img = ocrInfo.img;
+      let startX = img.width / 2;
+      let startY = Math.max(img.height * 0.8, img.height - 300);
+      let blueColors = images.findAllPointsForColor(img, '#00a1ff', {
+        region: [startX, startY],
+        threshold: 40
+      });
+      if (blueColors && blueColors.length) {
+        let topleft = blueColors.reduce((a, b) => {
+          if (a.x == b.x) {
+            return a.y < b.y ? a : b;
+          }
+          return a.x < b.x ? a : b;
+        });
+        let bottomright = blueColors.reduce((a, b) => {
+          if (a.x == b.x) {
+            return a.y > b.y ? a : b;
+          }
+          return a.x > b.x ? a : b;
+        });
+        let nextCombat = {
+          text: '下一关卡',
+          bounds: new android.graphics.Rect(
+            topleft.x, topleft.y,
+            bottomright.x, bottomright.y
+          )
+        };
+        // 太小，是门票框
+        if (nextCombat.bounds.width() < 200) {
+          clickRect(randomArea, 1, 0);
+        } else {
+          clickRect(nextCombat, 0.8, 0);
+        }
+        sleep(2000);
         continue;
-      }
-      else {
-        clickRect(randomArea, 1, 0);
-        sleep(1000);
-        continue;
-      }
-    }
-    let reward = res.find(e => e.text.match(/REWARD/) != null);
-    if (reward) {
-      log('Combat Win');
+      };
       clickRect(randomArea, 1, 0);
       sleep(2000);
       continue;

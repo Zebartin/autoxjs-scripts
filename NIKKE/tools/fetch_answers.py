@@ -178,6 +178,8 @@ def get_from_gamekee_wiki(skip_names: set[str]):
                 yield answer
 
     for nikke in characters:
+        if nikke['name'] == '芙萝拉':
+            nikke['name'] = '芙罗拉'
         if nikke['name'] in skip_names:
             continue
         # 编辑中词条

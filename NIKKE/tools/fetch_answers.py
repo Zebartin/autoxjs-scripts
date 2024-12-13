@@ -16,12 +16,13 @@ session = requests.Session()
 
 # ord('⋯') = 8943
 # ord('…') = 8230
-punctuation_pattern = re.compile(r"[，⋯…？?、!！「」～☆【】《》。.—{}'\"“”♪\s]")
+punctuation_pattern = re.compile(r"([，⋯…？?、!！「」～☆【】《》。.—{}'\"“”♪↗↘\s]|\\n)")
 
 
 def parse_gamekee_data(data: str):
-    ret = defaultdict(list)
+    ret = defaultdict(set)
     person = None
+    data = re.sub(R'\n\n\s+', '', data)
     for line in data.splitlines():
         line = line.strip()
         if not line:
@@ -33,7 +34,7 @@ def parse_gamekee_data(data: str):
             a = a.replace('AccountDataNickName', '')
             if not a:
                 continue
-            ret[person].append(a)
+            ret[person].add(a)
         else:
             person = line[:-1]
     print('Gamekee pastebin:')
@@ -188,7 +189,7 @@ def get_from_gamekee_wiki(skip_names: set[str]):
         if not is_valid(nikke):
             ret[nikke['name']] = []
             continue
-        ret[nikke['name']] = list(get_single(nikke['content_id']))
+        ret[nikke['name']] = set(get_single(nikke['content_id']))
         time.sleep(0.5)
     print('Gamekee Wiki:')
     keys = list(ret.keys())
@@ -198,7 +199,7 @@ def get_from_gamekee_wiki(skip_names: set[str]):
 
 
 def get_from_google_sheet(apiKey):
-    ret = defaultdict(list)
+    ret = defaultdict(set)
     # 定义要访问的google表格的ID和范围
     spreadsheetId = '1K_oGZWL4uvuqYM9JL2l5Kb-L0IXIuyrDI347b6rurho'
     # 构造请求的URL，附加API 密钥作为查询参数
@@ -233,7 +234,9 @@ def get_from_google_sheet(apiKey):
                 continue
             if n == 'Ｄ':
                 n = 'D'
-            ret[n].append(cleaned_a)
+            elif n == '吉罗婷：寒冬杀手':
+                n = '吉萝婷：寒冬杀手'
+            ret[n].add(cleaned_a)
     return ret
 
 

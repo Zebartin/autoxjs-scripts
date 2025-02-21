@@ -3,7 +3,11 @@ var {
   clickRect,
   getRandomArea,
   findImageByFeature,
-  getDisplaySize
+  getDisplaySize,
+  appear,
+  appearThenClick,
+  screenshot,
+  ocrInfo
 } = require('./utils.js');
 var {
   启动NIKKE, 等待NIKKE加载, 退出NIKKE,
@@ -171,7 +175,9 @@ function oneSimulation(status) {
     clickIntoDiffArea(status.tryDiff, status.tryArea, false);
   else
     clickIntoDiffArea('3', 0, false);
-  clickRect(ocrUntilFound(res => res.find(e => e.text.includes('开始')), 10, 300));
+  if (tryQuickSimulation(status)) {
+    return;
+  }
   for (status.layer = 0; status.layer < 7; ++status.layer) {
     selectOption(status);
     if (status.earlyStop)
@@ -230,6 +236,185 @@ function oneSimulation(status) {
     }
   }
   ocrUntilFound(res => res.text.includes('开始'), 30, 1000);
+}
+function tryQuickSimulation(status) {
+  const 模拟结束 = {
+    text: "模拟结束",
+    regex: /结[束東]$/,
+  };
+  const 确认 = {
+    text: "确认",
+    regex: /确认$/,
+  };
+  const 开始模拟 = {
+    text: "开始模拟",
+    regex: /开始/,
+  };
+  const 快速模拟 = {
+    text: "快速模拟",
+    regex: /快[連德逮遠速]/,
+  };
+  let quick = false;
+  for (let i = 0; i < 50; ++i) {
+    sleep(300);
+    screenshot();
+    if (appear(模拟结束)) {
+      break;
+    }
+    if (appearThenClick(确认)) {
+      sleep(3000);
+      continue;
+    }
+    if (appear(快速模拟)) {
+      const c = ocrInfo.img.pixel(快速模拟.bounds.right, 快速模拟.bounds.centerY())
+      if (colors.red(c) > 200) {
+        clickRect(快速模拟, 1, 0);
+        quick = true;
+        sleep(1000);
+        continue;
+      }
+    }
+    if (appearThenClick(开始模拟)) {
+      sleep(3000);
+      continue;
+    }
+  }
+  if (!quick) {
+    return quick;
+  }
+  // 开始快速模拟
+  const 取消 = {
+    text: "取消",
+    regex: /取/
+  };
+  const 跳过 = {
+    text: "跳过增益效果选择",
+    regex: /跳过/
+  };
+  const 不选择 = {
+    text: "不选择",
+    regex: /不[^管]{0,2}[迷选迭港遗]/
+  };
+  const 进入战斗 = {
+    text: "进入战斗",
+    regex: /入战.{1,3}$/,
+    filter: (bounds, img) =>
+      bounds &&
+      bounds.bottom > img.height * 0.8 &&
+      bounds.left > img.width * 0.5
+  };
+  const autoBtn = {
+    regex: /AUT/
+  };
+  for (let i = 0; i < 50; ++i) {
+    if (i != 0) {
+      sleep(300);
+      screenshot();
+    }
+    if (appear(autoBtn)) {
+      checkAuto(1);
+      break;
+    }
+    if (appear(进入战斗)) {
+      teamUp(status);
+      clickRect(进入战斗, 1, 0);
+      continue;
+    }
+    if (appear(取消) && appearThenClick(确认)) {
+      continue;
+    }
+    if (appearThenClick(跳过)) {
+      sleep(1000);
+      continue;
+    }
+    if (appearThenClick(不选择)) {
+      continue;
+    }
+  }
+  sleep(5 * 1000);
+  const 返回 = {
+    text: '返回',
+    regex: /返回/,
+    filter: (bounds, img) =>
+      bounds &&
+      bounds.bottom > img.height * 0.7 &&
+      bounds.right <= img.width / 2
+  };
+  const 作战失败 = {
+    text: '作战失败',
+    regex: /FA.LED/
+  };
+  const 作战成功 = {
+    regex: /(点击|任意处)/
+  };
+  const randomArea = getRandomArea(ocrInfo.img, [0.2, 0.4, 0.7, 0.6]);
+  let failed = false;
+  for (let i = 0; i < 50; ++i) {
+    if (i != 0) {
+      sleep(1000);
+      screenshot();
+    }
+    if (appear(作战成功)) {
+      break;
+    }
+    if (appear(作战失败)) {
+      failed = true;
+      break;
+    }
+    if (appear(autoBtn)) {
+      sleep(1000);
+      continue;
+    }
+  }
+  if (failed) {
+    status.earlyStop = true;
+    for (let i = 0; i < 50; ++i) {
+      if (i != 0) {
+        sleep(400);
+        screenshot();
+      }
+      if (appear(开始模拟)) {
+        break;
+      }
+      if (appearThenClick(确认)) {
+        continue;
+      }
+      if (appearThenClick(模拟结束)) {
+        continue;
+      }
+      if (appear(作战失败) && appearThenClick(返回)) {
+        continue;
+      }
+    }
+  } else {
+    const 结束模拟 = {
+      text: "结束模拟",
+      regex: /结[束東]/,
+      filter: (bounds, img) =>
+        bounds &&
+        bounds.bottom > img.height / 2
+    };
+    for (let i = 0; i < 50; ++i) {
+      if (i != 0) {
+        sleep(400);
+        screenshot();
+      }
+      if (appear(开始模拟)) {
+        break;
+      }
+      if (appear(作战成功)) {
+        clickRect(randomArea, 1, 0);
+        continue;
+      }
+      if (appearThenClick(确认)) {
+        continue;
+      }
+      if (appearThenClick(结束模拟)) {
+        continue;
+      }
+    }
+  }
+  return true;
 }
 
 function quitPrevSim() {
@@ -1014,6 +1199,8 @@ function getAllBuff() {
 
 // 编队相关函数
 function teamUp(status) {
+  log('自动编队功能暂时失效');
+  return;
   if (status.team.length == 0)
     return;
   // 找空位

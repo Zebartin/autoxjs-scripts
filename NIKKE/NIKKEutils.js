@@ -881,7 +881,7 @@ function detectNikkes(originalImg, options) {
   return nikkes;
 }
 
-function checkAuto() {
+function checkAuto(sleepTime) {
   let NIKKEstorage = storages.create("NIKKEconfig");
   if (!NIKKEstorage.get('checkGameAuto', true)) {
     if (firstCheckAuto) {
@@ -891,7 +891,7 @@ function checkAuto() {
     return;
   }
   // 把这一部分放在前面，为了检测已进入战斗
-  sleep(5000);
+  sleep(sleepTime || 5000);
   let autoBtn = ocrUntilFound((res, img) => res.find(e =>
     e.text.includes('AUT') && e.bounds != null &&
     e.bounds.left <= img.width / 2

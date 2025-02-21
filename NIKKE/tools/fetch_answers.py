@@ -16,7 +16,7 @@ session = requests.Session()
 
 # ord('⋯') = 8943
 # ord('…') = 8230
-punctuation_pattern = re.compile(r"([，⋯…？?、!！「」～☆【】《》。.—{}'\"“”♪↗↘\s]|\\n)")
+punctuation_pattern = re.compile(r"([，⋯…？?、!！「」～~☆【】《》。.—{}'\"“”♪↗↘\s]|\\n)")
 
 
 def parse_gamekee_data(data: str):
@@ -108,7 +108,7 @@ def get_from_gamekee_wiki(skip_names: set[str]):
     characters = None
     entry_id = None
     for d in entry_json['data']['entry_list']:
-        if d.get('name', None) == '游戏图鉴':
+        if d.get('name', None) == '妮姬图鉴':
             for l in d['child']:
                 if l.get('name', None) == '角色图鉴':
                     characters = l['child']
@@ -159,19 +159,19 @@ def get_from_gamekee_wiki(skip_names: set[str]):
             print(f'无法获取到好感度对话: content_id={content_id}')
             return
         for line in soup.select('tbody > tr'):
-            line_strs = list(line.stripped_strings)
-            if len(line_strs) != 4:
+            cols = line.select('td')
+            if len(cols) != 4:
                 continue
             answer = ''
             try:
-                lv = int(line_strs[0])
-                rv = int(line_strs[-1])
+                lv = int(''.join(cols[0].stripped_strings))
+                rv = int(''.join(cols[-1].stripped_strings))
                 if lv > rv:
-                    answer = line_strs[1]
+                    answer = ''.join(cols[1].stripped_strings)
                 else:
-                    answer = line_strs[-2]
+                    answer = ''.join(cols[-2].stripped_strings)
             except ValueError:
-                print(f'无法解析：{line_strs}')
+                print(f'无法解析：{cols}')
                 continue
             answer = punctuation_pattern.sub('', answer)
             answer = answer.replace('AccountDataNickName', '')
@@ -236,7 +236,7 @@ def get_from_google_sheet(apiKey):
                 n = 'D'
             elif n == '吉罗婷：寒冬杀手':
                 n = '吉萝婷：寒冬杀手'
-            ret[n].add(cleaned_a)
+            ret[n.strip()].add(cleaned_a)
     return ret
 
 

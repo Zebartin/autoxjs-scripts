@@ -1396,6 +1396,10 @@ function 下载咨询文本() {
   }
   if (advise == null)
     advise = JSON.parse(files.read(advisePath));
+  if (advise != null)
+    advise = Object.fromEntries(
+      Object.entries(advise).filter(([_, v]) => v.length > 0)
+  );
 }
 
 function 咨询() {

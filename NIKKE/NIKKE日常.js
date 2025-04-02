@@ -1399,7 +1399,7 @@ function 下载咨询文本() {
   if (advise != null)
     advise = Object.fromEntries(
       Object.entries(advise).filter(([_, v]) => v.length > 0)
-  );
+    );
 }
 
 function 咨询() {
@@ -1520,12 +1520,17 @@ function 咨询页面识别(btnText, maxRetry) {
     let res = gmlkit.ocr(newImg, 'zh').toArray(3).toArray().map(x => x.text);
     if (scale > 1)
       newImg && newImg.recycle();
-    for (let childText of res) {
+    let i = 0;
+    while (i < res.length) {
+      let childText = res[i++];
       if (childText.length == 0)
         continue;
       if (childText.match(/[Mm].[Xx]/) != null) {
         hasMax = true;
         continue;
+      }
+      if (childText.match(/[:：]$/) != null && i + 1 < res.length) {
+        childText += res[i++];
       }
       if (childText.match(/^雷[费骨賽費登]$/) != null)
         childText = '基里';

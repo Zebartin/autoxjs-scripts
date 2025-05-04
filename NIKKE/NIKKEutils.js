@@ -195,7 +195,7 @@ function checkInLIP() {
      * - LIPASS四月好礼
      */
     const entrance = res.find(e =>
-      e.text.match(/([领取超值好礼签到领珠宝送]{3,}|[领取LPAS]{3,}.{0,2}月[奖励好礼]{1,})/) != null &&
+      e.text.match(/([领取超值好礼签到领珠宝送]{3,}|[领取LPAS]{3,}.{0,2}月[奖励好礼福利]{1,})/) != null &&
       e.bounds != null &&
       e.bounds.top > announcementBtn.bounds.bottom
     );

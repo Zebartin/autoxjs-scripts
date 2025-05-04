@@ -43,7 +43,7 @@ function saveError(error) {
 function 半自动() {
   const confirm = {
     text: '确认',
-    regex: /[確确][認认定]/
+    regex: /[確确][認认定]$/
   };
   const backBtn = {
     text: '返回',
@@ -60,6 +60,14 @@ function 半自动() {
   const enterCombat = {
     text: '进入战斗',
     regex: /入战/,
+    filter: (bounds, img) =>
+      bounds &&
+      bounds.bottom > img.height * 0.7 &&
+      bounds.left >= img.width / 2
+  };
+  const quickCombat = {
+    text: '快速战斗',
+    regex: /快.战/,
     filter: (bounds, img) =>
       bounds &&
       bounds.bottom > img.height * 0.7 &&
@@ -83,8 +91,8 @@ function 半自动() {
       randomArea.bounds = new android.graphics.Rect();
       randomArea.bounds.left = img.width * 0.1;
       randomArea.bounds.right = img.width * 0.9;
-      randomArea.bounds.top = img.height * 0.4;
-      randomArea.bounds.bottom = img.height * 0.6;
+      randomArea.bounds.top = img.height * 0.1;
+      randomArea.bounds.bottom = img.height * 0.4;
     }
     if (appearThenClick(confirm)) {
       continue;
@@ -96,6 +104,14 @@ function 半自动() {
       }
       sleep(2000);
       continue;
+    }
+    if (appear(quickCombat)) {
+      let qbColor = ocrInfo.img.pixel(quickCombat.bounds.right + 3, quickCombat.bounds.centerY());
+      if (colors.red(qbColor) > 120) {
+        clickRect(quickCombat, 1, 0);
+        sleep(1000);
+        continue;
+      }
     }
     if (appearThenClick(enterCombat)) {
       sleep(2000);

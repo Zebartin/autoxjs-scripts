@@ -695,8 +695,11 @@ ui.save.on("click", function () {
     ui.finish();
     toastLog('设置已保存');
   }
-  else if (account || password) {
+  else if (email || password) {
     toast("已配置部分账号密码，请补充完整或全部留空");
+  } else {
+    ui.finish();
+    toastLog('设置已保存');
   }
 });
 

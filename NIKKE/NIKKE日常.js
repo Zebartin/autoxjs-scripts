@@ -910,7 +910,7 @@ function 爬塔() {
 function 新人竞技场(rookieTarget) {
   if (rookieTarget == 0)
     return;
-  clickRect(ocrUntilFound(res => res.find(e => e.text.match(/R[OD][OD]K.E/) != null), 30, 1000));
+  clickRect(ocrUntilFound(res => res.find(e => e.text.match(/(R[OD][OD]K.E|新)/i) != null), 30, 1000));
   toastLog('进入新人竞技场');
   const targetFight = ocrUntilFound((res, img) => {
     const seasonOver = res.find(e => e.text.match(/(敬请|期待)/) != null);

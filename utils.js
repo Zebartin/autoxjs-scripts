@@ -575,7 +575,11 @@ function killApp(packageName) {
     if (dialog != null) {
       let confirmBtn = textMatches(/(确[定认]|(强行|停止|结束).{0,3})/).findOne(1000);
       if (confirmBtn != null) {
-        confirmBtn.click();
+        while (confirmBtn != null && !confirmBtn.clickable())
+          confirmBtn = confirmBtn.parent();
+        if (confirmBtn != null) {
+          confirmBtn.click();
+        }
       }
       continue;
     }
@@ -674,8 +678,8 @@ function requestScreenCaptureAuto(ensureImg) {
   let hasPermission = false;
   const [w, h] = getDisplaySize();
   let confirmRequest = () => {
-    //安卓版本高于Android 9
-    if (hasPermission || device.sdkInt <= 28) {
+    // 安卓版本高于Android 9低于13
+    if (hasPermission || device.sdkInt <= 28 || device.sdkInt >= 34 ) {
       return;
     }
     const ele = textMatches(/(.*录.[或\/]投.*|允许|立即开始|确定|统一)/).findOne(10 * 1000);
@@ -726,6 +730,9 @@ function requestScreenCaptureAuto(ensureImg) {
   let isLandscape = (orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE);
   let isTablet = (device.width > device.height);    // 平板横边 > 竖边
   log(`申请截屏权限：${isLandscape ? '横' : '竖'}屏，设备类型：${isTablet ? '平板' : '手机'}`);
+  if (device.sdkInt >= 34) {
+    toastLog('高安卓版本须自行允许屏幕录制权限');
+  }
   if (!requestScreenCapture((isLandscape ^ isTablet) == 1)) {
     toastLog("请求截图失败");
     exit();

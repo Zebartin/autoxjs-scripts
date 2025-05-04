@@ -142,9 +142,12 @@ function 启动NIKKE() {
       app.launchApp('Google Play 商店');
       sleep(50);
     }
-    app.launchApp("NIKKE");
-    // waitForActivity('com.shiftup.nk.MainActivity');
-    log("打开NIKKE");
+    if(app.launchApp("NIKKE")) {
+      // waitForActivity('com.shiftup.nk.MainActivity');
+      log("打开NIKKE");
+    } else {
+      throw new Error('无法启动NIKKE，请确保Autox.js拥有“读取已安装应用列表”权限');
+    }
   } else if (launchMethod == 'OurPlay') {
     startFromOurPlay();
   } else if (launchMethod == 'Manually') {

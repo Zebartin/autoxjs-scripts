@@ -8,7 +8,7 @@
 
 ## 安装AutoX.js
 
-AutoX.js在初版Auto.js（现为[Auto.js Pro](https://pro.autojs.org/)）的基础上发展而来，是一个支持无障碍服务的Android平台上的JavaScript运行环境和开发环境。可以从[这里](https://github.com/kkevsekk1/AutoX#autoxjs%E4%B8%8B%E8%BD%BD%E5%9C%B0%E5%9D%80)下载到AutoX.js。
+AutoX.js在初版Auto.js的基础上发展而来，是一个支持无障碍服务的Android平台上的JavaScript运行环境和开发环境。可以从[这里](https://github.com/aiselp/AutoX?tab=readme-ov-file#autoxjs%E4%B8%8B%E8%BD%BD%E5%9C%B0%E5%9D%80)下载到AutoX.js。
 
 在手机上安装好AutoX.js之后，还需要做一系列的权限配置才能保证其正常运行。视不同设备而定，可能包括以下方面：
 

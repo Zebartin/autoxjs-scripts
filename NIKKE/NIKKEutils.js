@@ -142,10 +142,13 @@ function 启动NIKKE() {
       app.launchApp('Google Play 商店');
       sleep(50);
     }
-    if(app.launchApp("NIKKE")) {
+    if (app.launchApp("NIKKE")) {
       // waitForActivity('com.shiftup.nk.MainActivity');
       log("打开NIKKE");
+    } else if (device.sdkInt < 30) {
+      toastLog("无法确定是否成功打开NIKKE");
     } else {
+      // 参考：https://developer.android.com/training/package-visibility
       throw new Error('无法启动NIKKE，请确保Autox.js拥有“读取已安装应用列表”权限');
     }
   } else if (launchMethod == 'OurPlay') {

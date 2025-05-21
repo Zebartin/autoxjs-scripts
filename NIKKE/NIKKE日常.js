@@ -1055,7 +1055,7 @@ function 特殊竞技场() {
       if (!res.text.includes('取'))
         return null;
       let confirm = res.find(e =>
-        e.text.match(/[领領邻]取$/) != null && e.bounds != null &&
+        e.text.match(/[领領邻]取.{0,3}$/) != null && e.bounds != null &&
         e.bounds.top > img.height * 0.6 &&
         e.bounds.right > img.width * 0.5
       );

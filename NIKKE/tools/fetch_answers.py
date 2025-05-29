@@ -41,7 +41,7 @@ def parse_gamekee_data(data: str):
     keys = list(ret.keys())
     for i in range(0, len(keys), 5):
         print(', '.join(keys[i:i+5]))
-    return ret
+    return {k: list(v) for k, v in ret.items()}
 
 
 async def get_from_gamekee_baidu_pan():
@@ -138,7 +138,8 @@ def get_from_gamekee_wiki(skip_names: set[str]):
         for attr in entry_filter['data']['entry_filter_attr'].get(str(nikke_entry['id']), []):
             if len(attr['value']) != 1:
                 print(nikke_entry)
-                print(entry_filter['data']['entry_filter_attr'].get(str(nikke_entry['id'])))
+                print(entry_filter['data']['entry_filter_attr'].get(
+                    str(nikke_entry['id'])))
                 raise Exception('gamekee wiki parsing failed')
             if (attr['input_id'], int(attr['value'][0])) in invalid_pair:
                 return False
@@ -149,30 +150,11 @@ def get_from_gamekee_wiki(skip_names: set[str]):
             f'https://nikke.gamekee.com/v1/content/detail/{content_id}',
             headers=game_header
         ).json()
-        soup = None
-        for model in reversed(data_json['data']['model_list']):
-            soup = BeautifulSoup(model['html'], 'html.parser')
-            title = soup.select_one('tbody > tr:nth-child(1) > td > div')
-            if title != None and next(title.stripped_strings) == '好感度对话':
-                break
-        else:
-            print(f'无法获取到好感度对话: content_id={content_id}')
-            return
-        for line in soup.select('tbody > tr'):
-            cols = line.select('td')
-            if len(cols) != 4:
+        content_json = json.loads(data_json['data']['content_json'])
+        for d in content_json['baseData']:
+            if d[0]['value'] != '120好感度':
                 continue
-            answer = ''
-            try:
-                lv = int(''.join(cols[0].stripped_strings))
-                rv = int(''.join(cols[-1].stripped_strings))
-                if lv > rv:
-                    answer = ''.join(cols[1].stripped_strings)
-                else:
-                    answer = ''.join(cols[-2].stripped_strings)
-            except ValueError:
-                print(f'无法解析：{cols}')
-                continue
+            answer = d[1]['value']
             answer = punctuation_pattern.sub('', answer)
             answer = answer.replace('AccountDataNickName', '')
             if answer:
@@ -237,14 +219,14 @@ def get_from_google_sheet(apiKey):
             elif n == '吉罗婷：寒冬杀手':
                 n = '吉萝婷：寒冬杀手'
             ret[n.strip()].add(cleaned_a)
-    return ret
+    return {k: list(v) for k, v in ret.items()}
 
 
 if __name__ == '__main__':
     zh_cn_data = asyncio.run(get_from_gamekee_baidu_pan())
     if not zh_cn_data:
         print('Cannot get data from netcut, quit here')
-        exit(1)
+        zh_cn_data = dict()
     try:
         zh_cn_data_extra = get_from_gamekee_wiki(set(zh_cn_data.keys()))
         zh_cn_data.update(zh_cn_data_extra)

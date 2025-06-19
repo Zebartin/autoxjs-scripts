@@ -1460,8 +1460,8 @@ function 咨询() {
     }
     if (res != 'retry' && cnt < adviseCnt) {
       swipeRandom(new android.graphics.Rect(
-        random(width * 0.15, width * 0.35), height * 0.2,
-        random(width * 0.65, width * 0.85), height * 0.5
+        random(Math.round(width * 0.15), Math.round(width * 0.35)), height * 0.2,
+        random(Math.round(width * 0.65), Math.round(width * 0.85)), height * 0.5
       ), 'left');
       sleep(600);
     }

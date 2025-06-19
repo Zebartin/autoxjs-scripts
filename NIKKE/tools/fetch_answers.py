@@ -16,7 +16,7 @@ session = requests.Session()
 
 # ord('⋯') = 8943
 # ord('…') = 8230
-punctuation_pattern = re.compile(r"([，⋯…？?、!！「」～~☆【】《》。.—{}'\"“”♪↗↘\s]|\\n)")
+punctuation_pattern = re.compile(r"([，⋯…？?、!！「」～~☆【】《》。.·—{}'\"“”♪↗↘\s]|\\n)")
 
 
 def parse_gamekee_data(data: str):

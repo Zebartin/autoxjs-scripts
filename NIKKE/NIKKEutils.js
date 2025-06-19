@@ -211,7 +211,7 @@ function checkInLIP() {
     }
     let swipeArea = new android.graphics.Rect(
       img.width * 0.2, announcementBtn.bounds.bottom, img.width * 0.8,
-      announcementBtn.bounds.bottom + random(img.height * 0.3, img.height * 0.4)
+      announcementBtn.bounds.bottom + random(Math.round(img.height * 0.3), Math.round(img.height * 0.4))
     );
     swipeRandom(swipeArea, 'up');
     swipeRandom(swipeArea, 'right', 200);

@@ -6,9 +6,11 @@
 > - 运行脚本时，由于需要进行频繁的文字识别或图像匹配，可能会增加不少耗电量，不太确定；
 > - 脚本仅对本人使用的设备（分辨率2400×1080，竖屏）做了适配，不清楚对其他设备的兼容如何，因此**只建议愿意和喜欢折腾的人尝试**，不一定能正常使用（2023/02/04更新: 经尝试，模拟器上使用尚且算可用；2023/08后官方禁用模拟器），如果遇到问题欢迎反馈
 
+# **2025/07/05：不想玩辣！脚本能用就用，不能用看下面**
 以下列举其他平台/方式的脚本。之所以列出Fork版是因为原作者已弃坑：
 - [DoroHelper](https://github.com/1204244136/DoroHelper)（PC端游戏+AutoHotkey）
-- [NIKKEAutoScript](https://github.com/megumiss/NIKKEAutoScript)（云手机/ARM架构模拟器/Redroid+Python）
+- [NIKKEAutoScript](https://github.com/megumiss/NIKKEAutoScript)（云手机（猜测）/ARM架构模拟器（疑似）/Redroid+Python）
+- [MNA](https://github.com/MAA-Nikke/MNA)（基于[MaaFramework](https://github.com/MaaXYZ/MaaFramework)）
 
 # 使用方法
 

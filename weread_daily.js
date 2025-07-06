@@ -3,11 +3,25 @@ var {
     findContoursRect, killSameScripts
 } = require('./utils.js');
 killSameScripts();
-const URL = "";
-const KEY = "";
+let llmStorage = storages.create("llm");
+let MODEL = "gemini-2.5-flash";
+const URL = llmStorage.get('url');
+const KEY = llmStorage.get('key');
 requestScreenCaptureAuto();
 
 sleep(1000)
+// 操作按钮
+let clickButtonWindow = floaty.rawWindow(
+    <vertical bg="#88000000" padding="10dp" gravity="center">
+        <horizontal gravity="center">
+            <button id="captureAndOcr" text="查答案" margin="5dp"/>
+            <button id="closeBtn" text="退出" margin="5dp"/>
+        </horizontal>
+        <text id="text" textColor="#eb3434" textSize="16sp" w="*" gravity="center" marginTop="10dp">
+            答案显示在这里
+        </text>
+    </vertical>
+);
 let img = null;
 /**
  * 截图并识别OCR文本信息
@@ -18,6 +32,7 @@ function captureAndOcr() {
     if (!img) {
         toastLog('截图失败')
     }
+    let thresh = 50;
     let start = new Date()
     //结果转数组：层级：3
     let ocrResult = gmlkit.ocr(img, "zh");
@@ -26,27 +41,36 @@ function captureAndOcr() {
         log(x.text);
         log(x.bounds);
     }
+    MODEL = "gemini-2.5-flash";
     const top = ocrResult.find(e => e.text.match(/(第\d+.*?共\d+.{1,3}$|[最后一題题]{2,})/) != null);
-    const bottom = ocrResult.find(e => e.text.match(/[这這题題有問问！!]{3,}/) != null);
-    if (!top || !bottom) {
+    let bottom = ocrResult.find(e => e.text.match(/[这這题題有問问！!]{3,}/) != null);
+    if (!top) {
         toastLog("识别失败");
         return;
     }
+    if (!bottom) {
+        bottom = { bounds: { top: img.getHeight() } };
+        thresh = 75;
+        MODEL = "gemini-2.5-flash-lite-preview-06-17"; // 更快
+    }
     const contours = findContoursRect(img, {
-        thresh: 50,
+        thresh: thresh,
         type: "BINARY",
         region: [0, top.bounds.bottom, img.getWidth(), bottom.bounds.top - top.bounds.bottom],
         rectFilter: rect =>
             rect.left < img.getWidth() / 2 &&
             rect.right > img.getWidth() / 2 &&
-            rect.width() > img.getWidth() * 0.6
+            rect.width() > img.getWidth() * 0.6 &&
+            rect.height() < img.getHeight() * 0.3
     });
     const question = ocrResult.filter(x =>
         x.level == 1 &&
         x.bounds != null &&
         x.bounds.top >= top.bounds.bottom &&
         x.bounds.bottom <= contours[0].top
-    ).toArray().map(x => x.text).join('')
+    ).toArray()
+        .sort((a, b) => a.bounds.top - b.bounds.top)
+        .map(x => x.text).join('').trim();
     const options = contours.map(c => ocrResult.filter(x =>
         x.level == 1 &&
         x.bounds != null &&
@@ -54,7 +78,9 @@ function captureAndOcr() {
         x.bounds.right <= c.right &&
         x.bounds.top >= c.top &&
         x.bounds.bottom <= c.bottom
-    ).toArray().map(x => x.text).join(''));
+    ).toArray()
+        .sort((a, b) => a.bounds.top - b.bounds.top)
+        .map(x => x.text).join(''));
     log(question);
     log(options);
     try {
@@ -71,11 +97,11 @@ function solve(question, options) {
     // log("请求中……");
     const start = new Date();
     const r = http.postJson(URL, {
-        "model": "gemini-2.5-flash",
+        "model": MODEL,
         "messages": [
             {
                 "role": "system",
-                "content": "你是一位擅长百科问答题的专家，请根据用户提供的问题和选项，给出最合适的答案。用户提供的内容可能有错字或漏字，你能够自行判断。先给出选项对应的字母，再给出50字以内的简短理由，中间不需要换行。"
+                "content": "你是一位擅长百科问答题的专家，请根据用户提供的问题和选项，给出最合适的答案。用户提供的内容可能有错字或漏字，你能够自行判断。只给出答案选项对应的字母，再给出20字以内的简短理由，中间不需要换行。"
             },
             {
                 "role": "user",
@@ -88,18 +114,15 @@ function solve(question, options) {
             'Authorization': 'Bearer ' + KEY
         },
     });
-    toastLog(r.body.json()['choices'][0]['message']['content']);
+    const answer = r.body.json()['choices'][0]['message']['content'];
+    log(answer);
+    ui.run(function () {
+        clickButtonWindow.text.setText(answer);
+    })
     // log('请求API耗时：' + (new Date() - start) + 'ms')
 }
-// 操作按钮
-let clickButtonWindow = floaty.rawWindow(
-    <vertical>
-        <button id="captureAndOcr" text="查答案" />
-        <button id="closeBtn" text="退出" />
-    </vertical>
-);
 ui.run(function () {
-    clickButtonWindow.setPosition(device.width / 2 - ~~(clickButtonWindow.getWidth() / 2), device.height * 0.65)
+    clickButtonWindow.setPosition(device.width / 2 - ~~(clickButtonWindow.getWidth() / 2), device.height * 0.75)
 })
 
 // 点击识别
@@ -112,7 +135,7 @@ clickButtonWindow.captureAndOcr.click(function () {
         threads.start(() => {
             captureAndOcr()
             ui.run(function () {
-                clickButtonWindow.setPosition(device.width / 2 - ~~(clickButtonWindow.getWidth() / 2), device.height * 0.65)
+                clickButtonWindow.setPosition(device.width / 2 - ~~(clickButtonWindow.getWidth() / 2), device.height * 0.75)
             })
         })
     }, 500)

@@ -5,6 +5,7 @@ var {
 killSameScripts();
 let llmStorage = storages.create("llm");
 let MODEL = "gemini-2.5-flash";
+let TIMEOUTS = 2;
 const URL = llmStorage.get('url');
 const KEY = llmStorage.get('key');
 requestScreenCaptureAuto();
@@ -14,8 +15,8 @@ sleep(1000)
 let clickButtonWindow = floaty.rawWindow(
     <vertical bg="#88000000" padding="10dp" gravity="center">
         <horizontal gravity="center">
-            <button id="captureAndOcr" text="查答案" margin="5dp"/>
-            <button id="closeBtn" text="退出" margin="5dp"/>
+            <button id="captureAndOcr" text="查答案" margin="5dp" />
+            <button id="closeBtn" text="退出" margin="5dp" />
         </horizontal>
         <text id="text" textColor="#eb3434" textSize="16sp" w="*" gravity="center" marginTop="10dp">
             答案显示在这里
@@ -51,7 +52,7 @@ function captureAndOcr() {
     if (!bottom) {
         bottom = { bounds: { top: img.getHeight() } };
         thresh = 75;
-        MODEL = "gemini-2.5-flash-lite-preview-06-17"; // 更快
+        MODEL = "gemini-2.5-flash-lite"; // 更快
     }
     const contours = findContoursRect(img, {
         thresh: thresh,
@@ -91,12 +92,25 @@ function captureAndOcr() {
     }
 }
 
+function postJson(url, json, timeouts, options) {
+    options.method = "POST";
+    options.contentType = "application/json";
+    const customClient = http.client().newBuilder()
+        .connectTimeout(timeouts, java.util.concurrent.TimeUnit.SECONDS)
+        .readTimeout(timeouts, java.util.concurrent.TimeUnit.SECONDS)
+        .writeTimeout(timeouts, java.util.concurrent.TimeUnit.SECONDS)
+        .build();
+    options.body = JSON.stringify(json);
+    const call = customClient.newCall(http.buildRequest(url, options));
+    return JSON.parse(call.execute().body().string());
+}
+
 function solve(question, options) {
     const content = `问题：${question}\n选项：${options.map((opt, index) => String.fromCharCode(65 + index) + '、' + opt).join('\n')}`;
     log(content);
     // log("请求中……");
     const start = new Date();
-    const r = http.postJson(URL, {
+    const r = postJson(URL, {
         "model": MODEL,
         "messages": [
             {
@@ -108,13 +122,13 @@ function solve(question, options) {
                 "content": content
             }
         ],
-    }, {
+    }, TIMEOUTS, {
         headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + KEY
         },
     });
-    const answer = r.body.json()['choices'][0]['message']['content'];
+    const answer = r['choices'][0]['message']['content'];
     log(answer);
     ui.run(function () {
         clickButtonWindow.text.setText(answer);
@@ -150,4 +164,7 @@ setInterval(() => { }, 10000)
 events.on('exit', () => {
     // 回收图片
     img && img.recycle()
+    if (images.stopScreenCapturer) {
+        images.stopScreenCapturer();
+    }
 })

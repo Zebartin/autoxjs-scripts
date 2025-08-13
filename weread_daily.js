@@ -43,7 +43,7 @@ function captureAndOcr() {
         log(x.bounds);
     }
     MODEL = "gemini-2.5-flash";
-    const top = ocrResult.find(e => e.text.match(/(第\d+.*?共\d+.{1,3}$|[最后一題题]{2,})/) != null);
+    const top = ocrResult.find(e => e.text.match(/(第\d+.*?共\d+.{1,3}$|[最后一題题]{2,}|[附加题题]{2,})/) != null);
     let bottom = ocrResult.find(e => e.text.match(/[这這题題有問问！!]{3,}/) != null);
     if (!top) {
         toastLog("识别失败");

@@ -5,7 +5,8 @@ var {
 killSameScripts();
 let llmStorage = storages.create("llm");
 let MODEL = "gemini-2.5-flash";
-let TIMEOUTS = 2;
+let TIMEOUTS = 7;
+var solving = false;
 const URL = llmStorage.get('url');
 const KEY = llmStorage.get('key');
 requestScreenCaptureAuto();
@@ -52,6 +53,7 @@ function captureAndOcr() {
     if (!bottom) {
         bottom = { bounds: { top: img.getHeight() } };
         thresh = 75;
+        TIMEOUTS = 10;
         MODEL = "gemini-2.5-flash-lite"; // 更快
     }
     const contours = findContoursRect(img, {
@@ -84,12 +86,24 @@ function captureAndOcr() {
         .map(x => x.text).join(''));
     log(question);
     log(options);
-    try {
-        solve(question, options);
-    } catch (error) {
-        console.error(`调用API失败：${error.message}`);
-        toastLog('调用API失败');
-    }
+    const threadSolve = threads.start(() => {
+        try {
+            solve(question, options);
+        } catch (error) {
+            console.error(`调用API失败：${error.message}`);
+            toastLog('调用API失败');
+        }
+    });
+    setTimeout(() => {
+        if (solving) {
+            threadSolve.interrupt();
+            solving = false;
+            ui.run(function () {
+                clickButtonWindow.text.setText('调用API超时');
+            })
+            displayWindow();
+        }
+    }, TIMEOUTS * 1000);
 }
 
 function postJson(url, json, timeouts, options) {
@@ -106,6 +120,7 @@ function postJson(url, json, timeouts, options) {
 }
 
 function solve(question, options) {
+    solving = true;
     const content = `问题：${question}\n选项：${options.map((opt, index) => String.fromCharCode(65 + index) + '、' + opt).join('\n')}`;
     log(content);
     // log("请求中……");
@@ -128,16 +143,21 @@ function solve(question, options) {
             'Authorization': 'Bearer ' + KEY
         },
     });
+    solving = false;
     const answer = r['choices'][0]['message']['content'];
     log(answer);
     ui.run(function () {
         clickButtonWindow.text.setText(answer);
     })
+    displayWindow();
     // log('请求API耗时：' + (new Date() - start) + 'ms')
 }
-ui.run(function () {
-    clickButtonWindow.setPosition(device.width / 2 - ~~(clickButtonWindow.getWidth() / 2), device.height * 0.75)
-})
+function displayWindow() {
+    ui.run(function () {
+        clickButtonWindow.setPosition(device.width / 2 - ~~(clickButtonWindow.getWidth() / 2), device.height * 0.75)
+    })
+}
+ui.run(displayWindow);
 
 // 点击识别
 clickButtonWindow.captureAndOcr.click(function () {
@@ -148,9 +168,6 @@ clickButtonWindow.captureAndOcr.click(function () {
     setTimeout(() => {
         threads.start(() => {
             captureAndOcr()
-            ui.run(function () {
-                clickButtonWindow.setPosition(device.width / 2 - ~~(clickButtonWindow.getWidth() / 2), device.height * 0.75)
-            })
         })
     }, 500)
 })

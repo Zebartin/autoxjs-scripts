@@ -94,16 +94,20 @@ function captureAndOcr() {
             toastLog('调用API失败');
         }
     });
-    setTimeout(() => {
-        if (solving) {
-            threadSolve.interrupt();
-            solving = false;
-            ui.run(function () {
-                clickButtonWindow.text.setText('调用API超时');
-            })
-            displayWindow();
+    for (let i = 0; i < TIMEOUTS; ++i) {
+        sleep(1000);
+        if (!solving) {
+            return;
         }
-    }, TIMEOUTS * 1000);
+    }
+    if (solving) {
+        threadSolve.interrupt();
+        solving = false;
+        ui.run(function () {
+            clickButtonWindow.text.setText('调用API超时');
+        })
+        displayWindow();
+    }
 }
 
 function postJson(url, json, timeouts, options) {

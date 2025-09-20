@@ -10,7 +10,6 @@ from pathlib import Path
 import requests
 import websockets
 import zhconv
-from bs4 import BeautifulSoup
 
 session = requests.Session()
 
@@ -99,6 +98,7 @@ def get_from_gamekee_netcut():
 
 
 def get_from_gamekee_wiki(skip_names: set[str]):
+    '''2025/09/20：不可用状态，懒得适配'''
     # gamekee首页误写
     skip_names.update(['D:杀手妻子', '诺薇尔'])
     ret = dict()
@@ -223,16 +223,18 @@ def get_from_google_sheet(apiKey):
 
 
 if __name__ == '__main__':
-    zh_cn_data = asyncio.run(get_from_gamekee_baidu_pan())
-    if not zh_cn_data:
-        print('Cannot get data from netcut, quit here')
-        zh_cn_data = dict()
     try:
-        zh_cn_data_extra = get_from_gamekee_wiki(set(zh_cn_data.keys()))
-        zh_cn_data.update(zh_cn_data_extra)
+        zh_cn_data = asyncio.run(get_from_gamekee_baidu_pan())
     except Exception as e:
         print(e)
-        print()
+        print('Cannot get data from baidu pan')
+        zh_cn_data = dict()
+    # try:
+    #     zh_cn_data_extra = get_from_gamekee_wiki(set(zh_cn_data.keys()))
+    #     zh_cn_data.update(zh_cn_data_extra)
+    # except Exception as e:
+    #     print(e)
+    #     print()
     if len(sys.argv) > 1:
         zh_tw_data = get_from_google_sheet(sys.argv[1])
     else:

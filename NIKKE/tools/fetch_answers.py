@@ -98,7 +98,6 @@ def get_from_gamekee_netcut():
 
 
 def get_from_gamekee_wiki(skip_names: set[str]):
-    '''2025/09/20：不可用状态，懒得适配'''
     # gamekee首页误写
     skip_names.update(['D:杀手妻子', '诺薇尔'])
     ret = dict()
@@ -141,6 +140,8 @@ def get_from_gamekee_wiki(skip_names: set[str]):
                 print(entry_filter['data']['entry_filter_attr'].get(
                     str(nikke_entry['id'])))
                 raise Exception('gamekee wiki parsing failed')
+            if attr['value'][0] == '':
+                continue
             if (attr['input_id'], int(attr['value'][0])) in invalid_pair:
                 return False
         return True
@@ -229,12 +230,13 @@ if __name__ == '__main__':
         print(e)
         print('Cannot get data from baidu pan')
         zh_cn_data = dict()
-    # try:
-    #     zh_cn_data_extra = get_from_gamekee_wiki(set(zh_cn_data.keys()))
-    #     zh_cn_data.update(zh_cn_data_extra)
-    # except Exception as e:
-    #     print(e)
-    #     print()
+    try:
+        zh_cn_data_extra = get_from_gamekee_wiki(set(zh_cn_data.keys()))
+        zh_cn_data.update(zh_cn_data_extra)
+    except Exception as e:
+        # raise e
+        print(e)
+        print()
     if len(sys.argv) > 1:
         zh_tw_data = get_from_google_sheet(sys.argv[1])
     else:

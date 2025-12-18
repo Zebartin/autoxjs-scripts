@@ -98,8 +98,8 @@ def get_from_gamekee_netcut():
 
 
 def get_from_gamekee_wiki(skip_names: set[str]):
-    # gamekee首页误写
-    skip_names.update(['D:杀手妻子', '诺薇尔'])
+    # gamekee误写
+    skip_names.update(['D:杀手妻子'])
     ret = dict()
     game_header = {'game-alias': 'nikke'}
     entry_url = 'https://nikke.gamekee.com/v1/wiki/entry'
@@ -146,13 +146,8 @@ def get_from_gamekee_wiki(skip_names: set[str]):
                 return False
         return True
 
-    def get_single(content_id):
-        data_json = session.get(
-            f'https://nikke.gamekee.com/v1/content/detail/{content_id}',
-            headers=game_header
-        ).json()
-        content_json = json.loads(data_json['data']['content_json'])
-        for d in content_json['baseData']:
+    def get_single(base_data):
+        for d in base_data:
             if d[0]['value'] != '120好感度':
                 continue
             answer = d[1]['value']
@@ -162,17 +157,23 @@ def get_from_gamekee_wiki(skip_names: set[str]):
                 yield answer
 
     for nikke in characters:
-        if nikke['name'] == '芙萝拉':
-            nikke['name'] = '芙罗拉'
-        if nikke['name'] in skip_names:
+        if nikke["name"] in skip_names:
             continue
         # 编辑中词条
-        if nikke['content_id'] == 0:
+        if nikke["content_id"] == 0:
             continue
         if not is_valid(nikke):
-            ret[nikke['name']] = []
+            ret[nikke["name"]] = []
             continue
-        ret[nikke['name']] = set(get_single(nikke['content_id']))
+        data_json = session.get(
+            f"https://nikke.gamekee.com/v1/content/detail/{nikke['content_id']}",
+            headers=game_header,
+        ).json()
+        content_json = json.loads(data_json["data"]["content_json"])
+        base_data = content_json.get("baseData", [])
+        name = next((x for x in base_data if x[0]["value"] == "角色名称"), None)
+        name = name[1]["value"] if name else nikke["name"]
+        ret[name] = set(get_single(base_data))
         time.sleep(0.5)
     print('Gamekee Wiki:')
     keys = list(ret.keys())

@@ -1,5 +1,5 @@
 import logging
-import sys
+import os
 import time
 import random
 
@@ -11,10 +11,10 @@ logging.basicConfig(level=logging.INFO,
 
 
 def main():
-    if len(sys.argv) != 3:
+    EMAIL_ADDRESS = os.environ.get('NIKKE_EMAIL_ADDRESS')
+    PASSWORD = os.environ.get('NIKKE_PASSWORD')
+    if not EMAIL_ADDRESS or not PASSWORD:
         return
-    EMAIL_ADDRESS = sys.argv[1]
-    PASSWORD = sys.argv[2]
 
     random_duration = random.randint(0, 3600*3)
     logger.info(f'随机等待 {random_duration} 秒')
